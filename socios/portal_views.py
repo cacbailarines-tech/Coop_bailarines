@@ -482,11 +482,14 @@ def portal_pago_combinado(request):
             registrar_auditoria(None, 'verificaciones', 'reporte_aporte_combinado_portal', f'El socio {socio.nombre_completo} reporto un aporte dentro de un pago combinado.', 'AporteMensual', aporte.pk, {'comprobante': comprobante})
 
         for credito in creditos_sel:
-            tipo_pago = request.POST.get(f'credito_tipo_{credito.pk}', 'cuota')
             monto = Decimal(request.POST.get(f'credito_monto_{credito.pk}', '0') or '0')
             if monto <= 0:
                 messages.error(request, f'El monto reportado para el credito {credito.numero} debe ser mayor a cero.')
                 return render(request, 'portal/pago_combinado.html', {'socio': socio, 'aportes': aportes, 'creditos': creditos, 'multas': multas})
+            if credito.tipo == 'no_mensualizado':
+                tipo_pago = 'abono'
+            else:
+                tipo_pago = 'cuota' if monto == credito.cuota_mensual else 'abono'
             saldo_ant = credito.saldo_pendiente
             nuevo_saldo = max(saldo_ant - monto, Decimal('0'))
             num_pago = credito.pagos.count() + 1

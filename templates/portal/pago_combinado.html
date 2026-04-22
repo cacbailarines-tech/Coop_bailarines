@@ -1,17 +1,162 @@
 {% extends 'portal/base.html' %}
 {% block title %}Pago Combinado - Portal Bailarines{% endblock %}
 {% block content %}
-<div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;">
+<style>
+.pc-top{
+  margin-bottom:16px;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  flex-wrap:wrap;
+  gap:10px;
+}
+.pc-total-badge{
+  font-size:11px;
+  padding:8px 12px;
+}
+.pc-grid,
+.pc-grid-credito,
+.pc-grid-comprobante{
+  display:grid;
+  gap:12px;
+}
+.pc-grid{grid-template-columns:minmax(0,1fr) auto;}
+.pc-grid-credito{grid-template-columns:minmax(0,1fr) 170px auto;}
+.pc-grid-comprobante{grid-template-columns:repeat(2, minmax(0,1fr));}
+.pc-actions{
+  display:flex;
+  gap:10px;
+  justify-content:flex-end;
+}
+.pc-total-box{
+  background:rgba(11,61,145,0.08);
+  border:1px solid rgba(11,61,145,0.16);
+  border-radius:10px;
+  padding:12px 14px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-bottom:12px;
+}
+.pc-total-box strong{
+  font-size:22px;
+  font-weight:900;
+  color:var(--primary);
+}
+.pc-credito-info{
+  display:none;
+  margin-top:10px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:#F8FAFF;
+  padding:12px;
+}
+.pc-credito-info.is-visible{display:block;}
+.pc-credito-info-grid{
+  display:grid;
+  grid-template-columns:repeat(3, minmax(0,1fr));
+  gap:10px;
+  margin-top:8px;
+}
+.pc-credito-info-item{
+  background:white;
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:10px;
+}
+.pc-credito-info-item span{
+  display:block;
+  font-size:11px;
+  color:var(--muted);
+  margin-bottom:4px;
+}
+.pc-summary-item{
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:12px;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:10px;
+  margin-bottom:10px;
+  background:#fff;
+}
+.pc-summary-item:last-child{margin-bottom:0;}
+.pc-summary-meta{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  min-width:0;
+}
+.pc-summary-type{
+  font-size:11px;
+  font-weight:700;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:.4px;
+}
+.pc-summary-label{
+  font-size:13px;
+  font-weight:700;
+  color:var(--text);
+}
+.pc-summary-amount{
+  font-size:13px;
+  font-weight:800;
+  color:var(--primary);
+  white-space:nowrap;
+}
+.pc-summary-remove{
+  flex-shrink:0;
+  border:none;
+  background:rgba(198,40,40,0.08);
+  color:var(--danger);
+  width:34px;
+  height:34px;
+  border-radius:10px;
+  cursor:pointer;
+}
+@media(max-width:700px){
+  .pc-grid,
+  .pc-grid-credito,
+  .pc-grid-comprobante{
+    grid-template-columns:1fr;
+  }
+  .pc-top{
+    align-items:flex-start;
+  }
+  .pc-total-box{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+  .pc-credito-info-grid{
+    grid-template-columns:1fr;
+  }
+  .pc-summary-item{
+    flex-direction:column;
+  }
+  .pc-actions{
+    flex-direction:column-reverse;
+  }
+  .pc-actions .btn{
+    width:100%;
+    justify-content:center;
+  }
+}
+</style>
+
+<div class="pc-top">
   <div>
     <a href="{% url 'portal_inicio' %}" style="color:var(--muted);text-decoration:none;font-size:12px;"><i class="fas fa-arrow-left"></i> Inicio</a>
     <h1 style="font-size:18px;font-weight:800;margin-top:6px;">Reportar Pago Combinado</h1>
     <div style="font-size:12px;color:var(--muted);">Agregue solo los conceptos que entran en la misma transferencia.</div>
   </div>
-  <div class="badge badge-primary" style="font-size:11px;padding:7px 12px;">Total seleccionado: <span id="total-seleccionado">$0.00</span></div>
+  <div class="badge badge-primary pc-total-badge">Total seleccionado: <span id="total-seleccionado">$0.00</span></div>
 </div>
 
 <div class="alert alert-info">
-  <i class="fas fa-circle-info"></i> Elija cada concepto desde los selectores y v&aacute;yalo agregando al resumen. As&iacute; evitamos listas largas cuando un socio tiene muchas libretas.
+  <i class="fas fa-circle-info"></i> Seleccione cada concepto y agr&eacute;guelo al resumen. As&iacute; el pago combinado es m&aacute;s r&aacute;pido tambi&eacute;n en celular.
 </div>
 
 <form method="post" enctype="multipart/form-data" id="pago-combinado-form">
@@ -22,7 +167,7 @@
     <div class="pcard-header"><h3><i class="fas fa-book" style="color:var(--success);"></i> Agregar Aporte</h3></div>
     <div class="pcard-body">
       {% if aportes %}
-      <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end;">
+      <div class="pc-grid">
         <div>
           <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">Seleccione aporte pendiente</label>
           <select id="aporte-select" class="form-control">
@@ -39,7 +184,7 @@
             {% endfor %}
           </select>
         </div>
-        <button type="button" class="btn btn-primary" onclick="agregarAporte()"><i class="fas fa-plus"></i> Agregar</button>
+        <button type="button" class="btn btn-primary" id="agregar-aporte-btn"><i class="fas fa-plus"></i> Agregar</button>
       </div>
       {% else %}
       <div style="font-size:12px;color:var(--muted);">No tiene aportes pendientes para incluir.</div>
@@ -51,32 +196,43 @@
     <div class="pcard-header"><h3><i class="fas fa-hand-holding-dollar" style="color:var(--primary);"></i> Agregar Pago de Cr&eacute;dito</h3></div>
     <div class="pcard-body">
       {% if creditos %}
-      <div style="display:grid;grid-template-columns:1.4fr 1fr 180px auto;gap:10px;align-items:end;">
+      <div class="pc-grid-credito">
         <div>
           <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">Cr&eacute;dito</label>
-          <select id="credito-select" class="form-control" onchange="actualizarFormularioCredito()">
+          <select id="credito-select" class="form-control">
             <option value="">Seleccione un cr&eacute;dito...</option>
             {% for credito in creditos %}
-            <option value="{{ credito.pk }}" data-tipo="{{ credito.tipo }}" data-cuota="{{ credito.cuota_mensual|floatformat:2 }}" data-saldo="{{ credito.saldo_pendiente|floatformat:2 }}" data-label="{{ credito.numero }} - {{ credito.get_tipo_display }} - Saldo ${{ credito.saldo_pendiente|floatformat:2 }}">
+            <option
+              value="{{ credito.pk }}"
+              data-numero="{{ credito.numero }}"
+              data-tipo="{{ credito.get_tipo_display }}"
+              data-tipo-clave="{{ credito.tipo }}"
+              data-cuota="{{ credito.cuota_mensual|floatformat:2 }}"
+              data-saldo="{{ credito.saldo_pendiente|floatformat:2 }}"
+              data-libreta="{{ credito.libreta.numero }}"
+              data-vence="{% if credito.fecha_pago_limite %}{{ credito.fecha_pago_limite|date:'d/m/Y' }}{% else %}Sin fecha{% endif %}"
+              data-label="{{ credito.numero }} - {{ credito.get_tipo_display }} - Saldo ${{ credito.saldo_pendiente|floatformat:2 }}"
+            >
               {{ credito.numero }} - {{ credito.get_tipo_display }} - Saldo ${{ credito.saldo_pendiente|floatformat:2 }}
             </option>
             {% endfor %}
           </select>
         </div>
         <div>
-          <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">Tipo de pago</label>
-          <select id="credito-tipo" class="form-control">
-            <option value="cuota">Cuota sugerida</option>
-            <option value="abono">Abono manual</option>
-          </select>
+          <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">Monto a pagar</label>
+          <input type="number" id="credito-monto" class="form-control" min="0.01" step="0.01" placeholder="0.00">
         </div>
-        <div>
-          <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">Monto</label>
-          <input type="number" id="credito-monto" class="form-control" min="0.01" step="0.01">
-        </div>
-        <button type="button" class="btn btn-primary" onclick="agregarCredito()"><i class="fas fa-plus"></i> Agregar</button>
+        <button type="button" class="btn btn-primary" id="agregar-credito-btn"><i class="fas fa-plus"></i> Agregar</button>
       </div>
-      <div id="credito-ayuda" style="font-size:11px;color:var(--muted);margin-top:8px;">Seleccione un cr&eacute;dito para cargar su cuota o saldo.</div>
+      <div id="credito-ayuda" style="font-size:11px;color:var(--muted);margin-top:8px;">Seleccione un cr&eacute;dito para ver sus datos y editar el monto.</div>
+      <div id="credito-info" class="pc-credito-info">
+        <div style="font-size:12px;font-weight:700;color:var(--primary);" id="credito-info-titulo"></div>
+        <div class="pc-credito-info-grid">
+          <div class="pc-credito-info-item"><span>Libreta</span><strong id="credito-info-libreta">-</strong></div>
+          <div class="pc-credito-info-item"><span>Saldo pendiente</span><strong id="credito-info-saldo">$0.00</strong></div>
+          <div class="pc-credito-info-item"><span>Cuota sugerida</span><strong id="credito-info-cuota">$0.00</strong></div>
+        </div>
+      </div>
       {% else %}
       <div style="font-size:12px;color:var(--muted);">No tiene cr&eacute;ditos activos para incluir.</div>
       {% endif %}
@@ -87,7 +243,7 @@
     <div class="pcard-header"><h3><i class="fas fa-exclamation-triangle" style="color:var(--danger);"></i> Agregar Multa</h3></div>
     <div class="pcard-body">
       {% if multas %}
-      <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end;">
+      <div class="pc-grid">
         <div>
           <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">Seleccione multa pendiente</label>
           <select id="multa-select" class="form-control">
@@ -99,7 +255,7 @@
             {% endfor %}
           </select>
         </div>
-        <button type="button" class="btn btn-primary" onclick="agregarMulta()"><i class="fas fa-plus"></i> Agregar</button>
+        <button type="button" class="btn btn-primary" id="agregar-multa-btn"><i class="fas fa-plus"></i> Agregar</button>
       </div>
       {% else %}
       <div style="font-size:12px;color:var(--muted);">No tiene multas pendientes para incluir.</div>
@@ -110,9 +266,9 @@
   <div class="pcard">
     <div class="pcard-header"><h3><i class="fas fa-list-check" style="color:var(--warning);"></i> Resumen del Pago</h3></div>
     <div class="pcard-body">
-      <div style="background:rgba(11,61,145,0.08);border:1px solid rgba(11,61,145,0.16);border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;">
+      <div class="pc-total-box">
         <div style="font-size:12px;color:var(--muted);font-weight:700;">Total a reportar</div>
-        <div style="font-size:22px;font-weight:900;color:var(--primary);" id="total-resumen">$0.00</div>
+        <strong id="total-resumen">$0.00</strong>
       </div>
       <div id="seleccion-vacia" style="font-size:12px;color:var(--muted);">Todav&iacute;a no ha agregado conceptos.</div>
       <div id="seleccion-lista" style="display:none;"></div>
@@ -122,7 +278,7 @@
   <div class="pcard">
     <div class="pcard-header"><h3><i class="fas fa-receipt" style="color:var(--warning);"></i> Comprobante de la Transferencia</h3></div>
     <div class="pcard-body">
-      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;">
+      <div class="pc-grid-comprobante">
         <div>
           <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">N&uacute;mero de comprobante *</label>
           <input type="text" name="comprobante_referencia" class="form-control" required placeholder="Referencia de la transferencia">
@@ -139,12 +295,14 @@
     </div>
   </div>
 
-  <div style="display:flex;gap:10px;justify-content:flex-end;">
+  <div class="pc-actions">
     <a href="{% url 'portal_inicio' %}" class="btn btn-outline">Cancelar</a>
     <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Reportar Pago Combinado</button>
   </div>
 </form>
+{% endblock %}
 
+{% block extra_js %}
 <script>
 const seleccionHidden = document.getElementById('selecciones-hidden');
 const seleccionLista = document.getElementById('seleccion-lista');
@@ -163,63 +321,185 @@ function montoSeguro(valor) {
   return Number.isFinite(numero) ? numero : 0;
 }
 
-function actualizarFormularioCredito() {
+function formatearMonto(valor) {
+  return '$' + montoSeguro(valor).toFixed(2);
+}
+
+function mostrarCreditoSeleccionado() {
   const select = document.getElementById('credito-select');
-  const tipoSelect = document.getElementById('credito-tipo');
   const montoInput = document.getElementById('credito-monto');
+  const info = document.getElementById('credito-info');
   const ayuda = document.getElementById('credito-ayuda');
-  const option = select.options[select.selectedIndex];
+  const option = select?.options[select.selectedIndex];
+
   if (!option || !option.value) {
-    tipoSelect.value = 'cuota';
-    montoInput.value = '';
-    montoInput.readOnly = false;
-    ayuda.textContent = 'Seleccione un crédito para cargar su cuota o saldo.';
+    if (info) info.classList.remove('is-visible');
+    if (montoInput) montoInput.value = '';
+    if (ayuda) ayuda.textContent = 'Seleccione un crédito para ver sus datos y editar el monto.';
     return;
   }
 
-  const tipoCredito = option.dataset.tipo;
-  const cuota = option.dataset.cuota;
-  const saldo = option.dataset.saldo;
+  const cuota = montoSeguro(option.dataset.cuota);
+  const saldo = montoSeguro(option.dataset.saldo);
+  const tipoClave = option.dataset.tipoClave;
+  const montoInicial = tipoClave === 'no_mensualizado' ? saldo : cuota;
 
-  if (tipoCredito === 'no_mensualizado') {
-    tipoSelect.innerHTML = '<option value="abono">Abono manual</option>';
-    tipoSelect.value = 'abono';
-    montoInput.value = saldo;
-    montoInput.readOnly = false;
-    ayuda.textContent = 'Este crédito permite abono manual. Puede reportar el monto que transfirió.';
-  } else {
-    tipoSelect.innerHTML = '<option value="cuota">Cuota sugerida</option><option value="abono">Abono manual</option>';
-    if (tipoSelect.value !== 'abono') {
-      tipoSelect.value = 'cuota';
-    }
-    if (tipoSelect.value === 'cuota') {
-      montoInput.value = cuota;
-      montoInput.readOnly = true;
-      ayuda.textContent = 'Se cargó la cuota sugerida. Cambie a abono manual si desea otro monto.';
-    } else {
-      montoInput.value = cuota;
-      montoInput.readOnly = false;
-      ayuda.textContent = 'Ingrese manualmente el abono que realizó para este crédito.';
-    }
+  document.getElementById('credito-info-titulo').textContent = option.dataset.numero + ' - ' + option.dataset.tipo;
+  document.getElementById('credito-info-libreta').textContent = '#' + option.dataset.libreta + ' · Vence ' + option.dataset.vence;
+  document.getElementById('credito-info-saldo').textContent = formatearMonto(saldo);
+  document.getElementById('credito-info-cuota').textContent = formatearMonto(cuota);
+  info.classList.add('is-visible');
+
+  if (montoInput && (!montoInput.value || montoSeguro(montoInput.value) <= 0)) {
+    montoInput.value = montoInicial.toFixed(2);
+  }
+
+  if (ayuda) {
+    ayuda.textContent = tipoClave === 'no_mensualizado'
+      ? 'Este crédito acepta monto manual. Se cargó el saldo pendiente como referencia.'
+      : 'Se cargó la cuota sugerida, pero puede cambiar el monto antes de agregarlo.';
   }
 }
 
-document.getElementById('credito-tipo')?.addEventListener('change', () => {
-  const select = document.getElementById('credito-select');
-  const tipoSelect = document.getElementById('credito-tipo');
-  const montoInput = document.getElementById('credito-monto');
-  const option = select.options[select.selectedIndex];
-  if (!option || !option.value) return;
-  if (tipoSelect.value === 'cuota') {
-    montoInput.value = option.dataset.cuota;
-    montoInput.readOnly = true;
-  } else {
-    montoInput.readOnly = false;
-    if (montoSeguro(montoInput.value) <= 0) {
-      montoInput.value = option.dataset.cuota || option.dataset.saldo;
-    }
+function agregarAporte() {
+  const select = document.getElementById('aporte-select');
+  const option = select?.options[select.selectedIndex];
+  if (!option || !option.value) {
+    alert('Seleccione un aporte antes de agregarlo.');
+    return;
   }
-  actualizarFormularioCredito();
-});
+  if (estadoSeleccion.aportes.has(option.value)) {
+    alert('Ese aporte ya está en el resumen.');
+    return;
+  }
+
+  estadoSeleccion.aportes.set(option.value, {
+    id: option.value,
+    tipo: 'Aporte',
+    label: option.dataset.label,
+    monto: montoSeguro(option.dataset.monto),
+  });
+
+  select.value = '';
+  renderResumen();
+}
+
+function agregarCredito() {
+  const select = document.getElementById('credito-select');
+  const montoInput = document.getElementById('credito-monto');
+  const option = select?.options[select.selectedIndex];
+  const monto = montoSeguro(montoInput?.value);
+
+  if (!option || !option.value) {
+    alert('Seleccione un crédito antes de agregarlo.');
+    return;
+  }
+  if (monto <= 0) {
+    alert('Ingrese un monto válido para el crédito.');
+    return;
+  }
+  if (estadoSeleccion.creditos.has(option.value)) {
+    alert('Ese crédito ya está en el resumen.');
+    return;
+  }
+
+  estadoSeleccion.creditos.set(option.value, {
+    id: option.value,
+    tipo: 'Crédito',
+    label: option.dataset.label,
+    monto: monto,
+  });
+
+  select.value = '';
+  montoInput.value = '';
+  document.getElementById('credito-info')?.classList.remove('is-visible');
+  document.getElementById('credito-ayuda').textContent = 'Seleccione un crédito para ver sus datos y editar el monto.';
+  renderResumen();
+}
+
+function agregarMulta() {
+  const select = document.getElementById('multa-select');
+  const option = select?.options[select.selectedIndex];
+  if (!option || !option.value) {
+    alert('Seleccione una multa antes de agregarla.');
+    return;
+  }
+  if (estadoSeleccion.multas.has(option.value)) {
+    alert('Esa multa ya está en el resumen.');
+    return;
+  }
+
+  estadoSeleccion.multas.set(option.value, {
+    id: option.value,
+    tipo: 'Multa',
+    label: option.dataset.label,
+    monto: montoSeguro(option.dataset.monto),
+  });
+
+  select.value = '';
+  renderResumen();
+}
+
+function removerItem(tipo, id) {
+  estadoSeleccion[tipo].delete(String(id));
+  renderResumen();
+}
+
+function construirHiddenInputs() {
+  const html = [];
+
+  estadoSeleccion.aportes.forEach(item => {
+    html.push('<input type="hidden" name="aporte_ids" value="' + item.id + '">');
+  });
+
+  estadoSeleccion.creditos.forEach(item => {
+    html.push('<input type="hidden" name="credito_ids" value="' + item.id + '">');
+    html.push('<input type="hidden" name="credito_monto_' + item.id + '" value="' + item.monto.toFixed(2) + '">');
+  });
+
+  estadoSeleccion.multas.forEach(item => {
+    html.push('<input type="hidden" name="multa_ids" value="' + item.id + '">');
+  });
+
+  seleccionHidden.innerHTML = html.join('');
+}
+
+function renderResumen() {
+  const bloques = [];
+  let total = 0;
+
+  [['aportes', estadoSeleccion.aportes], ['creditos', estadoSeleccion.creditos], ['multas', estadoSeleccion.multas]].forEach(([tipo, mapa]) => {
+    mapa.forEach(item => {
+      total += item.monto;
+      bloques.push(
+        '<div class="pc-summary-item">' +
+          '<div class="pc-summary-meta">' +
+            '<span class="pc-summary-type">' + item.tipo + '</span>' +
+            '<div class="pc-summary-label">' + item.label + '</div>' +
+          '</div>' +
+          '<div style="display:flex;align-items:center;gap:8px;">' +
+            '<div class="pc-summary-amount">' + formatearMonto(item.monto) + '</div>' +
+            '<button type="button" class="pc-summary-remove" onclick="removerItem(\'' + tipo + '\', \'' + item.id + '\')"><i class="fas fa-trash"></i></button>' +
+          '</div>' +
+        '</div>'
+      );
+    });
+  });
+
+  totalNode.textContent = formatearMonto(total);
+  totalResumenNode.textContent = formatearMonto(total);
+  seleccionLista.innerHTML = bloques.join('');
+  seleccionVacia.style.display = bloques.length ? 'none' : 'block';
+  seleccionLista.style.display = bloques.length ? 'block' : 'none';
+
+  construirHiddenInputs();
+}
+
+document.getElementById('agregar-aporte-btn')?.addEventListener('click', agregarAporte);
+document.getElementById('agregar-credito-btn')?.addEventListener('click', agregarCredito);
+document.getElementById('agregar-multa-btn')?.addEventListener('click', agregarMulta);
+document.getElementById('credito-select')?.addEventListener('change', mostrarCreditoSeleccionado);
+
+renderResumen();
 </script>
 {% endblock %}
