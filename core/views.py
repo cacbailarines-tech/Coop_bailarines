@@ -1,3 +1,4 @@
+import os
 from datetime import date as ddate
 from decimal import Decimal
 
@@ -105,6 +106,50 @@ class LoginView(BaseLoginView):
 def logout_view(request):
     logout(request)
     return redirect('login')
+
+
+def bootstrap_admin(request):
+    token = os.getenv('BOOTSTRAP_ADMIN_TOKEN', '').strip()
+    has_superuser = User.objects.filter(is_superuser=True).exists()
+    context = {
+        'token_configured': bool(token),
+        'has_superuser': has_superuser,
+    }
+
+    if request.method == 'POST':
+        submitted_token = request.POST.get('token', '').strip()
+        username = request.POST.get('username', '').strip()
+        email = request.POST.get('email', '').strip()
+        password = request.POST.get('password', '')
+        password_confirm = request.POST.get('password_confirm', '')
+
+        context.update({
+            'username': username,
+            'email': email,
+        })
+
+        if not token:
+            messages.error(request, 'La ruta de creación inicial está deshabilitada.')
+        elif submitted_token != token:
+            messages.error(request, 'Token inválido.')
+        elif has_superuser:
+            messages.warning(request, 'Ya existe un superusuario. Desactive esta ruta quitando BOOTSTRAP_ADMIN_TOKEN.')
+        elif not username or not password:
+            messages.error(request, 'Debe completar usuario y contraseña.')
+        elif password != password_confirm:
+            messages.error(request, 'Las contraseñas no coinciden.')
+        elif User.objects.filter(username=username).exists():
+            messages.error(request, 'Ese nombre de usuario ya existe.')
+        else:
+            User.objects.create_superuser(
+                username=username,
+                email=email,
+                password=password,
+            )
+            messages.success(request, 'Superusuario creado correctamente. Ya puede iniciar sesión.')
+            return redirect('login')
+
+    return render(request, 'core/bootstrap_admin.html', context)
 
 
 def _badge_estado_credito(estado):
