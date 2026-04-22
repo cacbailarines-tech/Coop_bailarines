@@ -128,13 +128,15 @@ EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
 EMAIL_USE_TLS = env_bool('EMAIL_USE_TLS', True)
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '').strip()
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '').strip()
+RESEND_API_KEY = os.getenv('RESEND_API_KEY', '').strip()
+RESEND_FROM_EMAIL = os.getenv('RESEND_FROM_EMAIL', '').strip()
 WEBPUSH_ENABLED = env_bool('WEBPUSH_ENABLED', True)
 WEBPUSH_VAPID_PUBLIC_KEY = os.getenv('WEBPUSH_VAPID_PUBLIC_KEY', '').strip()
 WEBPUSH_VAPID_PRIVATE_KEY = os.getenv('WEBPUSH_VAPID_PRIVATE_KEY', '').replace('\\n', '\n').strip()
 WEBPUSH_VAPID_ADMIN_EMAIL = os.getenv('WEBPUSH_VAPID_ADMIN_EMAIL', EMAIL_HOST_USER or 'no-reply@bailarines.local').strip()
 DEFAULT_FROM_EMAIL = os.getenv(
     'DEFAULT_FROM_EMAIL',
-    f'Cooperativa Bailarines <{EMAIL_HOST_USER or "no-reply@bailarines.local"}>'
+    RESEND_FROM_EMAIL or f'Cooperativa Bailarines <{EMAIL_HOST_USER or "no-reply@bailarines.local"}>'
 )
 EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '20'))
 
