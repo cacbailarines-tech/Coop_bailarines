@@ -1,0 +1,28 @@
+from django.urls import path
+from . import views
+urlpatterns = [
+    path('', views.redirect_root),
+    path('manifest.webmanifest', views.pwa_manifest, name='pwa_manifest'),
+    path('service-worker.js', views.service_worker, name='service_worker'),
+    path('offline/', views.offline_page, name='offline_page'),
+    path('push-config/', views.push_config, name='push_config'),
+    path('login/', views.LoginView.as_view(), name='login'),
+    path('logout/', views.logout_view, name='logout'),
+    path('dashboard/', views.dashboard, name='dashboard'),
+    path('buscar/', views.busqueda_global, name='busqueda_global'),
+    path('tesoreria/', views.tesoreria_dashboard, name='tesoreria_dashboard'),
+    path('tesoreria/caja/', views.caja_diaria_accion, name='caja_diaria_accion'),
+    path('periodos/', views.periodos_list, name='periodos_list'),
+    path('periodos/crear/', views.periodo_crear, name='periodo_crear'),
+    path('usuarios/', views.usuarios_list, name='usuarios_list'),
+    path('usuarios/crear/', views.usuario_crear, name='usuario_crear'),
+    path('usuarios/<int:pk>/editar/', views.usuario_editar, name='usuario_editar'),
+    path('movimientos/', views.movimientos_list, name='movimientos_list'),
+    path('movimientos/crear/', views.movimiento_crear, name='movimiento_crear'),
+    path('movimientos/<int:pk>/editar/', views.movimiento_editar, name='movimiento_editar'),
+    path('verificar/', views.verificar_todo, name='verificar_todo'),
+    path('verificar/exportar/', views.exportar_verificaciones_excel, name='exportar_verificaciones_excel'),
+    path('solicitudes/', views.solicitudes_pendientes, name='solicitudes_pendientes'),
+    path('cumpleanos/', views.cumpleanos_calendario, name='cumpleanos_calendario'),
+    path('cumpleanos/<int:socio_pk>/registrar-egreso/', views.cumpleanos_registrar_egreso, name='cumpleanos_registrar_egreso'),
+]

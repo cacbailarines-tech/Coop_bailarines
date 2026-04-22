@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block page_title %}Reunión {{ reunion.fecha|date:"d/m/Y" }}{% endblock %}
+{% block topbar_actions %}
+{% if reunion.estado != 'realizada' %}
+<a href="{% url 'registrar_asistencia' reunion.pk %}" class="btn btn-primary"><i class="fas fa-user-check"></i> Editar Asistencia</a>
+<a href="{% url 'generar_multas_reunion' reunion.pk %}" class="btn btn-danger"><i class="fas fa-exclamation-triangle"></i> Generar Multas y Cerrar</a>
+{% endif %}
+{% endblock %}
+{% block content %}
+<div style="margin-bottom:14px;"><a href="{% url 'reuniones_list' %}" style="color:var(--muted);text-decoration:none;font-size:13px;"><i class="fas fa-arrow-left"></i> Volver</a></div>
+<div style="display:grid;grid-template-columns:260px 1fr;gap:16px;align-items:start;">
+  <div class="card">
+    <div class="card-body" style="padding:20px;text-align:center;">
+      <div style="font-size:36px;margin-bottom:8px;">📅</div>
+      <div style="font-size:20px;font-weight:800;">{{ reunion.fecha|date:"d/m/Y" }}</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Periodo {{ reunion.periodo.anio }}</div>
+      <span class="badge {% if reunion.estado == 'realizada' %}badge-success{% elif reunion.estado == 'programada' %}badge-primary{% else %}badge-secondary{% endif %}" style="font-size:12px;padding:6px 14px;">{{ reunion.get_estado_display }}</span>
+      <div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:center;">
+        <div style="background:var(--bg);border-radius:8px;padding:10px;"><div style="font-size:20px;font-weight:800;">{{ asistencias.count }}</div><div style="font-size:10px;color:var(--muted);">Registrados</div></div>
+        <div style="background:var(--bg);border-radius:8px;padding:10px;"><div style="font-size:20px;font-weight:800;">{{ socios_sin_registro.count }}</div><div style="font-size:10px;color:var(--muted);">Sin registro</div></div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="card" style="margin-bottom:14px;">
+      <div class="card-header"><h5><i class="fas fa-user-check" style="color:var(--success);margin-right:7px;"></i>Asistencia Registrada</h5></div>
+      <div style="overflow-x:auto;"><table>
+        <thead><tr><th>Socio</th><th>Estado</th><th>Hora Llegada</th><th>Justificación</th><th>Multa Gen.</th></tr></thead>
+        <tbody>
+        {% for a in asistencias %}
+        <tr>
+          <td style="font-weight:600;">{{ a.socio.nombre_completo }}</td>
+          <td><span class="badge {% if a.estado == 'presente' %}badge-success{% elif 'atrasado' in a.estado %}badge-warning{% else %}badge-danger{% endif %}">{{ a.get_estado_display }}</span></td>
+          <td style="font-size:12px;">{{ a.hora_llegada|default:"—" }}</td>
+          <td style="font-size:12px;color:var(--muted);">{{ a.justificacion|default:"—" }}</td>
+          <td>{% if a.multas_generadas %}<span class="badge badge-success"><i class="fas fa-check"></i></span>{% else %}<span class="badge badge-secondary">No</span>{% endif %}</td>
+        </tr>
+        {% empty %}<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--muted);">Sin registros de asistencia aún</td></tr>{% endfor %}
+        </tbody>
+      </table></div>
+    </div>
+    {% if socios_sin_registro %}
+    <div class="alert alert-warning"><i class="fas fa-triangle-exclamation"></i> <strong>{{ socios_sin_registro.count }} socios sin registrar</strong>: {% for s in socios_sin_registro %}{{ s.nombre_completo }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>
+    {% endif %}
+  </div>
+</div>{% endblock %}

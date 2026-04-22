@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% block page_title %}Calendario de Cumpleaños{% endblock %}
+{% block topbar_actions %}
+<a href="{% url 'movimiento_crear' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Registrar Movimiento Manual</a>
+{% endblock %}
+{% block content %}
+
+<!-- Selector de mes -->
+<div class="card" style="margin-bottom:20px;">
+  <div class="card-body" style="padding:16px 20px;">
+    <form method="get" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <label style="font-size:13px;font-weight:600;color:var(--muted);">Ver cumpleaños de:</label>
+      <select name="mes" class="form-control form-select" style="width:150px;">
+        {% for num, nombre in meses %}
+        <option value="{{ num }}" {% if num == mes_sel %}selected{% endif %}>{{ nombre }}</option>
+        {% endfor %}
+      </select>
+      <input type="number" name="anio" class="form-control" value="{{ anio_sel }}" style="width:100px;">
+      <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Ver</button>
+    </form>
+  </div>
+</div>
+
+<!-- Resumen del mes -->
+{% if total_mes > 0 %}
+<div style="background:rgba(198,40,40,0.06);border:1.5px solid rgba(198,40,40,0.25);border-radius:12px;padding:14px 18px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;">
+  <div>
+    <div style="font-size:13px;font-weight:700;color:var(--danger);"><i class="fas fa-cake-candles"></i> Egresos pendientes este mes</div>
+    <div style="font-size:11px;color:var(--muted);">{{ cumpleanos_data|length }} cumpleañero(s) — $12 por libreta activa</div>
+  </div>
+  <div style="font-size:26px;font-weight:900;color:var(--danger);">${{ total_mes }}</div>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-header">
+    <h5><i class="fas fa-cake-candles" style="color:#E91E63;margin-right:8px;"></i>Cumpleaños de {{ mes_nombre }} {{ anio_sel }}</h5>
+    <span style="font-size:12px;color:var(--muted);">{{ cumpleanos_data|length }} socio(s)</span>
+  </div>
+
+  {% if cumpleanos_data %}
+  <div style="overflow-x:auto;"><table>
+    <thead>
+      <tr><th>Día</th><th>Socio</th><th>Cédula</th><th>Fecha Nacimiento</th><th>Libretas Activas</th><th>Regalo ($12/lib)</th><th>Estado</th><th>Acción</th></tr>
+    </thead>
+    <tbody>
+    {% for d in cumpleanos_data %}
+    <tr style="{% if d.egreso_registrado %}opacity:0.6;{% endif %}">
+      <td>
+        <div style="width:36px;height:36px;border-radius:50%;background:{% if d.egreso_registrado %}var(--border){% else %}linear-gradient(135deg,#E91E63,#C2185B){% endif %};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:white;">
+          {{ d.dia }}
+        </div>
+      </td>
+      <td>
+        <strong>{{ d.socio.nombre_completo }}</strong>
+        <div style="font-size:11px;color:var(--muted);">{{ d.socio.telefono }}</div>
+      </td>
+      <td style="font-size:12px;">{{ d.socio.cedula }}</td>
+      <td style="font-size:12px;">{{ d.socio.fecha_nacimiento|date:"d/m" }}</td>
+      <td>
+        <span class="badge badge-primary" style="font-size:12px;padding:5px 12px;">{{ d.libretas }} libreta(s)</span>
+      </td>
+      <td>
+        {% if d.monto > 0 %}
+        <strong style="font-size:16px;color:var(--danger);">${{ d.monto }}</strong>
+        <div style="font-size:10px;color:var(--muted);">{{ d.libretas }} × $12</div>
+        {% else %}
+        <span style="color:var(--muted);font-size:12px;">Sin libretas</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if d.egreso_registrado %}
+        <span class="badge badge-success"><i class="fas fa-check"></i> Registrado</span>
+        {% elif d.monto > 0 %}
+        <span class="badge badge-warning">Pendiente</span>
+        {% else %}
+        <span class="badge badge-secondary">N/A</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if not d.egreso_registrado and d.monto > 0 %}
+        <form method="post" action="{% url 'cumpleanos_registrar_egreso' d.socio.pk %}" style="display:grid;gap:8px;">
+          {% csrf_token %}
+          <input type="hidden" name="mes" value="{{ mes_sel }}">
+          <input type="hidden" name="anio" value="{{ anio_sel }}">
+          <label style="display:flex;align-items:flex-start;gap:7px;font-size:11px;color:var(--muted);line-height:1.35;">
+            <input type="checkbox" name="otro_banco" value="1" style="margin-top:2px;">
+            <span>
+              <strong>¿Otro banco?</strong>
+              <span style="display:block;">Se descuenta $0.41 del regalo y se registra aparte como costo operativo.</span>
+              <span style="display:block;">Ejemplo: cumpleaños $11.59 + costo operativo $0.41</span>
+            </span>
+          </label>
+          <button type="submit" class="btn btn-danger btn-sm"
+            onclick="return confirm('¿Registrar egreso de ${{ d.monto }} por regalo de cumpleaños de {{ d.socio.nombre_completo }}?')">
+            <i class="fas fa-cake-candles"></i> Registrar ${{ d.monto }}
+          </button>
+        </form>
+        {% elif d.egreso_registrado %}
+        <span style="font-size:11px;color:var(--success);"><i class="fas fa-check-double"></i> Listo</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+
+  <div style="padding:12px 18px;background:rgba(233,30,99,0.04);border-top:1px solid var(--border);">
+    <div style="font-size:12px;color:var(--muted);">
+      <i class="fas fa-info-circle" style="color:#E91E63;"></i>
+      <strong>Reglamento Art. 32:</strong> $12 por cada libreta activa del socio cumpleañero.
+      Los socios con cumpleaños después del 6 de diciembre reciben el regalo en la fecha de cierre del periodo.
+    </div>
+  </div>
+  {% else %}
+  <div style="padding:48px;text-align:center;color:var(--muted);">
+    <i class="fas fa-cake-candles" style="font-size:36px;opacity:0.3;display:block;margin-bottom:10px;"></i>
+    No hay socios con cumpleaños en {{ mes_nombre }}
+  </div>
+  {% endif %}
+</div>
+
+<!-- Quick access all months -->
+<div style="margin-top:20px;">
+  <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.8px;">Ver por mes</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    {% for num, nombre in meses %}
+    <a href="?mes={{ num }}&anio={{ anio_sel }}"
+       style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;text-decoration:none;border:1.5px solid {% if num == mes_sel %}#E91E63{% else %}var(--border){% endif %};color:{% if num == mes_sel %}white{% else %}var(--muted){% endif %};background:{% if num == mes_sel %}#E91E63{% else %}transparent{% endif %};">
+      {{ nombre }}
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

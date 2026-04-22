@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block page_title %}Búsqueda Global{% endblock %}
+{% block content %}
+<div class="card" style="margin-bottom:16px;">
+  <div class="card-body">
+    <form method="get" style="display:flex;gap:10px;">
+      <input type="text" name="q" class="form-control" value="{{ q }}" placeholder="Buscar por cédula, nombre, libreta, crédito o comprobante">
+      <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Buscar</button>
+    </form>
+  </div>
+</div>
+
+{% if q %}
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+  <div class="card">
+    <div class="card-header"><h5>Socios y Libretas</h5></div>
+    <div class="card-body">
+      <div style="margin-bottom:14px;">
+        <div style="font-size:12px;font-weight:700;margin-bottom:8px;">Socios</div>
+        {% for socio in socios %}<div style="padding:8px 0;border-bottom:1px solid var(--border);"><a href="{% url 'socio_detalle' socio.pk %}" style="text-decoration:none;color:var(--primary);font-weight:600;">{{ socio.nombre_completo }}</a><div style="font-size:11px;color:var(--muted);">{{ socio.cedula }}</div></div>{% empty %}<div style="font-size:12px;color:var(--muted);">Sin coincidencias.</div>{% endfor %}
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700;margin-bottom:8px;">Libretas</div>
+        {% for libreta in libretas %}<div style="padding:8px 0;border-bottom:1px solid var(--border);"><a href="{% url 'libreta_detalle' libreta.pk %}" style="text-decoration:none;color:var(--primary);font-weight:600;">Libreta #{{ libreta.numero }}</a><div style="font-size:11px;color:var(--muted);">{{ libreta.socio.nombre_completo }} · {{ libreta.periodo.anio }}</div></div>{% empty %}<div style="font-size:12px;color:var(--muted);">Sin coincidencias.</div>{% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><h5>Créditos y Multas</h5></div>
+    <div class="card-body">
+      <div style="margin-bottom:14px;">
+        <div style="font-size:12px;font-weight:700;margin-bottom:8px;">Créditos</div>
+        {% for credito in creditos %}<div style="padding:8px 0;border-bottom:1px solid var(--border);"><a href="{% url 'credito_detalle' credito.pk %}" style="text-decoration:none;color:var(--primary);font-weight:600;">{{ credito.numero }}</a><div style="font-size:11px;color:var(--muted);">{{ credito.socio.nombre_completo }} · <span class="badge {% if credito.estado == 'pagado' %}badge-success{% elif 'mora' in credito.estado %}badge-danger{% elif credito.estado == 'desembolsado' %}badge-primary{% elif credito.estado == 'aprobado' %}badge-warning{% else %}badge-secondary{% endif %}">{{ credito.get_estado_display }}</span></div></div>{% empty %}<div style="font-size:12px;color:var(--muted);">Sin coincidencias.</div>{% endfor %}
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700;margin-bottom:8px;">Multas</div>
+        {% for multa in multas %}<div style="padding:8px 0;border-bottom:1px solid var(--border);"><a href="{% url 'socio_detalle' multa.socio.pk %}" style="text-decoration:none;color:var(--primary);font-weight:600;">{{ multa.socio.nombre_completo }}</a><div style="font-size:11px;color:var(--muted);">{{ multa.descripcion }} · ${{ multa.monto|floatformat:2 }}</div></div>{% empty %}<div style="font-size:12px;color:var(--muted);">Sin coincidencias.</div>{% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-top:16px;">
+  <div class="card-header"><h5>Movimientos</h5></div>
+  <div style="overflow-x:auto;"><table>
+    <thead><tr><th>Fecha</th><th>Descripción</th><th>Comprobante</th><th>Monto</th><th>Origen</th></tr></thead>
+    <tbody>
+    {% for m in movimientos %}
+    <tr><td>{{ m.fecha|date:"d/m/Y" }}</td><td>{{ m.descripcion }}</td><td class="mono">{{ m.comprobante|default:"—" }}</td><td class="{% if m.tipo == 'ingreso' %}amount-pos{% else %}amount-neg{% endif %}">${{ m.monto|floatformat:2 }}</td><td>{{ m.get_origen_display }}</td></tr>
+    {% empty %}<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--muted);">Sin coincidencias en movimientos.</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endif %}
+{% endblock %}

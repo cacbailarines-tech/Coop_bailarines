@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block page_title %}Registrar Rifa{% endblock %}
+{% block content %}
+<div style="max-width:480px;">
+  <div style="margin-bottom:14px;"><a href="{% url 'rifas_list' %}" style="color:var(--muted);text-decoration:none;font-size:13px;"><i class="fas fa-arrow-left"></i> Volver</a></div>
+  <div class="card"><div class="card-header"><h5><i class="fas fa-ticket" style="color:var(--accent);margin-right:7px;"></i>Registrar Resultado de Rifa Mensual</h5></div>
+  <div class="card-body"><form method="post">{% csrf_token %}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-group"><label class="form-label">Periodo *</label>
+        <select name="periodo" class="form-control form-select" required>{% for p in periodos %}<option value="{{ p.pk }}">{{ p.anio }}</option>{% endfor %}</select>
+      </div>
+      <div class="form-group"><label class="form-label">Mes *</label>
+        <select name="mes" class="form-control form-select" required>
+          <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
+          <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
+          <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
+          <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Año *</label><input type="number" name="anio" class="form-control" value="2026" required></div>
+    <div class="form-group"><label class="form-label">Números Ganadores de Lotería (últimos 3)</label><input type="text" name="numeros_loteria" class="form-control" placeholder="Ej: 4-7-2"></div>
+    <div class="form-group"><label class="form-label">Libreta Ganadora</label>
+      <select name="libreta_ganadora" class="form-control form-select">
+        <option value="">No hubo ganador / número no coincide</option>
+        {% for lib in libretas %}<option value="{{ lib.pk }}">#{{ lib.numero }} — {{ lib.socio.nombre_completo }}</option>{% endfor %}
+      </select>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+      <input type="checkbox" name="socio_al_dia" id="al_dia" checked style="width:16px;height:16px;">
+      <label for="al_dia" style="font-size:13px;margin:0;">El ganador está al día (recibe $50). Si no, el premio queda en la cooperativa.</label>
+    </div>
+    <div class="form-group"><label class="form-label">Observaciones</label><textarea name="observaciones" class="form-control" rows="2"></textarea></div>
+    <div style="display:flex;gap:10px;"><button type="submit" class="btn btn-accent"><i class="fas fa-ticket"></i> Registrar Resultado</button><a href="{% url 'rifas_list' %}" class="btn btn-outline">Cancelar</a></div>
+  </form></div></div>
+</div>{% endblock %}

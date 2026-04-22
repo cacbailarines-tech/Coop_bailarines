@@ -1,0 +1,65 @@
+{% extends 'portal/base.html' %}
+{% block title %}Reportar Aporte - Portal Bailarines{% endblock %}
+{% block content %}
+<div style="margin-bottom:16px;">
+  <a href="{% url 'portal_libretas' %}" style="color:var(--muted);text-decoration:none;font-size:12px;"><i class="fas fa-arrow-left"></i> Volver a Libretas</a>
+  <h1 style="font-size:18px;font-weight:800;margin-top:6px;">Reportar Aporte Mensual</h1>
+</div>
+
+<div class="pcard" style="background:linear-gradient(135deg,rgba(0,137,123,0.08),rgba(0,137,123,0.03));border-color:rgba(0,137,123,0.3);margin-bottom:14px;">
+  <div class="pcard-body" style="padding:16px 18px;">
+    <div style="font-size:11px;color:var(--muted);">Libreta #{{ libreta.numero }} — Periodo {{ libreta.periodo.anio }}</div>
+    <div style="font-size:20px;font-weight:800;color:var(--success);">{{ aporte.get_mes_display }} {{ aporte.anio }}</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;text-align:center;">
+      <div style="background:white;border-radius:8px;padding:10px;">
+        <div style="font-size:10px;color:var(--muted);">Ahorro</div>
+        <div style="font-size:18px;font-weight:800;color:var(--success);">${{ aporte.monto_ahorro|floatformat:2 }}</div>
+      </div>
+      <div style="background:white;border-radius:8px;padding:10px;">
+        <div style="font-size:10px;color:var(--muted);">Lotería + Cumple</div>
+        <div style="font-size:18px;font-weight:800;color:var(--warning);">${{ aporte.monto_loteria|floatformat:2 }} + ${{ aporte.monto_cumpleanos|floatformat:2 }}</div>
+      </div>
+      <div style="background:white;border-radius:8px;padding:10px;">
+        <div style="font-size:10px;color:var(--muted);">Total a Pagar</div>
+        <div style="font-size:22px;font-weight:900;color:var(--primary);">${{ aporte.monto_total|floatformat:2 }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="pcard">
+  <div class="pcard-header">
+    <h3><i class="fas fa-upload" style="color:var(--success);"></i> Reportar Pago Realizado</h3>
+  </div>
+  <div class="pcard-body">
+    <div style="background:rgba(11,61,145,0.06);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:var(--primary);">
+      <i class="fas fa-info-circle"></i> <strong>Instrucciones:</strong> Primero realice el depósito o transferencia de <strong>${{ aporte.monto_total|floatformat:2 }}</strong> a la cuenta autorizada de la cooperativa. Luego ingrese aquí el número de comprobante para que la administración lo verifique.
+    </div>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">N° de Comprobante / Referencia de Transferencia *</label>
+        <input type="text" name="comprobante" class="form-control" required
+          placeholder="Ej: 0012345678 o número de transacción"
+          value="{{ aporte.comprobante_referencia|default:'' }}"
+          style="font-size:14px;">
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">Ingrese el número que aparece en su comprobante de depósito o transferencia</div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">Observación (opcional)</label>
+        <input type="text" name="observacion" class="form-control" placeholder="Ej: Depósito en cajero automático">
+      </div>
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">Adjuntar comprobante (opcional)</label>
+        <input type="file" name="comprobante_archivo" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.webp">
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button type="submit" class="btn btn-success" style="flex:1;justify-content:center;padding:12px;">
+          <i class="fas fa-upload"></i> Reportar Pago de {{ aporte.get_mes_display }}
+        </button>
+        <a href="{% url 'portal_libretas' %}" class="btn btn-outline">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

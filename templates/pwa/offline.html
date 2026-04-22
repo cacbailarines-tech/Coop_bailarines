@@ -1,0 +1,30 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sin conexión | Cooperativa Bailarines</title>
+  <meta name="theme-color" content="#0B3D91">
+  <style>
+    :root{--primary:#0B3D91;--accent:#F2A900;--bg:#F0F4FA;--card:#FFFFFF;--text:#1A2332;--muted:#6B7A99;--border:#DDE3EF;}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;font-family:'Segoe UI',sans-serif;background:linear-gradient(180deg,#edf3ff,#f7faff);display:flex;align-items:center;justify-content:center;padding:20px;color:var(--text);}
+    .wrap{max-width:420px;width:100%;background:var(--card);border:1px solid var(--border);border-radius:22px;padding:28px;box-shadow:0 18px 40px rgba(11,61,145,0.12);text-align:center;}
+    img{width:96px;height:auto;object-fit:contain;margin-bottom:16px;}
+    h1{margin:0 0 10px;font-size:26px;color:var(--primary);}
+    p{margin:0 0 10px;line-height:1.5;color:var(--muted);}
+    .btn{display:inline-flex;align-items:center;justify-content:center;margin-top:14px;padding:11px 18px;border-radius:999px;background:var(--primary);color:white;text-decoration:none;font-weight:700;}
+    .accent{color:var(--accent);}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <img src="{% static 'img/logo.png' %}" alt="Cooperativa Bailarines">
+    <h1>Sin conexión</h1>
+    <p>La app web de <span class="accent">Cooperativa Bailarines</span> no puede conectarse en este momento.</p>
+    <p>Cuando vuelva el internet, recargue la página para seguir trabajando o revisar su portal.</p>
+    <a class="btn" href="/">Intentar de nuevo</a>
+  </div>
+</body>
+</html>

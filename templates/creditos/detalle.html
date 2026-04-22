@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block page_title %}Crédito {{ credito.numero }}{% endblock %}
+{% block topbar_actions %}
+<a href="{% url 'credito_pdf' credito.pk %}" class="btn btn-outline" target="_blank" style="border-color:#C62828;color:#C62828;"><i class="fas fa-file-pdf"></i> PDF</a>
+{% if credito.estado == 'pendiente' or credito.estado == 'aprobado' %}
+<a href="{% url 'credito_aprobar' credito.pk %}" class="btn btn-warning"><i class="fas fa-gavel"></i> {% if credito.estado == 'pendiente' %}Revisar Solicitud{% else %}Confirmar Desembolso{% endif %}</a>
+{% endif %}
+{% if credito.estado in 'desembolsado,mora_leve,mora_media,mora_grave' %}
+<a href="{% url 'registrar_pago' credito.pk %}" class="btn btn-success"><i class="fas fa-dollar-sign"></i> Registrar Pago</a>
+{% endif %}
+{% endblock %}
+{% block content %}
+<div style="margin-bottom:14px;"><a href="{% url 'creditos_list' %}" style="color:var(--muted);text-decoration:none;font-size:13px;"><i class="fas fa-arrow-left"></i> Volver</a></div>
+<div style="display:grid;grid-template-columns:300px 1fr;gap:16px;align-items:start;">
+  <div>
+    <div class="card" style="margin-bottom:12px;">
+      <div class="card-body" style="text-align:center;padding:22px 16px;">
+        <div style="font-size:11px;color:var(--muted);">Saldo Pendiente</div>
+        <div style="font-size:32px;font-weight:900;color:{% if credito.saldo_pendiente > 0 %}var(--warning){% else %}var(--success){% endif %};">${{ credito.saldo_pendiente|floatformat:2 }}</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">de ${{ credito.monto_solicitado|floatformat:2 }}</div>
+        <span class="badge {% if credito.estado == 'pagado' %}badge-success{% elif 'mora' in credito.estado %}badge-danger{% elif credito.estado == 'desembolsado' %}badge-primary{% elif credito.estado == 'aprobado' %}badge-warning{% else %}badge-secondary{% endif %}" style="font-size:12px;padding:6px 14px;">{{ credito.get_estado_display }}</span>
+      </div>
+      <div style="border-top:1px solid var(--border);">
+        {% for label, val in info_credito %}
+        <div style="padding:8px 15px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;gap:8px;">
+          <span style="font-size:11px;color:var(--muted);flex-shrink:0;">{{ label }}</span>
+          <span style="font-size:11px;font-weight:600;text-align:right;">{{ val }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="card" style="background:rgba(11,61,145,0.04);border-color:rgba(11,61,145,0.2);">
+      <div class="card-body" style="padding:14px 15px;">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Desglose Financiero</div>
+        {% if credito.tipo == 'mensualizado' %}
+        <div style="display:flex;justify-content:space-between;margin-bottom:5px;"><span style="font-size:12px;">Cuota mensual:</span><strong style="color:var(--primary);">${{ credito.cuota_mensual|floatformat:2 }}</strong></div>
+        {% if resumen_plano %}
+        <div style="display:flex;justify-content:space-between;margin-bottom:5px;"><span style="font-size:12px;">Capital por cuota:</span><strong style="color:var(--success);">${{ resumen_plano.capital_por_cuota|floatformat:2 }}</strong></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:5px;"><span style="font-size:12px;">Inter&eacute;s por cuota:</span><strong style="color:var(--warning);">${{ resumen_plano.interes_por_cuota|floatformat:2 }}</strong></div>
+        {% endif %}
+        {% endif %}
+        <div style="display:flex;justify-content:space-between;margin-bottom:5px;"><span style="font-size:12px;">Inter&eacute;s total:</span><strong style="color:var(--warning);">${{ credito.interes_total|floatformat:2 }}</strong></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:5px;"><span style="font-size:12px;">Valor transferencia:</span><strong style="color:var(--danger);">${{ credito.comision_bancaria|floatformat:2 }}</strong></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:5px;"><span style="font-size:12px;">Beneficio coop.:</span><strong style="color:var(--success);">${{ credito.beneficio_transferencia|floatformat:2 }}</strong></div>
+        <div style="border-top:1px solid var(--border);padding-top:7px;display:flex;justify-content:space-between;"><span style="font-size:12px;font-weight:700;">Monto transferido al socio:</span><strong style="font-size:15px;color:var(--success);">${{ credito.monto_transferir|floatformat:2 }}</strong></div>
+      </div>
+    </div>
+    {% if credito.comprobante_desembolso %}
+    <div class="card" style="margin-top:12px;background:rgba(0,137,123,0.06);border-color:rgba(0,137,123,0.25);">
+      <div class="card-body" style="padding:14px 15px;">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Respaldo de Desembolso</div>
+        <a href="{{ credito.comprobante_desembolso.url }}" target="_blank" class="btn btn-success btn-sm"><i class="fas fa-image"></i> Ver archivo adjunto</a>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div>
+    {% if tabla_pagos %}
+    <div class="card" style="margin-bottom:14px;">
+      <div class="card-header"><h5><i class="fas fa-table" style="color:var(--primary);margin-right:7px;"></i>Tabla de Cuotas Planas</h5></div>
+      <div style="overflow-x:auto;"><table>
+        <thead><tr><th>#</th><th>Fecha de Pago</th><th>Saldo Inicial</th><th>Capital</th><th>Inter&eacute;s</th><th>Cuota</th><th>Saldo Final</th><th>Estado</th></tr></thead>
+        <tbody>
+        {% for cuota in tabla_pagos %}
+        <tr style="{% if cuota.pagado %}background:rgba(0,137,123,0.04);{% endif %}">
+          <td><strong>{{ cuota.numero }}</strong></td>
+          <td style="font-weight:600;{% if not cuota.pagado and cuota.fecha < hoy %}color:var(--danger);{% endif %}">{{ cuota.fecha|date:"d/m/Y" }}</td>
+          <td>${{ cuota.saldo_inicial|floatformat:2 }}</td>
+          <td style="color:var(--success);">${{ cuota.capital|floatformat:2 }}</td>
+          <td style="color:var(--warning);">${{ cuota.interes|floatformat:2 }}</td>
+          <td><strong>${{ cuota.cuota|floatformat:2 }}</strong></td>
+          <td>${{ cuota.saldo_final|floatformat:2 }}</td>
+          <td>{% if cuota.pagado %}<span class="badge badge-success"><i class="fas fa-check"></i> Pagada</span>{% else %}<span class="badge badge-secondary">Pendiente</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <div class="card-header">
+        <h5><i class="fas fa-list-check" style="color:var(--success);margin-right:7px;"></i>Pagos Registrados</h5>
+        <span style="font-size:12px;color:var(--muted);">{{ pagos.count }} pago(s)</span>
+      </div>
+      <div style="overflow-x:auto;"><table>
+        <thead><tr><th>#</th><th>Monto</th><th>Comprobante</th><th>Saldo Ant.</th><th>Saldo Post.</th><th>Estado</th><th>Fecha</th><th>Acci&oacute;n</th></tr></thead>
+        <tbody>
+        {% for p in pagos %}
+        <tr>
+          <td><strong>{{ p.numero_pago }}</strong>{% if p.es_abono %} <span class="badge badge-secondary" style="font-size:9px;">abono</span>{% endif %}</td>
+          <td class="amount-pos">${{ p.monto_pagado|floatformat:2 }}</td>
+          <td class="mono" style="font-size:11px;">{{ p.comprobante_referencia|default:"-" }}</td>
+          <td style="color:var(--muted);">${{ p.saldo_anterior|floatformat:2 }}</td>
+          <td><strong>${{ p.saldo_posterior|floatformat:2 }}</strong></td>
+          <td>{% if p.estado == 'verificado' %}<span class="badge badge-success">Verificado</span>{% elif p.estado == 'reportado' %}<span class="badge badge-warning">Reportado</span>{% else %}<span class="badge badge-danger">Rechazado</span>{% endif %}</td>
+          <td style="font-size:11px;color:var(--muted);">{{ p.fecha_reporte|date:"d/m/Y" }}</td>
+          <td>{% if p.estado == 'reportado' %}<a href="{% url 'verificar_pago' credito.pk p.pk %}" class="btn btn-success btn-sm"><i class="fas fa-check"></i></a>{% endif %}</td>
+        </tr>
+        {% empty %}<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--muted);">Sin pagos</td></tr>{% endfor %}
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+const hoy = new Date('{{ hoy }}');
+</script>
+{% endblock %}

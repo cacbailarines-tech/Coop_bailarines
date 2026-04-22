@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block page_title %}Ingresos y Egresos{% endblock %}
+{% block topbar_actions %}
+<a href="{% url 'tesoreria_dashboard' %}" class="btn btn-outline"><i class="fas fa-vault"></i> Tesorería</a>
+<a href="{% url 'cumpleanos_calendario' %}" class="btn btn-outline" style="border-color:#E91E63;color:#E91E63;"><i class="fas fa-cake-candles"></i> Cumpleaños</a>
+<a href="{% url 'movimiento_crear' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Registrar Manual</a>
+{% endblock %}
+{% block content %}
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;">
+  <div class="stat-card stat-green">
+    <div class="stat-icon"><i class="fas fa-arrow-down"></i></div>
+    <div class="stat-value" style="color:var(--success);">${{ total_ingresos|floatformat:2 }}</div>
+    <div class="stat-label">Total Ingresos</div>
+  </div>
+  <div class="stat-card stat-red">
+    <div class="stat-icon"><i class="fas fa-arrow-up"></i></div>
+    <div class="stat-value" style="color:var(--danger);">${{ total_egresos|floatformat:2 }}</div>
+    <div class="stat-label">Total Egresos</div>
+  </div>
+  <div class="stat-card {% if saldo >= 0 %}stat-blue{% else %}stat-red{% endif %}">
+    <div class="stat-icon"><i class="fas fa-scale-balanced"></i></div>
+    <div class="stat-value" style="color:{% if saldo >= 0 %}var(--primary){% else %}var(--danger){% endif %};">${{ saldo|floatformat:2 }}</div>
+    <div class="stat-label">Saldo Neto</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header" style="align-items:flex-start;gap:12px;flex-direction:column;">
+    <div style="display:flex;justify-content:space-between;align-items:center;width:100%;gap:12px;flex-wrap:wrap;">
+      <h5><i class="fas fa-arrow-right-arrow-left" style="color:var(--primary);margin-right:7px;"></i>Registro de Movimientos</h5>
+      <span style="font-size:11px;color:var(--muted);">Filtros avanzados de tesorería</span>
+    </div>
+    <form method="get" style="display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:8px;width:100%;">
+      <input type="text" name="q" class="form-control" placeholder="Buscar referencia" value="{{ q }}">
+      <select name="tipo" class="form-control form-select">
+        <option value="">Todos los tipos</option>
+        <option value="ingreso" {% if tipo == 'ingreso' %}selected{% endif %}>Ingresos</option>
+        <option value="egreso" {% if tipo == 'egreso' %}selected{% endif %}>Egresos</option>
+      </select>
+      <select name="categoria" class="form-control form-select">
+        <option value="">Todas las categorías</option>
+        {% for val, lab in categorias %}<option value="{{ val }}" {% if categoria == val %}selected{% endif %}>{{ lab }}</option>{% endfor %}
+      </select>
+      <select name="origen" class="form-control form-select">
+        <option value="">Todos los orígenes</option>
+        <option value="manual" {% if origen == 'manual' %}selected{% endif %}>Manual</option>
+        <option value="automatico" {% if origen == 'automatico' %}selected{% endif %}>Automático</option>
+      </select>
+      <select name="registrado_por" class="form-control form-select">
+        <option value="">Todos los usuarios</option>
+        {% for usuario in usuarios %}<option value="{{ usuario.pk }}" {% if registrado_por == usuario.pk|stringformat:'s' %}selected{% endif %}>{{ usuario.get_full_name|default:usuario.username }}</option>{% endfor %}
+      </select>
+      <input type="date" name="desde" class="form-control" value="{{ desde }}">
+      <input type="date" name="hasta" class="form-control" value="{{ hasta }}">
+      <input type="number" name="monto_min" class="form-control" min="0" step="0.01" value="{{ monto_min }}" placeholder="Monto mínimo">
+      <input type="number" name="monto_max" class="form-control" min="0" step="0.01" value="{{ monto_max }}" placeholder="Monto máximo">
+      <div style="display:flex;gap:8px;">
+        <button type="submit" class="btn btn-outline" style="flex:1;"><i class="fas fa-filter"></i> Filtrar</button>
+        <a href="{% url 'movimientos_list' %}" class="btn btn-outline"><i class="fas fa-rotate"></i></a>
+      </div>
+    </form>
+  </div>
+  <div style="overflow-x:auto;"><table>
+    <thead><tr><th>Fecha</th><th>Tipo</th><th>Categoría</th><th>Descripción</th><th>Socio / Ref.</th><th>Comprobante</th><th>Adjunto</th><th>Monto</th><th>Origen</th><th>Usuario</th><th></th></tr></thead>
+    <tbody>
+    {% for m in page_obj %}
+    <tr>
+      <td style="font-weight:600;white-space:nowrap;">{{ m.fecha|date:"d/m/Y" }}</td>
+      <td>{% if m.tipo == 'ingreso' %}<span class="badge badge-success">Ingreso</span>{% else %}<span class="badge badge-danger">Egreso</span>{% endif %}</td>
+      <td style="font-size:11px;">{{ m.get_categoria_display }}</td>
+      <td>{{ m.descripcion }}{% if m.observaciones %}<div style="font-size:10px;color:var(--muted);margin-top:4px;">{{ m.observaciones|truncatechars:60 }}</div>{% endif %}</td>
+      <td style="font-size:11px;color:var(--muted);">{{ m.socio_ref|default:"—" }}{% if m.libreta_ref %}<div>Lib. {{ m.libreta_ref }}</div>{% endif %}{% if m.credito_ref %}<div>Crd. {{ m.credito_ref }}</div>{% endif %}</td>
+      <td class="mono">{{ m.comprobante|default:"—" }}</td>
+      <td>{% if m.comprobante_archivo %}<a href="{{ m.comprobante_archivo.url }}" target="_blank" class="btn btn-outline btn-sm"><i class="fas fa-paperclip"></i></a>{% else %}<span style="color:var(--muted);">—</span>{% endif %}</td>
+      <td class="{% if m.tipo == 'ingreso' %}amount-pos{% else %}amount-neg{% endif %}" style="font-size:15px;font-weight:800;">{% if m.tipo == 'ingreso' %}+{% else %}-{% endif %}${{ m.monto|floatformat:2 }}</td>
+      <td><span class="badge {% if m.origen == 'automatico' %}badge-primary{% else %}badge-secondary{% endif %}">{{ m.get_origen_display }}</span></td>
+      <td style="font-size:11px;">{{ m.registrado_por.get_full_name|default:m.registrado_por.username|default:"Sistema" }}</td>
+      <td>{% if m.origen == 'manual' %}<a href="{% url 'movimiento_editar' m.pk %}" class="btn btn-outline btn-sm"><i class="fas fa-pen"></i></a>{% endif %}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="11" style="text-align:center;padding:40px;color:var(--muted);">No hay movimientos registrados</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% if page_obj.has_other_pages %}
+  <div style="padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+    <span style="font-size:11px;color:var(--muted);">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+    <nav><ul class="pagination pagination-sm mb-0">
+      {% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&tipo={{ tipo }}&categoria={{ categoria }}&desde={{ desde }}&hasta={{ hasta }}&origen={{ origen }}&registrado_por={{ registrado_por }}&monto_min={{ monto_min }}&monto_max={{ monto_max }}&q={{ q }}">«</a></li>{% endif %}
+      {% for n in page_obj.paginator.page_range %}<li class="page-item {% if n == page_obj.number %}active{% endif %}"><a class="page-link" href="?page={{ n }}&tipo={{ tipo }}&categoria={{ categoria }}&desde={{ desde }}&hasta={{ hasta }}&origen={{ origen }}&registrado_por={{ registrado_por }}&monto_min={{ monto_min }}&monto_max={{ monto_max }}&q={{ q }}">{{ n }}</a></li>{% endfor %}
+      {% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&tipo={{ tipo }}&categoria={{ categoria }}&desde={{ desde }}&hasta={{ hasta }}&origen={{ origen }}&registrado_por={{ registrado_por }}&monto_min={{ monto_min }}&monto_max={{ monto_max }}&q={{ q }}">»</a></li>{% endif %}
+    </ul></nav>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

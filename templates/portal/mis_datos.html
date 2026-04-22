@@ -1,0 +1,130 @@
+{% extends 'portal/base.html' %}
+{% block title %}Mis Datos - Portal Bailarines{% endblock %}
+{% block content %}
+<div style="margin-bottom:16px;">
+  <a href="{% url 'portal_inicio' %}" style="color:var(--muted);text-decoration:none;font-size:12px;"><i class="fas fa-arrow-left"></i> Inicio</a>
+  <h1 style="font-size:18px;font-weight:800;margin-top:6px;">Mis Datos</h1>
+  <div style="font-size:12px;color:var(--muted);">Aqu&iacute; puede revisar los datos que la cooperativa tiene registrados sobre usted y actualizar los campos permitidos para agilizar sus solicitudes.</div>
+</div>
+
+<div class="pcard">
+  <div class="pcard-header"><h3><i class="fas fa-id-card" style="color:var(--primary);"></i> Perfil del Socio</h3></div>
+  <div class="pcard-body">
+    <form method="post">
+      {% csrf_token %}
+
+      <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">
+        Si quiere modificar alg&uacute;n dato no editable, cont&aacute;ctese con la administraci&oacute;n de la cooperativa.
+      </div>
+      <div style="font-size:12px;line-height:1.6;color:var(--muted);background:#f8fbff;border:1px solid #dbe7f6;border-radius:12px;padding:12px 14px;margin-bottom:12px;">
+        Usted tiene derecho a acceder, actualizar y corregir sus datos personales.<br>
+        Si necesita modificar informaci&oacute;n no editable, puede solicitarlo a la administraci&oacute;n.
+      </div>
+      <details style="margin-bottom:16px;background:#ffffff;border:1px solid #dbe7f6;border-radius:12px;padding:10px 12px;">
+        <summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--primary);outline:none;">Ver informaci&oacute;n legal</summary>
+        <div style="font-size:11px;line-height:1.6;color:var(--muted);margin-top:10px;">
+          En cumplimiento de la Constituci&oacute;n de la Rep&uacute;blica del Ecuador, art&iacute;culos 66 numeral 19 y 92, as&iacute; como de la Ley Org&aacute;nica de Protecci&oacute;n de Datos Personales, art&iacute;culos 12, 13 y 14, este portal le permite conocer los datos personales que la cooperativa mantiene registrados sobre usted, as&iacute; como solicitar su rectificaci&oacute;n o actualizaci&oacute;n cuando corresponda.<br><br>
+          La informaci&oacute;n se presenta de forma clara, transparente y accesible. Si requiere modificar alg&uacute;n dato que no sea editable desde el portal, podr&aacute; solicitarlo directamente a la administraci&oacute;n de la cooperativa.
+        </div>
+      </details>
+
+      <div style="font-size:13px;font-weight:800;margin-bottom:10px;color:var(--primary);">Datos registrados por la cooperativa</div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;">
+        <div>
+          <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">Nombre completo</label>
+          <input type="text" class="form-control" value="{{ socio.nombre_completo }}" readonly>
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">C&eacute;dula</label>
+          <input type="text" class="form-control" value="{{ socio.cedula }}" readonly>
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">Fecha de nacimiento</label>
+          <input type="text" class="form-control" value="{{ socio.fecha_nacimiento|date:'d/m/Y' }}" readonly>
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">G&eacute;nero</label>
+          <input type="text" class="form-control" value="{{ socio.get_genero_display }}" readonly>
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">Tel&eacute;fono</label>
+          <input type="text" class="form-control" value="{{ socio.telefono }}" readonly>
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">Email</label>
+          <input type="email" class="form-control" value="{{ socio.email|default:'' }}" readonly>
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">Estado</label>
+          <input type="text" class="form-control" value="{{ socio.get_estado_display }}" readonly>
+        </div>
+        {% if socio.es_menor or socio.representante_nombre or socio.representante_cedula %}
+        <div>
+          <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">Representante</label>
+          <input type="text" class="form-control" value="{{ socio.representante_nombre|default:'No registrado' }}" readonly>
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">C&eacute;dula representante</label>
+          <input type="text" class="form-control" value="{{ socio.representante_cedula|default:'No registrada' }}" readonly>
+        </div>
+        {% endif %}
+      </div>
+
+      <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border);">
+        <div style="font-size:13px;font-weight:800;margin-bottom:10px;color:var(--primary);">Datos que puede actualizar</div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;">
+          <div>
+            <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">C&oacute;mo quiere que aparezca su nombre en el portal</label>
+            <input type="text" name="nombre_preferido" class="form-control" value="{{ socio.nombre_preferido }}" placeholder="Ej: Mou">
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">Ciudad</label>
+            <input type="text" name="ciudad" class="form-control" value="{{ socio.ciudad }}">
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">WhatsApp</label>
+            <input type="text" name="whatsapp" class="form-control" value="{{ socio.whatsapp }}">
+          </div>
+        </div>
+
+        <div style="margin-top:12px;">
+          <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">Direcci&oacute;n</label>
+          <textarea name="direccion" class="form-control" rows="2">{{ socio.direccion }}</textarea>
+        </div>
+      </div>
+
+      <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border);">
+        <div style="font-size:13px;font-weight:800;margin-bottom:10px;color:var(--primary);">Datos Bancarios Guardados</div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;">
+          <div>
+            <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">Banco</label>
+            <select name="banco_preferido" class="form-control form-select">
+              <option value="">Seleccionar banco...</option>
+              {% for val, lab in bancos %}
+              <option value="{{ val }}" {% if socio.banco_preferido == val %}selected{% endif %}>{{ lab }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">N&uacute;mero de cuenta</label>
+            <input type="text" name="cuenta_bancaria_preferida" class="form-control" value="{{ socio.cuenta_bancaria_preferida }}">
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">Titular de la cuenta</label>
+            <input type="text" name="titular_cuenta_preferida" class="form-control" value="{{ socio.titular_cuenta_preferida }}" placeholder="Si queda vac&iacute;o, se usa su nombre completo">
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">C&eacute;dula del titular</label>
+            <input type="text" name="cedula_titular_preferida" class="form-control" value="{{ socio.cedula_titular_preferida }}" placeholder="Si queda vac&iacute;o, se usa su c&eacute;dula">
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:18px;">
+        <button type="submit" class="btn btn-primary"><i class="fas fa-floppy-disk"></i> Guardar Datos</button>
+        <a href="{% url 'portal_solicitar_credito' %}" class="btn btn-outline"><i class="fas fa-hand-holding-dollar"></i> Ir a Solicitar Cr&eacute;dito</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

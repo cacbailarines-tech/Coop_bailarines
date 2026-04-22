@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% block title %}Panel - Cooperativa Bailarines{% endblock %}
+{% block page_title %}Panel Principal{% endblock %}
+{% block content %}
+<div style="margin-bottom:20px;">
+  <div style="font-size:12px;color:var(--muted);">Bienvenido/a,</div>
+  <h1 style="font-size:22px;font-weight:800;">{{ user.get_full_name|default:user.username }} 👋
+    {% if periodo_activo %}<span style="font-size:13px;font-weight:500;color:var(--muted);margin-left:10px;">Periodo {{ periodo_activo.anio }}</span>{% endif %}
+  </h1>
+</div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;">
+  <div class="stat-card stat-blue">
+    <div class="stat-icon"><i class="fas fa-users"></i></div>
+    <div class="stat-value">{{ total_socios }}</div>
+    <div class="stat-label">Socios Activos</div>
+  </div>
+  <div class="stat-card stat-green">
+    <div class="stat-icon"><i class="fas fa-book"></i></div>
+    <div class="stat-value">{{ total_libretas }}</div>
+    <div class="stat-label">Libretas Activas</div>
+    <div style="font-size:11px;color:var(--success);margin-top:6px;">Ahorros: ${{ total_ahorros|floatformat:2 }}</div>
+  </div>
+  <div class="stat-card stat-amber">
+    <div class="stat-icon"><i class="fas fa-hand-holding-dollar"></i></div>
+    <div class="stat-value">${{ total_cartera|floatformat:0 }}</div>
+    <div class="stat-label">Cartera de Créditos</div>
+    {% if creditos_mora %}<div style="font-size:11px;color:var(--danger);margin-top:6px;">{{ creditos_mora }} en mora</div>{% endif %}
+  </div>
+  <div class="stat-card stat-red">
+    <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
+    <div class="stat-value">${{ multas_pendientes|floatformat:0 }}</div>
+    <div class="stat-label">Multas Pendientes</div>
+  </div>
+</div>
+{% if es_tesoreria and aportes_por_verificar or es_tesoreria and pagos_por_verificar or es_tesoreria and multas_por_verificar %}
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
+  <a href="{% url 'verificar_todo' %}" style="text-decoration:none;">
+    <div style="background:rgba(242,169,0,0.1);border:1.5px solid rgba(242,169,0,0.4);border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:12px;">
+      <div style="width:40px;height:40px;background:rgba(242,169,0,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;">📋</div>
+      <div><div style="font-size:13px;font-weight:700;color:#8B6914;">{{ aportes_por_verificar|add:pagos_por_verificar|add:multas_por_verificar }} reporte(s) por revisar</div>
+      <div style="font-size:11px;color:#A07820;">Aportes, pagos de crédito y multas desde un solo panel</div></div>
+      <i class="fas fa-arrow-right" style="margin-left:auto;color:#A07820;"></i>
+    </div>
+  </a>
+  <a href="{% url 'tesoreria_dashboard' %}" style="text-decoration:none;">
+    <div style="background:rgba(11,61,145,0.07);border:1.5px solid rgba(11,61,145,0.25);border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:12px;">
+      <div style="width:40px;height:40px;background:rgba(11,61,145,0.12);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;">💰</div>
+      <div><div style="font-size:13px;font-weight:700;color:var(--primary);">Entrar a tesorería</div>
+      <div style="font-size:11px;color:var(--muted);">Caja diaria, auditoría, alertas y movimientos manuales</div></div>
+      <i class="fas fa-arrow-right" style="margin-left:auto;color:var(--primary);"></i>
+    </div>
+  </a>
+</div>
+{% endif %}
+<div class="card" style="margin-bottom:20px;">
+  <div class="card-header">
+    <h5><i class="fas fa-calendar-day" style="color:var(--warning);margin-right:7px;"></i>Cr&eacute;ditos Pr&oacute;ximos a Vencer</h5>
+    <a href="{% url 'creditos_list' %}" class="btn btn-outline btn-sm">Ver cartera</a>
+  </div>
+  <div class="card-body" style="padding-bottom:10px;">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+      {% if resumen_vencimientos.hoy %}<span class="badge badge-danger">{{ resumen_vencimientos.hoy }} vence(n) hoy</span>{% endif %}
+      {% if resumen_vencimientos.manana %}<span class="badge badge-warning">{{ resumen_vencimientos.manana }} vence(n) ma&ntilde;ana</span>{% endif %}
+      {% if resumen_vencimientos.tres_dias %}<span class="badge badge-warning">{{ resumen_vencimientos.tres_dias }} dentro de 3 d&iacute;as</span>{% endif %}
+      {% if resumen_vencimientos.semana %}<span class="badge badge-primary">{{ resumen_vencimientos.semana }} dentro de la semana</span>{% endif %}
+    </div>
+    {% if creditos_por_vencer %}
+    <div style="overflow-x:auto;">
+      <table>
+        <thead><tr><th>Cr&eacute;dito</th><th>Socio</th><th>Libreta</th><th>Saldo</th><th>Vencimiento</th><th>Alerta</th></tr></thead>
+        <tbody>
+          {% for item in creditos_por_vencer %}
+          <tr>
+            <td><a href="{% url 'credito_detalle' item.credito.pk %}" class="mono" style="color:var(--primary);text-decoration:none;">{{ item.credito.numero }}</a></td>
+            <td style="font-weight:600;">{{ item.credito.socio.nombre_completo }}</td>
+            <td>#{{ item.credito.libreta.numero }}</td>
+            <td class="amount-neg">${{ item.credito.saldo_pendiente|floatformat:2 }}</td>
+            <td>{{ item.credito.fecha_pago_limite|date:"d/m/Y" }}</td>
+            <td><span class="badge {{ item.badge }}">{{ item.texto_alerta }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div style="padding:8px 4px 14px 4px;color:var(--muted);font-size:12px;">No hay cr&eacute;ditos que venzan en los pr&oacute;ximos 15 d&iacute;as.</div>
+    {% endif %}
+  </div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 340px;gap:16px;">
+  <div class="card">
+    <div class="card-header">
+      <h5><i class="fas fa-hand-holding-dollar" style="color:var(--warning);margin-right:7px;"></i>Últimas Solicitudes de Crédito</h5>
+      <a href="{% url 'creditos_list' %}" class="btn btn-outline btn-sm">Ver todos</a>
+    </div>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead><tr><th>Crédito</th><th>Socio</th><th>Libreta</th><th>Tipo</th><th>Monto</th><th>Transfiere</th><th>Estado</th></tr></thead>
+        <tbody>
+          {% for c in ultimos_creditos %}
+          <tr>
+            <td><a href="{% url 'credito_detalle' c.pk %}" class="mono" style="color:var(--primary);text-decoration:none;">{{ c.numero }}</a></td>
+            <td style="font-weight:600;">{{ c.socio.nombre_completo }}</td>
+            <td><span class="badge badge-secondary">#{{ c.libreta.numero }}</span></td>
+            <td><span class="badge {% if c.tipo == 'mensualizado' %}badge-primary{% else %}badge-warning{% endif %}">{{ c.get_tipo_display }}</span></td>
+            <td>${{ c.monto_solicitado|floatformat:2 }}</td>
+            <td class="amount-pos">${{ c.monto_transferir|floatformat:2 }}</td>
+            <td><span class="badge {% if c.estado == 'pagado' %}badge-success{% elif 'mora' in c.estado %}badge-danger{% elif c.estado == 'desembolsado' %}badge-primary{% elif c.estado == 'aprobado' %}badge-warning{% else %}badge-secondary{% endif %}">{{ c.get_estado_display }}</span></td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" style="text-align:center;padding:28px;color:var(--muted);">Sin créditos registrados</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <h5><i class="fas fa-exclamation-triangle" style="color:var(--danger);margin-right:7px;"></i>Multas Pendientes</h5>
+      <a href="{% url 'multas_list' %}" class="btn btn-outline btn-sm">Ver todas</a>
+    </div>
+    {% for m in ultimas_multas %}
+    <div style="padding:11px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-size:12px;font-weight:700;">{{ m.socio.nombre_completo }}</div>
+        <div style="font-size:10.5px;color:var(--muted);">{{ m.get_origen_display }}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:14px;font-weight:800;color:var(--danger);">${{ m.monto|floatformat:2 }}</div>
+        <div style="font-size:10px;color:var(--muted);">{{ m.fecha_generacion|date:"d/m/Y" }}</div>
+      </div>
+    </div>
+    {% empty %}
+    <div style="padding:28px;text-align:center;color:var(--muted);font-size:12px;">Sin multas pendientes 🎉</div>
+    {% endfor %}
+  </div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:16px;">
+  {% if es_tesoreria %}
+  <a href="{% url 'verificar_todo' %}" style="text-decoration:none;">
+    <div class="card" style="padding:16px;text-align:center;border:2px dashed var(--border);transition:all 0.2s;" onmouseover="this.style.borderColor='#F2A900';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='var(--border)';this.style.transform='none'">
+      <i class="fas fa-list-check" style="font-size:22px;color:#F2A900;display:block;margin-bottom:7px;"></i>
+      <div style="font-size:12px;font-weight:700;">Revisar Reportes</div>
+    </div>
+  </a>
+  {% endif %}
+  <a href="{% url 'socio_crear' %}" style="text-decoration:none;">
+    <div class="card" style="padding:16px;text-align:center;border:2px dashed var(--border);transition:all 0.2s;" onmouseover="this.style.borderColor='#0B3D91';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='var(--border)';this.style.transform='none'">
+      <i class="fas fa-user-plus" style="font-size:22px;color:#0B3D91;display:block;margin-bottom:7px;"></i>
+      <div style="font-size:12px;font-weight:700;">Nuevo Socio</div>
+    </div>
+  </a>
+  <a href="{% url 'libreta_crear' %}" style="text-decoration:none;">
+    <div class="card" style="padding:16px;text-align:center;border:2px dashed var(--border);transition:all 0.2s;" onmouseover="this.style.borderColor='#00897B';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='var(--border)';this.style.transform='none'">
+      <i class="fas fa-book-medical" style="font-size:22px;color:#00897B;display:block;margin-bottom:7px;"></i>
+      <div style="font-size:12px;font-weight:700;">Nueva Libreta</div>
+    </div>
+  </a>
+  <a href="{% url 'credito_crear' %}" style="text-decoration:none;">
+    <div class="card" style="padding:16px;text-align:center;border:2px dashed var(--border);transition:all 0.2s;" onmouseover="this.style.borderColor='#F57F17';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='var(--border)';this.style.transform='none'">
+      <i class="fas fa-hand-holding-dollar" style="font-size:22px;color:#F57F17;display:block;margin-bottom:7px;"></i>
+      <div style="font-size:12px;font-weight:700;">Nuevo Crédito</div>
+    </div>
+  </a>
+  {% if es_tesoreria %}
+  <a href="{% url 'movimiento_crear' %}" style="text-decoration:none;">
+    <div class="card" style="padding:16px;text-align:center;border:2px dashed var(--border);transition:all 0.2s;" onmouseover="this.style.borderColor='#00897B';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='var(--border)';this.style.transform='none'">
+      <i class="fas fa-cash-register" style="font-size:22px;color:#00897B;display:block;margin-bottom:7px;"></i>
+      <div style="font-size:12px;font-weight:700;">Nuevo Movimiento</div>
+    </div>
+  </a>
+  {% endif %}
+  <a href="{% url 'reunion_crear' %}" style="text-decoration:none;">
+    <div class="card" style="padding:16px;text-align:center;border:2px dashed var(--border);transition:all 0.2s;" onmouseover="this.style.borderColor='#C62828';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='var(--border)';this.style.transform='none'">
+      <i class="fas fa-video" style="font-size:22px;color:#C62828;display:block;margin-bottom:7px;"></i>
+      <div style="font-size:12px;font-weight:700;">Nueva Reunión</div>
+    </div>
+  </a>
+</div>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block page_title %}Reporte Completo de Movimientos{% endblock %}
+{% block topbar_actions %}
+<a href="{% url 'exportar_movimientos' %}" class="btn btn-outline" style="border-color:#217346;color:#217346;"><i class="fas fa-file-excel"></i> Exportar Excel</a>
+{% endblock %}
+{% block content %}
+<div style="margin-bottom:14px;"><a href="{% url 'reportes_index' %}" style="color:var(--muted);text-decoration:none;font-size:13px;"><i class="fas fa-arrow-left"></i> Volver</a></div>
+
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;">
+  <div class="stat-card stat-green">
+    <div class="stat-icon"><i class="fas fa-arrow-down"></i></div>
+    <div class="stat-value" style="color:var(--success);">${{ total_ingresos|floatformat:2 }}</div>
+    <div class="stat-label">Total Ingresos</div>
+  </div>
+  <div class="stat-card stat-red">
+    <div class="stat-icon"><i class="fas fa-arrow-up"></i></div>
+    <div class="stat-value" style="color:var(--danger);">${{ total_egresos|floatformat:2 }}</div>
+    <div class="stat-label">Total Egresos</div>
+  </div>
+  <div class="stat-card {% if saldo >= 0 %}stat-blue{% else %}stat-red{% endif %}">
+    <div class="stat-icon"><i class="fas fa-scale-balanced"></i></div>
+    <div class="stat-value" style="color:{% if saldo >= 0 %}var(--primary){% else %}var(--danger){% endif %};">${{ saldo|floatformat:2 }}</div>
+    <div class="stat-label">Saldo Neto</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h5><i class="fas fa-chart-line" style="color:var(--primary);margin-right:7px;"></i>Todos los Movimientos</h5>
+    <form method="get" style="display:flex;gap:8px;flex-wrap:wrap;">
+      <select name="tipo" class="form-control form-select" style="width:120px;">
+        <option value="">Todos</option>
+        <option value="ingreso" {% if tipo == 'ingreso' %}selected{% endif %}>Ingresos</option>
+        <option value="egreso" {% if tipo == 'egreso' %}selected{% endif %}>Egresos</option>
+      </select>
+      <select name="categoria" class="form-control form-select" style="width:180px;">
+        <option value="">Todas las categorías</option>
+        {% for val,lab in categorias %}<option value="{{ val }}" {% if categoria == val %}selected{% endif %}>{{ lab }}</option>{% endfor %}
+      </select>
+      <input type="date" name="desde" class="form-control" value="{{ desde }}" style="width:140px;">
+      <input type="date" name="hasta" class="form-control" value="{{ hasta }}" style="width:140px;">
+      <button type="submit" class="btn btn-outline"><i class="fas fa-filter"></i></button>
+      <a href="{% url 'reporte_movimientos' %}" class="btn btn-outline"><i class="fas fa-rotate"></i></a>
+    </form>
+  </div>
+  <div style="overflow-x:auto;"><table>
+    <thead><tr><th>Fecha</th><th>Tipo</th><th>Categoría</th><th>Descripción</th><th>Socio / Ref.</th><th>Comprobante</th><th>Monto</th><th>Origen</th></tr></thead>
+    <tbody>
+    {% for m in movs %}
+    <tr>
+      <td style="font-size:12px;font-weight:600;white-space:nowrap;">{{ m.fecha|date:"d/m/Y" }}</td>
+      <td>{% if m.tipo == 'ingreso' %}<span class="badge badge-success"><i class="fas fa-arrow-down"></i> Ingreso</span>{% else %}<span class="badge badge-danger"><i class="fas fa-arrow-up"></i> Egreso</span>{% endif %}</td>
+      <td style="font-size:11px;">{{ m.get_categoria_display }}</td>
+      <td style="font-size:12px;">{{ m.descripcion }}</td>
+      <td style="font-size:11px;color:var(--muted);">{{ m.socio_ref|default:"—" }}{% if m.libreta_ref %} · Lib.{{ m.libreta_ref }}{% endif %}{% if m.credito_ref %} · {{ m.credito_ref }}{% endif %}</td>
+      <td class="mono" style="font-size:11px;">{{ m.comprobante|default:"—" }}</td>
+      <td class="{% if m.tipo == 'ingreso' %}amount-pos{% else %}amount-neg{% endif %}" style="font-size:15px;font-weight:800;">{% if m.tipo == 'ingreso' %}+{% else %}-{% endif %}${{ m.monto|floatformat:2 }}</td>
+      <td><span class="badge {% if m.origen == 'automatico' %}badge-primary{% else %}badge-secondary{% endif %}" style="font-size:10px;">{{ m.get_origen_display }}</span></td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="8" style="text-align:center;padding:32px;color:var(--muted);">Sin movimientos</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endblock %}

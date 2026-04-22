@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block page_title %}Generar Multas y Cerrar Reunión{% endblock %}
+{% block content %}
+<div style="max-width:560px;">
+  <div style="margin-bottom:14px;"><a href="{% url 'reunion_detalle' reunion.pk %}" style="color:var(--muted);text-decoration:none;font-size:13px;"><i class="fas fa-arrow-left"></i> Volver</a></div>
+  <div class="card" style="margin-bottom:14px;background:rgba(198,40,40,0.05);border-color:rgba(198,40,40,0.25);">
+    <div class="card-body" style="padding:18px;">
+      <div style="font-size:14px;font-weight:800;color:var(--danger);margin-bottom:8px;"><i class="fas fa-triangle-exclamation"></i> Confirmar Generación de Multas</div>
+      <p style="font-size:13px;color:var(--text);">Se generarán las multas para <strong>{{ asistencias.count }}</strong> socios registrados según sus estados de asistencia. Esta acción cerrará la reunión y no se puede deshacer.</p>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:14px;">
+    <div class="card-header"><h5>Resumen de Asistencia</h5></div>
+    <div style="overflow-x:auto;"><table>
+      <thead><tr><th>Socio</th><th>Estado</th><th>Multa a Generar</th></tr></thead>
+      <tbody>
+      {% for a in asistencias %}
+      <tr>
+        <td>{{ a.socio.nombre_completo }}</td>
+        <td><span class="badge {% if a.estado == 'presente' %}badge-success{% elif 'atrasado' in a.estado %}badge-warning{% else %}badge-danger{% endif %}">{{ a.get_estado_display }}</span></td>
+        <td style="font-size:12px;">
+          {% if a.estado == 'falta_injustificada' %}<span style="color:var(--danger);">$3 × libretas activas</span>
+          {% elif a.estado == 'falta_justificada' %}<span style="color:var(--warning);">$1 × libretas activas</span>
+          {% elif a.estado == 'atrasado_21' %}<span style="color:var(--warning);">$3 por socio</span>
+          {% elif a.estado == 'atrasado_11' %}<span style="color:var(--warning);">$1 por socio</span>
+          {% else %}<span style="color:var(--success);">Sin multa</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+  <form method="post">{% csrf_token %}
+    <div style="display:flex;gap:10px;"><button type="submit" class="btn btn-danger" style="flex:1;justify-content:center;padding:13px;"><i class="fas fa-exclamation-triangle"></i> Generar Multas y Cerrar Reunión</button>
+    <a href="{% url 'reunion_detalle' reunion.pk %}" class="btn btn-outline">Cancelar</a></div>
+  </form>
+</div>{% endblock %}

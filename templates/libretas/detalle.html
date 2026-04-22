@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block page_title %}Libreta #{{ libreta.numero }}{% endblock %}
+{% block topbar_actions %}
+<a href="{% url 'credito_crear' %}?socio={{ libreta.socio.pk }}&libreta={{ libreta.pk }}" class="btn btn-warning"><i class="fas fa-hand-holding-dollar"></i> Solicitar Crédito</a>
+{% endblock %}
+{% block content %}
+<div style="margin-bottom:14px;"><a href="{% url 'socio_detalle' libreta.socio.pk %}" style="color:var(--muted);text-decoration:none;font-size:13px;"><i class="fas fa-arrow-left"></i> Volver al Socio</a></div>
+<div style="display:grid;grid-template-columns:260px 1fr;gap:16px;align-items:start;">
+  <div>
+    <div class="card" style="margin-bottom:12px;">
+      <div class="card-body" style="text-align:center;padding:22px 16px;">
+        <div style="font-size:42px;font-weight:900;color:var(--primary);margin-bottom:4px;">#{{ libreta.numero }}</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Periodo {{ libreta.periodo.anio }}</div>
+        <span class="badge {% if libreta.estado == 'activa' %}badge-success{% else %}badge-secondary{% endif %}" style="font-size:12px;padding:5px 12px;">{{ libreta.get_estado_display }}</span>
+      </div>
+      <div style="border-top:1px solid var(--border);">
+        <div style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;">
+          <span style="font-size:11px;color:var(--muted);">Socio</span>
+          <a href="{% url 'socio_detalle' libreta.socio.pk %}" style="font-size:12px;font-weight:600;color:var(--primary);text-decoration:none;">{{ libreta.socio.nombre_completo }}</a>
+        </div>
+        <div style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;">
+          <span style="font-size:11px;color:var(--muted);">Saldo Ahorro</span>
+          <span style="font-size:14px;font-weight:800;color:var(--success);">${{ libreta.saldo_ahorro|floatformat:2 }}</span>
+        </div>
+        <div style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;">
+          <span style="font-size:11px;color:var(--muted);">Inscripción</span>
+          <span>{% if libreta.inscripcion_pagada %}<span class="badge badge-success">Pagada</span>{% else %}<span class="badge badge-danger">Pendiente</span>{% endif %}</span>
+        </div>
+        <div style="padding:10px 16px;display:flex;justify-content:space-between;">
+          <span style="font-size:11px;color:var(--muted);">Apertura</span>
+          <span style="font-size:12px;font-weight:600;">{{ libreta.fecha_inscripcion|date:"d/m/Y" }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <!-- Aportes mensuales -->
+    <div class="card" style="margin-bottom:14px;">
+      <div class="card-header"><h5><i class="fas fa-calendar-check" style="color:var(--success);margin-right:7px;"></i>Aportes Mensuales — $22/mes ($20+$1+$1)</h5></div>
+      <div style="overflow-x:auto;"><table>
+        <thead><tr><th>Mes</th><th>Ahorro</th><th>Lotería</th><th>Cumpleaños</th><th>Total</th><th>Estado</th><th>Comprobante</th><th>Acción</th></tr></thead>
+        <tbody>
+        {% for a in aportes %}
+        <tr>
+          <td style="font-weight:600;">{{ a.get_mes_display }}</td>
+          <td>${{ a.monto_ahorro|floatformat:2 }}</td>
+          <td>${{ a.monto_loteria|floatformat:2 }}</td>
+          <td>${{ a.monto_cumpleanos|floatformat:2 }}</td>
+          <td><strong>${{ a.monto_total|floatformat:2 }}</strong></td>
+          <td>
+            {% if a.estado == 'verificado' %}<span class="badge badge-success"><i class="fas fa-check"></i> Verificado</span>
+            {% elif a.estado == 'reportado' %}<span class="badge badge-warning"><i class="fas fa-clock"></i> Reportado</span>
+            {% elif a.estado == 'atrasado' %}<span class="badge badge-danger">Atrasado</span>
+            {% else %}<span class="badge badge-secondary">Pendiente</span>{% endif %}
+          </td>
+          <td style="font-size:11px;color:var(--muted);">{{ a.comprobante_referencia|default:"—" }}</td>
+          <td>
+            {% if a.estado != 'verificado' %}
+            <a href="{% url 'aporte_verificar' libreta.pk a.mes %}" class="btn btn-outline btn-sm"><i class="fas fa-check"></i></a>
+            {% else %}<span style="color:var(--success);font-size:12px;"><i class="fas fa-check-double"></i></span>{% endif %}
+          </td>
+        </tr>
+        {% empty %}<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--muted);">Sin aportes registrados</td></tr>{% endfor %}
+        </tbody>
+      </table></div>
+    </div>
+    <!-- Créditos de esta libreta -->
+    <div class="card">
+      <div class="card-header"><h5><i class="fas fa-hand-holding-dollar" style="color:var(--warning);margin-right:7px;"></i>Créditos de esta Libreta</h5></div>
+      <div style="overflow-x:auto;"><table>
+        <thead><tr><th>Crédito</th><th>Tipo</th><th>Monto</th><th>Transfiere</th><th>Saldo</th><th>Estado</th><th></th></tr></thead>
+        <tbody>
+        {% for c in creditos %}
+        <tr>
+          <td class="mono"><a href="{% url 'credito_detalle' c.pk %}" style="color:var(--primary);text-decoration:none;">{{ c.numero }}</a></td>
+          <td>{{ c.get_tipo_display }}</td>
+          <td>${{ c.monto_solicitado|floatformat:2 }}</td>
+          <td class="amount-pos">${{ c.monto_transferir|floatformat:2 }}</td>
+          <td><strong>${{ c.saldo_pendiente|floatformat:2 }}</strong></td>
+          <td><span class="badge {% if c.estado == 'pagado' %}badge-success{% elif 'mora' in c.estado %}badge-danger{% elif c.estado == 'desembolsado' %}badge-primary{% else %}badge-secondary{% endif %}">{{ c.get_estado_display }}</span></td>
+          <td>{% if c.estado in 'desembolsado,mora_leve,mora_media,mora_grave' %}<a href="{% url 'registrar_pago' c.pk %}" class="btn btn-success btn-sm"><i class="fas fa-dollar-sign"></i></a>{% endif %}</td>
+        </tr>
+        {% empty %}<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted);">Sin créditos</td></tr>{% endfor %}
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+</div>{% endblock %}

@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block page_title %}Solicitudes Pendientes{% endblock %}
+{% block content %}
+{% if not solicitudes %}
+<div style="text-align:center;padding:60px 20px;">
+  <div style="font-size:56px;margin-bottom:16px;">📭</div>
+  <h2 style="font-size:20px;font-weight:800;margin-bottom:8px;">Sin solicitudes pendientes</h2>
+  <p style="color:var(--muted);">No hay solicitudes de crédito esperando revisión.</p>
+</div>
+{% else %}
+<div class="alert alert-info">
+  <i class="fas fa-inbox"></i> <strong>{{ solicitudes.count }} solicitud(es)</strong> esperando revisión. Recuerde que el plazo de respuesta es de 24 horas.
+</div>
+<div class="card">
+  <div class="card-header">
+    <h5><i class="fas fa-inbox" style="color:var(--primary);margin-right:7px;"></i>Solicitudes de Crédito Pendientes</h5>
+  </div>
+  <div style="overflow-x:auto;"><table>
+    <thead><tr><th>N° Crédito</th><th>Fecha Solicitud</th><th>Socio</th><th>Libreta</th><th>Tipo</th><th>Banco</th><th>Monto</th><th>Transfiere</th><th>Cuota</th><th>Plazo</th><th>Acción</th></tr></thead>
+    <tbody>
+    {% for c in solicitudes %}
+    <tr>
+      <td><strong class="mono" style="color:var(--primary);">{{ c.numero }}</strong></td>
+      <td style="font-size:11px;color:var(--muted);">{{ c.fecha_solicitud|date:"d/m/Y H:i" }}</td>
+      <td>
+        <a href="{% url 'socio_detalle' c.socio.pk %}" style="color:var(--primary);text-decoration:none;font-weight:600;">{{ c.socio.nombre_completo }}</a>
+        <div style="font-size:10px;color:var(--muted);">{{ c.socio.cedula }}</div>
+      </td>
+      <td><span class="badge badge-secondary">#{{ c.libreta.numero }}</span></td>
+      <td><span class="badge {% if c.tipo == 'mensualizado' %}badge-primary{% else %}badge-warning{% endif %}">{{ c.get_tipo_display }}</span></td>
+      <td style="font-size:11px;">{{ c.get_banco_display }}</td>
+      <td><strong>${{ c.monto_solicitado|floatformat:2 }}</strong></td>
+      <td class="amount-pos">${{ c.monto_transferir|floatformat:2 }}</td>
+      <td>{% if c.tipo == 'mensualizado' %}<strong>${{ c.cuota_mensual|floatformat:2 }}</strong>{% else %}<span style="color:var(--muted);">Único</span>{% endif %}</td>
+      <td>{{ c.plazo_meses }}m</td>
+      <td style="white-space:nowrap;">
+        <a href="{% url 'credito_aprobar' c.pk %}" class="btn btn-warning btn-sm"><i class="fas fa-gavel"></i> Revisar</a>
+        <a href="{% url 'credito_detalle' c.pk %}" class="btn btn-outline btn-sm"><i class="fas fa-eye"></i></a>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block page_title %}Reporte Multas{% endblock %}
+{% block topbar_actions %}<a href="{% url 'exportar_multas' %}" class="btn btn-outline" style="border-color:#217346;color:#217346;"><i class="fas fa-file-excel"></i> Exportar</a>{% endblock %}
+{% block content %}
+<div style="margin-bottom:14px;"><a href="{% url 'reportes_index' %}" style="color:var(--muted);text-decoration:none;font-size:13px;"><i class="fas fa-arrow-left"></i> Volver</a></div>
+<div class="stat-card stat-red" style="margin-bottom:18px;display:inline-block;min-width:240px;"><div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div><div class="stat-value">${{ total|floatformat:2 }}</div><div class="stat-label">Total Multas Pendientes — {{ multas.count }}</div></div>
+<div class="card"><div class="card-header"><h5>Multas Pendientes de Cobro</h5></div>
+<div style="overflow-x:auto;"><table>
+  <thead><tr><th>Socio</th><th>Libreta</th><th>Origen</th><th>Descripción</th><th>Monto</th><th>Fecha</th><th></th></tr></thead>
+  <tbody>
+  {% for m in multas %}
+  <tr>
+    <td><a href="{% url 'socio_detalle' m.socio.pk %}" style="color:var(--primary);text-decoration:none;font-weight:600;">{{ m.socio.nombre_completo }}</a></td>
+    <td>{% if m.libreta %}#{{ m.libreta.numero }}{% else %}<span style="color:var(--muted);">Por socio</span>{% endif %}</td>
+    <td style="font-size:11px;">{{ m.get_origen_display }}</td>
+    <td style="font-size:12px;">{{ m.descripcion }}</td>
+    <td class="amount-neg">${{ m.monto|floatformat:2 }}</td>
+    <td style="font-size:11px;color:var(--muted);">{{ m.fecha_generacion|date:"d/m/Y" }}</td>
+    <td><a href="{% url 'multa_pagar' m.pk %}" class="btn btn-success btn-sm"><i class="fas fa-check"></i></a></td>
+  </tr>
+  {% empty %}<tr><td colspan="7" style="text-align:center;padding:28px;color:var(--muted);">Sin multas pendientes 🎉</td></tr>{% endfor %}
+  </tbody>
+</table></div></div>{% endblock %}

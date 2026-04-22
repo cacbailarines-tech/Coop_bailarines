@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block page_title %}Créditos{% endblock %}
+{% block topbar_actions %}<a href="{% url 'credito_crear' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Nuevo Crédito</a>{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <h5><i class="fas fa-hand-holding-dollar" style="color:var(--warning);margin-right:7px;"></i>Gestión de Créditos</h5>
+    <form method="get" style="display:flex;gap:8px;">
+      <div style="position:relative;"><i class="fas fa-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:12px;"></i>
+      <input type="text" name="q" class="form-control" value="{{ q }}" style="padding-left:32px;width:220px;" placeholder="Buscar socio o número..."></div>
+      <select name="estado" class="form-control form-select" style="width:160px;">
+        <option value="">Todos</option>
+        {% for val,lab in estados %}<option value="{{ val }}" {% if estado == val %}selected{% endif %}>{{ lab }}</option>{% endfor %}
+      </select>
+      <button type="submit" class="btn btn-outline"><i class="fas fa-filter"></i></button>
+    </form>
+  </div>
+  <div style="overflow-x:auto;"><table>
+    <thead><tr><th>Crédito</th><th>Socio</th><th>Lib.</th><th>Tipo</th><th>Banco</th><th>Solicitado</th><th>Transfiere</th><th>Cuota</th><th>Saldo</th><th>Estado</th><th></th></tr></thead>
+    <tbody>
+    {% for c in page_obj %}
+    <tr>
+      <td><a href="{% url 'credito_detalle' c.pk %}" class="mono" style="color:var(--primary);text-decoration:none;">{{ c.numero }}</a></td>
+      <td style="font-weight:600;font-size:12px;">{{ c.socio.nombre_completo }}</td>
+      <td><span class="badge badge-secondary">#{{ c.libreta.numero }}</span></td>
+      <td><span class="badge {% if c.tipo == 'mensualizado' %}badge-primary{% else %}badge-warning{% endif %}">{{ c.get_tipo_display }}</span></td>
+      <td style="font-size:11px;">{{ c.get_banco_display }}</td>
+      <td>${{ c.monto_solicitado|floatformat:2 }}</td>
+      <td class="amount-pos">${{ c.monto_transferir|floatformat:2 }}</td>
+      <td>{% if c.tipo == 'mensualizado' %}<strong>${{ c.cuota_mensual|floatformat:2 }}</strong>{% else %}<span style="color:var(--muted);">Único</span>{% endif %}</td>
+      <td><strong>${{ c.saldo_pendiente|floatformat:2 }}</strong></td>
+      <td><span class="badge {% if c.estado == 'pagado' %}badge-success{% elif 'mora' in c.estado %}badge-danger{% elif c.estado == 'desembolsado' %}badge-primary{% elif c.estado == 'aprobado' %}badge-warning{% else %}badge-secondary{% endif %}">{{ c.get_estado_display }}</span></td>
+      <td style="white-space:nowrap;">
+        <a href="{% url 'credito_detalle' c.pk %}" class="btn btn-outline btn-sm"><i class="fas fa-eye"></i></a>
+        {% if c.estado in 'desembolsado,mora_leve,mora_media,mora_grave' %}<a href="{% url 'registrar_pago' c.pk %}" class="btn btn-success btn-sm"><i class="fas fa-dollar-sign"></i></a>{% endif %}
+        {% if c.estado == 'pendiente' %}<a href="{% url 'credito_aprobar' c.pk %}" class="btn btn-warning btn-sm"><i class="fas fa-gavel"></i></a>{% endif %}
+      </td>
+    </tr>
+    {% empty %}<tr><td colspan="11" style="text-align:center;padding:40px;color:var(--muted);">No se encontraron créditos</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+  {% if page_obj.has_other_pages %}
+  <div style="padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+    <span style="font-size:11px;color:var(--muted);">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+    <nav><ul class="pagination pagination-sm mb-0">
+      {% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ q }}&estado={{ estado }}">«</a></li>{% endif %}
+      {% for n in page_obj.paginator.page_range %}<li class="page-item {% if n == page_obj.number %}active{% endif %}"><a class="page-link" href="?page={{ n }}&q={{ q }}&estado={{ estado }}">{{ n }}</a></li>{% endfor %}
+      {% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ q }}&estado={{ estado }}">»</a></li>{% endif %}
+    </ul></nav>
+  </div>{% endif %}
+</div>{% endblock %}

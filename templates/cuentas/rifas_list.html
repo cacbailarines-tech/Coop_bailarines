@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block page_title %}Rifa Mensual{% endblock %}
+{% block topbar_actions %}<a href="{% url 'rifa_crear' %}" class="btn btn-accent"><i class="fas fa-ticket"></i> Registrar Rifa</a>{% endblock %}
+{% block content %}
+<div class="card"><div class="card-header"><h5><i class="fas fa-ticket" style="color:var(--accent);margin-right:7px;"></i>Rifas Mensuales — Lotería $50</h5></div>
+<div style="overflow-x:auto;"><table>
+  <thead><tr><th>Mes/Año</th><th>Números Lotería</th><th>Libreta Ganadora</th><th>Socio</th><th>Al Día</th><th>Estado</th></tr></thead>
+  <tbody>
+  {% for r in rifas %}
+  <tr>
+    <td style="font-weight:600;">{{ r.mes }}/{{ r.anio }}</td>
+    <td class="mono">{{ r.numeros_loteria|default:"—" }}</td>
+    <td>{% if r.libreta_ganadora %}<span class="badge badge-warning">#{{ r.libreta_ganadora.numero }}</span>{% else %}<span style="color:var(--muted);">No ganó</span>{% endif %}</td>
+    <td style="font-size:12px;">{{ r.libreta_ganadora.socio.nombre_completo|default:"—" }}</td>
+    <td>{% if r.socio_al_dia %}<span class="badge badge-success">Sí — recibe $50</span>{% else %}<span class="badge badge-danger">No — queda en coop.</span>{% endif %}</td>
+    <td><span class="badge {% if r.estado == 'ganada' %}badge-success{% elif r.estado == 'no_ganada' %}badge-secondary{% else %}badge-warning{% endif %}">{{ r.get_estado_display }}</span></td>
+  </tr>
+  {% empty %}<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted);">Sin rifas registradas</td></tr>{% endfor %}
+  </tbody>
+</table></div></div>{% endblock %}

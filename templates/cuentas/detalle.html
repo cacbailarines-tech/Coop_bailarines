@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% block title %}Cuenta {{ cuenta.numero_cuenta }}{% endblock %}
+{% block page_title %}Detalle de Cuenta{% endblock %}
+{% block topbar_actions %}
+<a href="{% url 'deposito' cuenta.pk %}" class="btn btn-success"><i class="fas fa-arrow-down"></i> Depósito</a>
+<a href="{% url 'retiro' cuenta.pk %}" class="btn btn-danger"><i class="fas fa-arrow-up"></i> Retiro</a>
+{% endblock %}
+{% block content %}
+<div style="margin-bottom:16px;">
+  <a href="{% url 'cuentas_list' %}" style="color:var(--text-muted);text-decoration:none;font-size:13px;"><i class="fas fa-arrow-left"></i> Volver a Cuentas</a>
+</div>
+<div style="display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:start;">
+  <div>
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-body" style="text-align:center;padding:28px 20px;">
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">Saldo Disponible</div>
+        <div style="font-size:36px;font-weight:800;color:var(--success);margin-bottom:4px;">${{ cuenta.saldo|floatformat:2 }}</div>
+        <div style="font-size:11px;color:var(--text-muted);">Saldo mínimo: ${{ cuenta.saldo_minimo|floatformat:2 }}</div>
+        <span class="badge {% if cuenta.estado == 'activa' %}badge-success{% else %}badge-secondary{% endif %}" style="margin-top:12px;font-size:12px;padding:6px 14px;">{{ cuenta.get_estado_display }}</span>
+      </div>
+      <div style="border-top:1px solid var(--border);">
+        <div style="padding:10px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;">
+          <span style="font-size:12px;color:var(--text-muted);">N° Cuenta</span>
+          <span class="mono" style="font-size:11px;font-weight:600;">{{ cuenta.numero_cuenta }}</span>
+        </div>
+        <div style="padding:10px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;">
+          <span style="font-size:12px;color:var(--text-muted);">Socio</span>
+          <span style="font-size:12px;font-weight:600;">
+            <a href="{% url 'socio_detalle' cuenta.socio.pk %}" style="color:var(--primary);text-decoration:none;">{{ cuenta.socio.nombre_completo }}</a>
+          </span>
+        </div>
+        <div style="padding:10px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;">
+          <span style="font-size:12px;color:var(--text-muted);">Tipo</span>
+          <span style="font-size:12px;font-weight:600;">{{ cuenta.get_tipo_display }}</span>
+        </div>
+        <div style="padding:10px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;">
+          <span style="font-size:12px;color:var(--text-muted);">Tasa interés</span>
+          <span style="font-size:12px;font-weight:600;">{{ cuenta.tasa_interes }}% anual</span>
+        </div>
+        <div style="padding:10px 18px;display:flex;justify-content:space-between;">
+          <span style="font-size:12px;color:var(--text-muted);">Apertura</span>
+          <span style="font-size:12px;font-weight:600;">{{ cuenta.fecha_apertura|date:"d/m/Y" }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h5><i class="fas fa-list" style="color:var(--primary);margin-right:8px;"></i>Historial de Movimientos</h5>
+      <span style="font-size:12px;color:var(--text-muted);">{{ page_obj.paginator.count }} transacción(es)</span>
+    </div>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr><th>Comprobante</th><th>Tipo</th><th>Monto</th><th>Saldo Anterior</th><th>Saldo Posterior</th><th>Descripción</th><th>Fecha</th><th>Usuario</th></tr>
+        </thead>
+        <tbody>
+          {% for t in page_obj %}
+          <tr>
+            <td><span class="mono">{{ t.comprobante }}</span></td>
+            <td>
+              {% if t.tipo == 'deposito' %}
+              <span class="badge badge-success"><i class="fas fa-arrow-down"></i> Depósito</span>
+              {% elif t.tipo == 'retiro' %}
+              <span class="badge badge-danger"><i class="fas fa-arrow-up"></i> Retiro</span>
+              {% else %}
+              <span class="badge badge-primary"><i class="fas fa-percent"></i> Interés</span>
+              {% endif %}
+            </td>
+            <td class="{% if t.tipo == 'deposito' or t.tipo == 'interes' %}amount-positive{% else %}amount-negative{% endif %}">
+              {% if t.tipo == 'deposito' or t.tipo == 'interes' %}+{% else %}-{% endif %}${{ t.monto|floatformat:2 }}
+            </td>
+            <td style="color:var(--text-muted);">${{ t.saldo_anterior|floatformat:2 }}</td>
+            <td><strong>${{ t.saldo_posterior|floatformat:2 }}</strong></td>
+            <td style="color:var(--text-muted);font-size:12px;">{{ t.descripcion|default:"-" }}</td>
+            <td style="font-size:12px;color:var(--text-muted);">{{ t.fecha|date:"d/m/Y H:i" }}</td>
+            <td style="font-size:12px;color:var(--text-muted);">{{ t.usuario.get_full_name|default:t.usuario.username|default:"-" }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text-muted);">No hay movimientos registrados</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if page_obj.has_other_pages %}
+    <div style="padding:16px 20px;border-top:1px solid var(--border);display:flex;justify-content:center;">
+      <nav><ul class="pagination pagination-sm mb-0">
+        {% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">«</a></li>{% endif %}
+        {% for n in page_obj.paginator.page_range %}<li class="page-item {% if n == page_obj.number %}active{% endif %}"><a class="page-link" href="?page={{ n }}">{{ n }}</a></li>{% endfor %}
+        {% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">»</a></li>{% endif %}
+      </ul></nav>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

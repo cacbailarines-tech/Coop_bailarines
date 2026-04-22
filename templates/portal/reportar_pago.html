@@ -1,0 +1,83 @@
+{% extends 'portal/base.html' %}
+{% block title %}Reportar Pago - Portal Bailarines{% endblock %}
+{% block content %}
+<div style="margin-bottom:16px;">
+  <a href="{% url 'portal_creditos' %}" style="color:var(--muted);text-decoration:none;font-size:12px;"><i class="fas fa-arrow-left"></i> Volver a Cr&eacute;ditos</a>
+  <h1 style="font-size:18px;font-weight:800;margin-top:6px;">Reportar Pago de Cr&eacute;dito</h1>
+  <div style="font-size:12px;color:var(--muted);margin-top:4px;">Si su transferencia cubre varios conceptos, puede usar el <a href="{% url 'portal_pago_combinado' %}" style="font-weight:700;">pago combinado</a>.</div>
+</div>
+
+{% if pago_pendiente %}
+<div class="alert alert-warning">
+  <i class="fas fa-clock"></i> Tiene un pago anterior <strong>en revisi&oacute;n</strong> por la administraci&oacute;n. Puede reportar otro si hizo otra transferencia.
+</div>
+{% endif %}
+
+<div class="pcard" style="margin-bottom:14px;background:{% if 'mora' in credito.estado %}rgba(198,40,40,0.06){% else %}rgba(0,137,123,0.05){% endif %};border-color:{% if 'mora' in credito.estado %}rgba(198,40,40,0.3){% else %}rgba(0,137,123,0.25){% endif %};">
+  <div class="pcard-body" style="padding:16px 18px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
+      <div>
+        <div style="font-size:11px;color:var(--muted);">{{ credito.numero }} · Libreta #{{ credito.libreta.numero }}</div>
+        <div style="font-size:11px;color:var(--muted);">{{ credito.get_tipo_display }} · {{ credito.get_banco_display }}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">Saldo pendiente:</div>
+        <div style="font-size:30px;font-weight:900;color:var(--warning);">${{ credito.saldo_pendiente|floatformat:2 }}</div>
+      </div>
+      <div style="text-align:right;">
+        {% if credito.tipo == 'mensualizado' %}
+        <div style="font-size:10px;color:var(--muted);">Cuota mensual sugerida</div>
+        <div style="font-size:22px;font-weight:800;color:var(--primary);">${{ credito.cuota_mensual|floatformat:2 }}</div>
+        {% else %}
+        <div style="font-size:10px;color:var(--muted);">Puede abonar cualquier monto</div>
+        <div style="font-size:22px;font-weight:800;color:var(--primary);">Pago libre</div>
+        {% endif %}
+        <div style="font-size:10px;color:var(--muted);margin-top:6px;">Vence:</div>
+        <div style="font-size:13px;font-weight:600;">{{ credito.fecha_pago_limite|date:"d/m/Y"|default:"N/D" }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="pcard">
+  <div class="pcard-header">
+    <h3><i class="fas fa-dollar-sign" style="color:var(--success);"></i> Reportar Transferencia Realizada</h3>
+  </div>
+  <div class="pcard-body">
+    <div style="background:rgba(11,61,145,0.06);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:var(--primary);">
+      <i class="fas fa-info-circle"></i> Primero realice la transferencia a la cuenta autorizada de la cooperativa. Luego ingrese el comprobante aqu&iacute;.
+    </div>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">Monto Pagado ($) *</label>
+        <input type="number" name="monto_pagado" class="form-control" min="0.01" step="0.01"
+          value="{% if credito.tipo == 'mensualizado' %}{{ credito.cuota_mensual }}{% else %}{{ credito.saldo_pendiente }}{% endif %}"
+          required style="font-size:22px;font-weight:700;text-align:center;color:var(--success);">
+        {% if credito.tipo == 'no_mensualizado' %}
+        <div style="font-size:11px;color:var(--muted);margin-top:3px;">Puede pagar el total o hacer un abono parcial</div>
+        {% endif %}
+      </div>
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">N&uacute;mero de comprobante *</label>
+        <input type="text" name="comprobante_referencia" class="form-control" required placeholder="N&uacute;mero de transacci&oacute;n o comprobante">
+      </div>
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">Observaci&oacute;n (opcional)</label>
+        <input type="text" name="observaciones" class="form-control" placeholder="Ej: Pago cuota enero">
+      </div>
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">Adjuntar comprobante (opcional)</label>
+        <input type="file" name="comprobante_archivo" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.webp">
+      </div>
+      <div style="background:rgba(242,169,0,0.1);border:1.5px solid rgba(242,169,0,0.3);border-radius:9px;padding:11px 14px;margin-bottom:16px;">
+        <div style="font-size:12px;color:#8B6914;"><i class="fas fa-clock"></i> Su pago quedar&aacute; como <strong>en revisi&oacute;n</strong> hasta que la administraci&oacute;n confirme la transferencia.</div>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button type="submit" class="btn btn-success" style="flex:1;justify-content:center;padding:12px;font-size:14px;">
+          <i class="fas fa-check-circle"></i> Reportar Pago
+        </button>
+        <a href="{% url 'portal_creditos' %}" class="btn btn-outline">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

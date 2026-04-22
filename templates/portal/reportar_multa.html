@@ -1,0 +1,53 @@
+{% extends 'portal/base.html' %}
+{% block title %}Reportar Pago de Multa - Portal Bailarines{% endblock %}
+{% block content %}
+<div style="margin-bottom:16px;">
+  <a href="{% url 'portal_multas' %}" style="color:var(--muted);text-decoration:none;font-size:12px;"><i class="fas fa-arrow-left"></i> Volver a Multas</a>
+  <h1 style="font-size:18px;font-weight:800;margin-top:6px;">Reportar Pago de Multa</h1>
+</div>
+
+<div class="pcard" style="background:rgba(198,40,40,0.06);border-color:rgba(198,40,40,0.25);margin-bottom:14px;">
+  <div class="pcard-body" style="padding:16px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+    <div>
+      <div style="font-size:12px;font-weight:700;color:var(--danger);">{{ multa.descripcion }}</div>
+      <div style="font-size:11px;color:var(--muted);">{{ multa.get_origen_display }} · {{ multa.fecha_generacion|date:"d/m/Y" }}</div>
+      {% if multa.libreta %}<div style="font-size:11px;color:var(--muted);">Libreta #{{ multa.libreta.numero }}</div>{% else %}<div style="font-size:11px;color:var(--muted);">Aplicada por socio</div>{% endif %}
+    </div>
+    <div style="font-size:30px;font-weight:900;color:var(--danger);">${{ multa.monto|floatformat:2 }}</div>
+  </div>
+</div>
+
+<div class="pcard">
+  <div class="pcard-header">
+    <h3><i class="fas fa-upload" style="color:var(--danger);"></i> Reportar Pago de la Multa</h3>
+  </div>
+  <div class="pcard-body">
+    <div style="background:rgba(11,61,145,0.06);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:var(--primary);">
+      <i class="fas fa-info-circle"></i> Primero realice el pago de <strong>${{ multa.monto|floatformat:2 }}</strong> a la administración de la cooperativa (puede ser en la reunión o por transferencia). Luego ingrese el comprobante.
+    </div>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">N° Comprobante / Referencia *</label>
+        <input type="text" name="comprobante" class="form-control" required
+          placeholder="Número de transacción o referencia de pago">
+      </div>
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">Observación (opcional)</label>
+        <input type="text" name="observacion" class="form-control"
+          placeholder="Ej: Pagado en reunión de enero">
+      </div>
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">Adjuntar comprobante (opcional)</label>
+        <input type="file" name="comprobante_archivo" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.webp">
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button type="submit" class="btn btn-danger" style="flex:1;justify-content:center;padding:12px;">
+          <i class="fas fa-check-circle"></i> Reportar Pago de Multa
+        </button>
+        <a href="{% url 'portal_multas' %}" class="btn btn-outline">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

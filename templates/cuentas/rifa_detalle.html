@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block page_title %}Detalle Rifa{% endblock %}
+{% block content %}
+<div style="max-width:400px;">
+  <div style="margin-bottom:14px;"><a href="{% url 'rifas_list' %}" style="color:var(--muted);text-decoration:none;font-size:13px;"><i class="fas fa-arrow-left"></i> Volver</a></div>
+  <div class="card"><div class="card-body" style="padding:28px;text-align:center;">
+    <div style="font-size:48px;margin-bottom:12px;">🎟️</div>
+    <div style="font-size:20px;font-weight:800;">Rifa {{ rifa.mes }}/{{ rifa.anio }}</div>
+    <div style="font-size:14px;color:var(--muted);margin-bottom:14px;">Números: <span class="mono">{{ rifa.numeros_loteria|default:"No registrados" }}</span></div>
+    {% if rifa.libreta_ganadora %}
+    <div style="background:rgba(242,169,0,0.1);border-radius:12px;padding:16px;">
+      <div style="font-size:12px;color:var(--muted);">Libreta Ganadora</div>
+      <div style="font-size:28px;font-weight:900;color:var(--warning);">#{{ rifa.libreta_ganadora.numero }}</div>
+      <div style="font-size:14px;font-weight:600;">{{ rifa.libreta_ganadora.socio.nombre_completo }}</div>
+      {% if rifa.socio_al_dia %}<div style="color:var(--success);font-weight:700;margin-top:8px;">✅ Recibió $50.00</div>{% else %}<div style="color:var(--danger);font-weight:700;margin-top:8px;">❌ No estaba al día — Premio a la cooperativa</div>{% endif %}
+    </div>
+    {% else %}<div style="color:var(--muted);">No hubo ganador este mes</div>{% endif %}
+  </div></div>
+</div>{% endblock %}

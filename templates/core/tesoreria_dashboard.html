@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block page_title %}Panel de Tesorería{% endblock %}
+{% block topbar_actions %}
+<a href="{% url 'verificar_todo' %}" class="btn btn-outline"><i class="fas fa-list-check"></i> Revisar Reportes</a>
+<a href="{% url 'movimiento_crear' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Nuevo Movimiento</a>
+{% endblock %}
+{% block content %}
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;">
+  <div class="stat-card stat-green"><div class="stat-icon"><i class="fas fa-arrow-down"></i></div><div class="stat-value">${{ ingresos_hoy|floatformat:2 }}</div><div class="stat-label">Ingresos de Hoy</div></div>
+  <div class="stat-card stat-red"><div class="stat-icon"><i class="fas fa-arrow-up"></i></div><div class="stat-value">${{ egresos_hoy|floatformat:2 }}</div><div class="stat-label">Egresos de Hoy</div></div>
+  <div class="stat-card stat-blue"><div class="stat-icon"><i class="fas fa-scale-balanced"></i></div><div class="stat-value">${{ saldo_hoy|floatformat:2 }}</div><div class="stat-label">Saldo del Día</div></div>
+  <div class="stat-card stat-amber"><div class="stat-icon"><i class="fas fa-list-check"></i></div><div class="stat-value">{{ total_verificaciones }}</div><div class="stat-label">Reportes por Revisar</div></div>
+</div>
+
+<div style="display:grid;grid-template-columns:1.1fr 0.9fr;gap:16px;margin-bottom:18px;">
+  <div class="card">
+    <div class="card-header"><h5><i class="fas fa-cash-register" style="color:var(--success);margin-right:7px;"></i>Caja Diaria</h5></div>
+    <div class="card-body">
+      {% if caja_hoy and caja_hoy.esta_abierta %}
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px;">
+        <div><div style="font-size:11px;color:var(--muted);">Saldo inicial</div><div style="font-size:22px;font-weight:800;">${{ caja_hoy.saldo_inicial|floatformat:2 }}</div></div>
+        <div><div style="font-size:11px;color:var(--muted);">Abierta por</div><div style="font-size:14px;font-weight:700;">{% if caja_hoy.abierta_por %}{{ caja_hoy.abierta_por.get_full_name|default:caja_hoy.abierta_por.username }}{% else %}Sistema{% endif %}</div></div>
+        <div><div style="font-size:11px;color:var(--muted);">Mes actual</div><div style="font-size:14px;font-weight:700;">${{ saldo_mes|floatformat:2 }}</div></div>
+      </div>
+      <form method="post" action="{% url 'caja_diaria_accion' %}">{% csrf_token %}
+        <input type="hidden" name="accion" value="cerrar">
+        <div class="form-group"><label class="form-label">Observación de cierre</label><textarea name="observaciones_cierre" class="form-control" rows="2"></textarea></div>
+        <button type="submit" class="btn btn-danger"><i class="fas fa-lock"></i> Cerrar Caja</button>
+      </form>
+      {% else %}
+      <form method="post" action="{% url 'caja_diaria_accion' %}">{% csrf_token %}
+        <input type="hidden" name="accion" value="abrir">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="form-group"><label class="form-label">Saldo inicial</label><input type="number" name="saldo_inicial" class="form-control" min="0" step="0.01" value="0"></div>
+          <div class="form-group"><label class="form-label">Observación de apertura</label><input type="text" name="observaciones_apertura" class="form-control"></div>
+        </div>
+        <button type="submit" class="btn btn-success"><i class="fas fa-lock-open"></i> Abrir Caja</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><h5><i class="fas fa-bell" style="color:var(--warning);margin-right:7px;"></i>Alertas</h5></div>
+    <div class="card-body" style="display:grid;gap:10px;">
+      <div class="alert alert-warning" style="margin:0;">{{ alertas.pendientes_antiguos }} reporte(s) pendientes desde días anteriores.</div>
+      <div class="alert alert-danger" style="margin:0;">{{ alertas.multas_antiguas }} multa(s) pendientes con más de 30 días.</div>
+      <div class="alert alert-info" style="margin:0;">{{ alertas.creditos_mora }} crédito(s) actualmente en mora.</div>
+      <div class="alert alert-warning" style="margin:0;">{{ alertas.creditos_por_vencer }} crédito(s) vencen en los próximos 15 días.</div>
+      <div class="alert {% if alertas.caja_abierta %}alert-success{% else %}alert-warning{% endif %}" style="margin:0;">Caja de hoy {% if alertas.caja_abierta %}abierta{% else %}cerrada o sin apertura{% endif %}.</div>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:18px;">
+  <div class="card-header"><h5><i class="fas fa-hourglass-half" style="color:var(--warning);margin-right:7px;"></i>Créditos Próximos a Cancelar</h5></div>
+  {% if creditos_por_vencer %}
+  <div style="overflow-x:auto;"><table>
+    <thead><tr><th>Crédito</th><th>Socio</th><th>Libreta</th><th>Saldo</th><th>Vence</th><th>Alerta</th></tr></thead>
+    <tbody>
+      {% for item in creditos_por_vencer %}
+      <tr>
+        <td><a href="{% url 'credito_detalle' item.credito.pk %}" class="mono" style="color:var(--primary);text-decoration:none;">{{ item.credito.numero }}</a></td>
+        <td>{{ item.credito.socio.nombre_completo }}</td>
+        <td>#{{ item.credito.libreta.numero }}</td>
+        <td class="amount-neg">${{ item.credito.saldo_pendiente|floatformat:2 }}</td>
+        <td>{{ item.credito.fecha_pago_limite|date:"d/m/Y" }}</td>
+        <td><span class="badge {{ item.badge }}">{{ item.texto }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}
+  <div style="padding:16px 18px;color:var(--muted);font-size:12px;">No hay créditos que venzan en los próximos 15 días.</div>
+  {% endif %}
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+  <div class="card">
+    <div class="card-header"><h5><i class="fas fa-arrow-right-arrow-left" style="color:var(--primary);margin-right:7px;"></i>Últimos Movimientos</h5></div>
+    <div style="overflow-x:auto;"><table>
+      <thead><tr><th>Fecha</th><th>Descripción</th><th>Tipo</th><th>Monto</th></tr></thead>
+      <tbody>
+      {% for m in movimientos_recientes %}
+      <tr>
+        <td>{{ m.fecha|date:"d/m/Y" }}</td>
+        <td>{{ m.descripcion }}</td>
+        <td>{% if m.tipo == 'ingreso' %}<span class="badge badge-success">Ingreso</span>{% else %}<span class="badge badge-danger">Egreso</span>{% endif %}</td>
+        <td class="{% if m.tipo == 'ingreso' %}amount-pos{% else %}amount-neg{% endif %}">${{ m.monto|floatformat:2 }}</td>
+      </tr>
+      {% empty %}<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--muted);">Sin movimientos</td></tr>{% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+  <div class="card">
+    <div class="card-header"><h5><i class="fas fa-shield-halved" style="color:var(--danger);margin-right:7px;"></i>Auditoría Reciente</h5></div>
+    <div style="padding:10px 16px;display:grid;gap:10px;">
+      {% for item in auditorias %}
+      <div style="border-bottom:1px solid var(--border);padding-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;gap:12px;">
+          <strong style="font-size:12px;">{{ item.accion }}</strong>
+          <span style="font-size:10px;color:var(--muted);">{{ item.fecha|date:"d/m/Y H:i" }}</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);">{{ item.descripcion }}</div>
+        <div style="font-size:10px;color:var(--muted);">{% if item.usuario %}{{ item.usuario.get_full_name|default:item.usuario.username }}{% else %}Sistema{% endif %} · {{ item.get_area_display }}</div>
+      </div>
+      {% empty %}<div style="color:var(--muted);font-size:12px;">Sin auditorías registradas.</div>{% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

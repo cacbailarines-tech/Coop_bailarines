@@ -1,0 +1,255 @@
+{% extends 'base.html' %}
+{% block page_title %}Reporte General Completo{% endblock %}
+{% block topbar_actions %}
+<a href="{% url 'exportar_general' %}" class="btn btn-outline" style="border-color:#217346;color:#217346;"><i class="fas fa-file-excel"></i> Exportar Todo (7 hojas)</a>
+{% endblock %}
+{% block content %}
+<div style="margin-bottom:16px;"><a href="{% url 'reportes_index' %}" style="color:var(--muted);text-decoration:none;font-size:13px;"><i class="fas fa-arrow-left"></i> Volver a Reportes</a></div>
+
+<!-- Filtros -->
+<div class="card" style="margin-bottom:20px;">
+  <div class="card-body" style="padding:14px 18px;">
+    <form method="get" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <label style="font-size:12px;font-weight:600;color:var(--muted);">Filtrar por:</label>
+      <select name="periodo" class="form-control form-select" style="width:140px;">
+        <option value="">Todos los periodos</option>
+        {% for p in periodos %}<option value="{{ p.pk }}" {% if periodo_id == p.pk|stringformat:"s" %}selected{% endif %}>Periodo {{ p.anio }}</option>{% endfor %}
+      </select>
+      <input type="date" name="desde" class="form-control" value="{{ desde }}" style="width:150px;" placeholder="Desde">
+      <input type="date" name="hasta" class="form-control" value="{{ hasta }}" style="width:150px;" placeholder="Hasta">
+      <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Filtrar</button>
+      <a href="{% url 'reporte_general' %}" class="btn btn-outline"><i class="fas fa-rotate"></i> Limpiar</a>
+    </form>
+  </div>
+</div>
+
+<!-- ===== RESUMEN EJECUTIVO ===== -->
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;">
+  <div class="stat-card stat-blue">
+    <div class="stat-icon"><i class="fas fa-users"></i></div>
+    <div class="stat-value">{{ socios_total }}</div>
+    <div class="stat-label">Socios Activos</div>
+  </div>
+  <div class="stat-card stat-green">
+    <div class="stat-icon"><i class="fas fa-book"></i></div>
+    <div class="stat-value">{{ libretas_activas }}</div>
+    <div class="stat-label">Libretas Activas</div>
+    <div style="font-size:11px;color:var(--success);margin-top:5px;">Ahorro: ${{ total_saldo_ahorro|floatformat:2 }}</div>
+  </div>
+  <div class="stat-card stat-amber">
+    <div class="stat-icon"><i class="fas fa-hand-holding-dollar"></i></div>
+    <div class="stat-value">${{ cartera_activa|floatformat:0 }}</div>
+    <div class="stat-label">Cartera Activa</div>
+    {% if cartera_mora > 0 %}<div style="font-size:11px;color:var(--danger);margin-top:5px;">En mora: ${{ cartera_mora|floatformat:2 }}</div>{% endif %}
+  </div>
+  <div class="stat-card {% if saldo_neto >= 0 %}stat-green{% else %}stat-red{% endif %}">
+    <div class="stat-icon"><i class="fas fa-scale-balanced"></i></div>
+    <div class="stat-value" style="color:{% if saldo_neto >= 0 %}var(--success){% else %}var(--danger){% endif %};">${{ saldo_neto|floatformat:0 }}</div>
+    <div class="stat-label">Saldo Neto (Ing. - Egr.)</div>
+  </div>
+</div>
+
+<!-- ===== INGRESOS vs EGRESOS ===== -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+  <!-- Ingresos -->
+  <div class="card">
+    <div class="card-header" style="background:rgba(0,137,123,0.06);">
+      <h5><i class="fas fa-arrow-down" style="color:var(--success);margin-right:7px;"></i>Total Ingresos</h5>
+      <strong style="font-size:20px;color:var(--success);">${{ total_ingresos|floatformat:2 }}</strong>
+    </div>
+    <div style="padding:0;">
+      {% for cat, monto in ingresos_por_cat.items %}
+      <div style="padding:10px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:12px;font-weight:600;">
+            {% if cat == 'aporte_mensual' %}📋 Aportes Mensuales
+            {% elif cat == 'inscripcion' %}📝 Inscripciones
+            {% elif cat == 'interes_credito' %}💰 Intereses de Crédito
+            {% elif cat == 'comision_banco' %}🏦 Comisiones Bancarias
+            {% elif cat == 'multa' %}⚠️ Multas
+            {% elif cat == 'rifa' %}🎟️ Rifas
+            {% else %}📌 {{ cat }}{% endif %}
+          </div>
+        </div>
+        <strong class="amount-pos">${{ monto|floatformat:2 }}</strong>
+      </div>
+      {% empty %}
+      <div style="padding:20px;text-align:center;color:var(--muted);">Sin ingresos registrados</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Egresos -->
+  <div class="card">
+    <div class="card-header" style="background:rgba(198,40,40,0.06);">
+      <h5><i class="fas fa-arrow-up" style="color:var(--danger);margin-right:7px;"></i>Total Egresos</h5>
+      <strong style="font-size:20px;color:var(--danger);">${{ total_egresos|floatformat:2 }}</strong>
+    </div>
+    <div style="padding:0;">
+      {% for cat, monto in egresos_por_cat.items %}
+      <div style="padding:10px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:12px;font-weight:600;">
+            {% if cat == 'desembolso_credito' %}💸 Desembolsos de Crédito
+            {% elif cat == 'devolucion_ahorro' %}↩️ Devoluciones de Ahorro
+            {% elif cat == 'premio_rifa' %}🎁 Premios Rifa
+            {% elif cat == 'cumpleanos' %}🎂 Regalos Cumpleaños
+            {% elif cat == 'gasto_operativo' %}🔧 Gastos Operativos
+            {% else %}📌 {{ cat }}{% endif %}
+          </div>
+        </div>
+        <strong class="amount-neg">${{ monto|floatformat:2 }}</strong>
+      </div>
+      {% empty %}
+      <div style="padding:20px;text-align:center;color:var(--muted);">Sin egresos registrados</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ===== APORTES MENSUALES ===== -->
+<div class="card" style="margin-bottom:16px;">
+  <div class="card-header">
+    <h5><i class="fas fa-calendar-check" style="color:var(--success);margin-right:7px;"></i>Estado de Aportes Mensuales</h5>
+    <a href="{% url 'reporte_aportes' %}" class="btn btn-outline btn-sm">Ver detalle</a>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);">
+    <div style="background:white;padding:18px;text-align:center;">
+      <div style="font-size:28px;font-weight:900;color:var(--success);">{{ aportes_verificados }}</div>
+      <div style="font-size:11px;color:var(--muted);">Aportes Verificados</div>
+      <div style="font-size:13px;font-weight:700;color:var(--success);">${{ total_aportes|floatformat:2 }}</div>
+    </div>
+    <div style="background:white;padding:18px;text-align:center;">
+      <div style="font-size:28px;font-weight:900;color:var(--warning);">{{ aportes_pendientes }}</div>
+      <div style="font-size:11px;color:var(--muted);">Aportes Pendientes</div>
+    </div>
+    <div style="background:white;padding:18px;text-align:center;">
+      <div style="font-size:28px;font-weight:900;color:var(--primary);">{{ libretas_activas }}</div>
+      <div style="font-size:11px;color:var(--muted);">Libretas Activas</div>
+      <div style="font-size:13px;font-weight:700;color:var(--primary);">${{ total_saldo_ahorro|floatformat:2 }} en ahorro</div>
+    </div>
+  </div>
+  {% if ultimos_aportes_pend %}
+  <div style="padding:12px 18px;background:rgba(245,127,23,0.05);border-top:1px solid var(--border);">
+    <div style="font-size:11px;font-weight:700;color:var(--warning);margin-bottom:8px;">⚠️ Aportes pendientes más antiguos:</div>
+    {% for a in ultimos_aportes_pend %}
+    <div style="font-size:11px;color:var(--text);margin-bottom:3px;">
+      • Libreta #{{ a.libreta.numero }} — {{ a.libreta.socio.nombre_completo }} — {{ a.get_mes_display }} {{ a.anio }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- ===== CRÉDITOS ===== -->
+<div class="card" style="margin-bottom:16px;">
+  <div class="card-header">
+    <h5><i class="fas fa-hand-holding-dollar" style="color:var(--warning);margin-right:7px;"></i>Resumen de Créditos</h5>
+    <a href="{% url 'reporte_cartera' %}" class="btn btn-outline btn-sm">Ver cartera</a>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);">
+    <div style="background:white;padding:16px;text-align:center;">
+      <div style="font-size:11px;color:var(--muted);">Total Desembolsado</div>
+      <div style="font-size:22px;font-weight:800;color:var(--warning);">${{ total_desembolsado|floatformat:2 }}</div>
+    </div>
+    <div style="background:white;padding:16px;text-align:center;">
+      <div style="font-size:11px;color:var(--muted);">Cartera Activa</div>
+      <div style="font-size:22px;font-weight:800;color:var(--primary);">${{ cartera_activa|floatformat:2 }}</div>
+    </div>
+    <div style="background:white;padding:16px;text-align:center;">
+      <div style="font-size:11px;color:var(--muted);">En Mora</div>
+      <div style="font-size:22px;font-weight:800;color:var(--danger);">${{ cartera_mora|floatformat:2 }}</div>
+    </div>
+    <div style="background:white;padding:16px;text-align:center;">
+      <div style="font-size:11px;color:var(--muted);">Total Cobrado (pagos)</div>
+      <div style="font-size:22px;font-weight:800;color:var(--success);">${{ total_cobrado|floatformat:2 }}</div>
+    </div>
+  </div>
+  {% if ultimos_creditos %}
+  <div style="overflow-x:auto;"><table>
+    <thead><tr><th>Crédito</th><th>Socio</th><th>Tipo</th><th>Monto</th><th>Saldo</th><th>Estado</th><th>Vence</th></tr></thead>
+    <tbody>
+    {% for c in ultimos_creditos %}
+    <tr>
+      <td><a href="{% url 'credito_detalle' c.pk %}" class="mono" style="color:var(--primary);text-decoration:none;">{{ c.numero }}</a></td>
+      <td style="font-size:12px;">{{ c.socio.nombre_completo }}</td>
+      <td><span class="badge {% if c.tipo == 'mensualizado' %}badge-primary{% else %}badge-warning{% endif %}">{{ c.get_tipo_display }}</span></td>
+      <td>${{ c.monto_solicitado|floatformat:2 }}</td>
+      <td><strong>${{ c.saldo_pendiente|floatformat:2 }}</strong></td>
+      <td><span class="badge {% if c.estado == 'pagado' %}badge-success{% elif 'mora' in c.estado %}badge-danger{% elif c.estado == 'desembolsado' %}badge-primary{% elif c.estado == 'aprobado' %}badge-warning{% else %}badge-secondary{% endif %}">{{ c.get_estado_display }}</span></td>
+      <td style="font-size:11px;color:var(--muted);">{{ c.fecha_pago_limite|date:"d/m/Y"|default:"—" }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% endif %}
+</div>
+
+<!-- ===== MULTAS ===== -->
+<div class="card" style="margin-bottom:16px;">
+  <div class="card-header">
+    <h5><i class="fas fa-exclamation-triangle" style="color:var(--danger);margin-right:7px;"></i>Multas</h5>
+    <a href="{% url 'reporte_multas' %}" class="btn btn-outline btn-sm">Ver detalle</a>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);">
+    <div style="background:white;padding:18px;text-align:center;">
+      <div style="font-size:11px;color:var(--muted);">Pendientes de Cobro</div>
+      <div style="font-size:28px;font-weight:800;color:var(--danger);">${{ multas_pendientes_monto|floatformat:2 }}</div>
+    </div>
+    <div style="background:white;padding:18px;text-align:center;">
+      <div style="font-size:11px;color:var(--muted);">Total Cobrado</div>
+      <div style="font-size:28px;font-weight:800;color:var(--success);">${{ multas_cobradas|floatformat:2 }}</div>
+    </div>
+  </div>
+  {% if ultimas_multas %}
+  <div style="overflow-x:auto;"><table>
+    <thead><tr><th>Socio</th><th>Descripción</th><th>Libreta</th><th>Monto</th><th>Fecha</th><th></th></tr></thead>
+    <tbody>
+    {% for m in ultimas_multas %}
+    <tr>
+      <td style="font-weight:600;font-size:12px;">{{ m.socio.nombre_completo }}</td>
+      <td style="font-size:12px;">{{ m.descripcion }}</td>
+      <td>{% if m.libreta %}<span class="badge badge-secondary">#{{ m.libreta.numero }}</span>{% else %}<span style="font-size:11px;color:var(--muted);">Por socio</span>{% endif %}</td>
+      <td class="amount-neg">${{ m.monto|floatformat:2 }}</td>
+      <td style="font-size:11px;color:var(--muted);">{{ m.fecha_generacion|date:"d/m/Y" }}</td>
+      <td><a href="{% url 'multa_pagar' m.pk %}" class="btn btn-success btn-sm"><i class="fas fa-check"></i></a></td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% endif %}
+</div>
+
+<!-- ===== RIFAS ===== -->
+<div class="card" style="margin-bottom:16px;">
+  <div class="card-header">
+    <h5><i class="fas fa-ticket" style="color:var(--accent);margin-right:7px;"></i>Rifas Mensuales</h5>
+    <a href="{% url 'rifas_list' %}" class="btn btn-outline btn-sm">Ver rifas</a>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);">
+    <div style="background:white;padding:16px;text-align:center;">
+      <div style="font-size:11px;color:var(--muted);">Rifas Realizadas</div>
+      <div style="font-size:22px;font-weight:800;">{{ rifas_total }}</div>
+    </div>
+    <div style="background:white;padding:16px;text-align:center;">
+      <div style="font-size:11px;color:var(--muted);">Rifas Ganadas (premio $50)</div>
+      <div style="font-size:22px;font-weight:800;color:var(--success);">{{ rifas_ganadas }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Exportaciones -->
+<div class="card">
+  <div class="card-header"><h5><i class="fas fa-file-excel" style="color:#217346;margin-right:7px;"></i>Exportar a Excel</h5></div>
+  <div class="card-body">
+    <p style="font-size:12px;color:var(--muted);margin-bottom:14px;">El reporte general exporta <strong>7 hojas</strong>: Socios, Libretas, Aportes, Créditos, Pagos, Multas, Ingresos/Egresos.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <a href="{% url 'exportar_general' %}" class="btn btn-success"><i class="fas fa-file-excel"></i> Exportar Todo (7 hojas)</a>
+      <a href="{% url 'exportar_socios' %}" class="btn btn-outline" style="border-color:#217346;color:#217346;"><i class="fas fa-users"></i> Solo Socios</a>
+      <a href="{% url 'exportar_creditos' %}" class="btn btn-outline" style="border-color:#217346;color:#217346;"><i class="fas fa-hand-holding-dollar"></i> Solo Créditos</a>
+      <a href="{% url 'exportar_multas' %}" class="btn btn-outline" style="border-color:#217346;color:#217346;"><i class="fas fa-exclamation-triangle"></i> Solo Multas</a>
+      <a href="{% url 'exportar_movimientos' %}" class="btn btn-outline" style="border-color:#217346;color:#217346;"><i class="fas fa-chart-line"></i> Solo Movimientos</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}{% if tipo == 'deposito' %}Depósito{% else %}Retiro{% endif %} - {{ cuenta.numero_cuenta }}{% endblock %}
+{% block page_title %}{% if tipo == 'deposito' %}Registrar Depósito{% else %}Registrar Retiro{% endif %}{% endblock %}
+{% block content %}
+<div style="max-width:520px;">
+  <div style="margin-bottom:16px;">
+    <a href="{% url 'cuenta_detalle' cuenta.pk %}" style="color:var(--text-muted);text-decoration:none;font-size:13px;"><i class="fas fa-arrow-left"></i> Volver a la Cuenta</a>
+  </div>
+
+  <div class="card" style="margin-bottom:16px;background:{% if tipo == 'deposito' %}rgba(0,137,123,0.05){% else %}rgba(198,40,40,0.05){% endif %};border-color:{% if tipo == 'deposito' %}rgba(0,137,123,0.25){% else %}rgba(198,40,40,0.25){% endif %};">
+    <div class="card-body" style="display:flex;align-items:center;gap:16px;">
+      <div style="width:52px;height:52px;border-radius:14px;background:{% if tipo == 'deposito' %}rgba(0,137,123,0.15){% else %}rgba(198,40,40,0.15){% endif %};display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">
+        {% if tipo == 'deposito' %}<i class="fas fa-arrow-down" style="color:var(--success);"></i>{% else %}<i class="fas fa-arrow-up" style="color:var(--danger);"></i>{% endif %}
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--text-muted);">{{ cuenta.socio.nombre_completo }} · <span class="mono">{{ cuenta.numero_cuenta }}</span></div>
+        <div style="font-size:22px;font-weight:800;color:var(--success);">Saldo: ${{ cuenta.saldo|floatformat:2 }}</div>
+        {% if tipo == 'retiro' %}<div style="font-size:12px;color:var(--text-muted);">Disponible para retiro: <strong>${{ cuenta.saldo|floatformat:2 }}</strong> (mínimo ${{ cuenta.saldo_minimo|floatformat:2 }})</div>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h5>
+        {% if tipo == 'deposito' %}
+        <i class="fas fa-arrow-down" style="color:var(--success);margin-right:8px;"></i>Datos del Depósito
+        {% else %}
+        <i class="fas fa-arrow-up" style="color:var(--danger);margin-right:8px;"></i>Datos del Retiro
+        {% endif %}
+      </h5>
+    </div>
+    <div class="card-body">
+      <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+          <label class="form-label">Monto ($) *</label>
+          <input type="number" name="monto" class="form-control" min="0.01" step="0.01" required
+            style="font-size:24px;font-weight:700;text-align:center;color:{% if tipo == 'deposito' %}var(--success){% else %}var(--danger){% endif %};"
+            placeholder="0.00" autofocus>
+          {% if tipo == 'retiro' %}
+          <div class="form-text">Máximo disponible: ${{ cuenta.saldo|floatformat:2 }}</div>
+          {% endif %}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Descripción / Concepto</label>
+          <input type="text" name="descripcion" class="form-control" placeholder="{% if tipo == 'deposito' %}Depósito en efectivo{% else %}Retiro en efectivo{% endif %}">
+        </div>
+        <div style="display:flex;gap:10px;margin-top:16px;">
+          <button type="submit" class="btn {% if tipo == 'deposito' %}btn-success{% else %}btn-danger{% endif %}" style="flex:1;justify-content:center;padding:12px;">
+            <i class="fas {% if tipo == 'deposito' %}fa-arrow-down{% else %}fa-arrow-up{% endif %}"></i>
+            {% if tipo == 'deposito' %}Confirmar Depósito{% else %}Confirmar Retiro{% endif %}
+          </button>
+          <a href="{% url 'cuenta_detalle' cuenta.pk %}" class="btn btn-outline">Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

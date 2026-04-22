@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block page_title %}{{ accion }} Socio{% endblock %}
+{% block content %}
+<div style="max-width:800px;">
+  <div style="margin-bottom:14px;"><a href="{% url 'socios_list' %}" style="color:var(--muted);text-decoration:none;font-size:13px;"><i class="fas fa-arrow-left"></i> Volver</a></div>
+  <div class="card"><div class="card-header"><h5><i class="fas fa-user" style="color:var(--primary);margin-right:7px;"></i>{{ accion }} Socio</h5></div>
+  <div class="card-body"><form method="post">{% csrf_token %}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+      <div class="form-group"><label class="form-label">Nombres *</label><input type="text" name="nombres" class="form-control" value="{{ socio.nombres|default:'' }}" required></div>
+      <div class="form-group"><label class="form-label">Apellidos *</label><input type="text" name="apellidos" class="form-control" value="{{ socio.apellidos|default:'' }}" required></div>
+      <div class="form-group"><label class="form-label">Cédula *</label><input type="text" name="cedula" class="form-control" value="{{ socio.cedula|default:'' }}" required maxlength="13"></div>
+      <div class="form-group"><label class="form-label">Fecha de Nacimiento *</label><input type="date" name="fecha_nacimiento" class="form-control" value="{{ socio.fecha_nacimiento|default:'' }}" required></div>
+      <div class="form-group"><label class="form-label">Género *</label>
+        <select name="genero" class="form-control form-select" required>
+          <option value="">Seleccionar...</option>
+          <option value="M" {% if socio.genero == 'M' %}selected{% endif %}>Masculino</option>
+          <option value="F" {% if socio.genero == 'F' %}selected{% endif %}>Femenino</option>
+          <option value="O" {% if socio.genero == 'O' %}selected{% endif %}>Otro</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Teléfono *</label><input type="tel" name="telefono" class="form-control" value="{{ socio.telefono|default:'' }}" required></div>
+      <div class="form-group"><label class="form-label">WhatsApp</label><input type="tel" name="whatsapp" class="form-control" value="{{ socio.whatsapp|default:'' }}"></div>
+      <div class="form-group"><label class="form-label">Email</label><input type="email" name="email" class="form-control" value="{{ socio.email|default:'' }}"></div>
+      <div class="form-group"><label class="form-label">Ciudad</label><input type="text" name="ciudad" class="form-control" value="{{ socio.ciudad|default:'Quito' }}"></div>
+      {% if socio %}<div class="form-group"><label class="form-label">Estado</label>
+        <select name="estado" class="form-control form-select">
+          <option value="activo" {% if socio.estado == 'activo' %}selected{% endif %}>Activo</option>
+          <option value="inactivo" {% if socio.estado == 'inactivo' %}selected{% endif %}>Inactivo</option>
+          <option value="suspendido" {% if socio.estado == 'suspendido' %}selected{% endif %}>Suspendido</option>
+        </select>
+      </div>{% endif %}
+    </div>
+    <div class="form-group"><label class="form-label">Dirección *</label><textarea name="direccion" class="form-control" rows="2" required>{{ socio.direccion|default:'' }}</textarea></div>
+    <div style="background:rgba(11,61,145,0.05);border-radius:10px;padding:14px;margin-bottom:14px;">
+      <div style="font-size:12px;font-weight:700;margin-bottom:10px;"><i class="fas fa-child" style="color:var(--warning);"></i> Menor de Edad / Representante</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <input type="checkbox" name="es_menor" id="es_menor" {% if socio.es_menor %}checked{% endif %}>
+        <label for="es_menor" style="font-size:13px;margin:0;">El socio es menor de edad</label>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group" style="margin:0;"><label class="form-label">Nombre del Representante</label><input type="text" name="representante_nombre" class="form-control" value="{{ socio.representante_nombre|default:'' }}"></div>
+        <div class="form-group" style="margin:0;"><label class="form-label">Cédula del Representante</label><input type="text" name="representante_cedula" class="form-control" value="{{ socio.representante_cedula|default:'' }}" maxlength="13"></div>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Recomendado por</label>
+      <select name="recomendado_por" class="form-control form-select">
+        <option value="">Ninguno / Sin recomendación</option>
+        {% for s in socios %}<option value="{{ s.pk }}" {% if socio.recomendado_por_id == s.pk %}selected{% endif %}>{{ s.nombre_completo }} - {{ s.cedula }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">Observaciones</label><textarea name="observaciones" class="form-control" rows="2">{{ socio.observaciones|default:'' }}</textarea></div>
+    <div style="display:flex;gap:10px;"><button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> {{ accion }} Socio</button><a href="{% url 'socios_list' %}" class="btn btn-outline">Cancelar</a></div>
+  </form></div></div>
+</div>{% endblock %}

@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block page_title %}Nueva Libreta{% endblock %}
+{% block content %}
+<div style="max-width:540px;">
+  <div style="margin-bottom:14px;"><a href="{% url 'libretas_list' %}" style="color:var(--muted);text-decoration:none;font-size:13px;"><i class="fas fa-arrow-left"></i> Volver</a></div>
+  <div class="card"><div class="card-header"><h5><i class="fas fa-book-medical" style="color:var(--success);margin-right:7px;"></i>Registrar Nueva Libreta</h5></div>
+  <div class="card-body">
+    <div class="alert alert-info"><i class="fas fa-info-circle"></i> Se asignará el siguiente número disponible automáticamente. El aporte mensual es de <strong>$22 ($20 ahorro + $1 lotería + $1 cumpleaños)</strong>.</div>
+    <form method="post">{% csrf_token %}
+      <div class="form-group"><label class="form-label">Socio *</label>
+        <select name="socio" class="form-control form-select" required>
+          <option value="">Seleccionar socio...</option>
+          {% for s in socios %}<option value="{{ s.pk }}" {% if request.GET.socio == s.pk|stringformat:"s" %}selected{% endif %}>{{ s.nombre_completo }} - {{ s.cedula }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Periodo *</label>
+        <select name="periodo" class="form-control form-select" required>
+          {% for p in periodos %}<option value="{{ p.pk }}">{{ p.anio }} (Activo)</option>{% endfor %}
+        </select>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:12px;background:rgba(0,137,123,0.06);border-radius:9px;margin-bottom:14px;">
+        <input type="checkbox" name="inscripcion_pagada" id="insc_pag" style="width:16px;height:16px;">
+        <label for="insc_pag" style="margin:0;font-size:13px;font-weight:600;">Inscripción pagada ($20)</label>
+      </div>
+      <div style="display:flex;gap:10px;"><button type="submit" class="btn btn-success"><i class="fas fa-book-medical"></i> Crear Libreta</button><a href="{% url 'libretas_list' %}" class="btn btn-outline">Cancelar</a></div>
+    </form>
+  </div></div>
+</div>{% endblock %}

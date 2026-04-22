@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block page_title %}Periodos Anuales{% endblock %}
+{% block topbar_actions %}<a href="{% url 'periodo_crear' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Nuevo Periodo</a>{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <h5><i class="fas fa-calendar-alt" style="color:var(--primary);margin-right:7px;"></i>Periodos Anuales de la Cooperativa</h5>
+  </div>
+  <div style="overflow-x:auto;"><table>
+    <thead><tr><th>Año</th><th>Fecha Inicio</th><th>Fecha Cierre</th><th>Estado</th><th>Libretas</th><th>Créditos</th><th>Multas</th></tr></thead>
+    <tbody>
+    {% for p in periodos %}
+    <tr>
+      <td><strong style="font-size:18px;">{{ p.anio }}</strong></td>
+      <td>{{ p.fecha_inicio|date:"d/m/Y" }}</td>
+      <td>{{ p.fecha_cierre|date:"d/m/Y" }}</td>
+      <td>{% if p.activo %}<span class="badge badge-success">✅ Activo</span>{% else %}<span class="badge badge-secondary">Cerrado</span>{% endif %}</td>
+      <td><span class="badge badge-primary">{{ p.libretas.count }}</span></td>
+      <td><span class="badge badge-warning">{{ p.creditos.count }}</span></td>
+      <td><span class="badge badge-danger">{{ p.multas.count }}</span></td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="7" style="text-align:center;padding:36px;color:var(--muted);">
+      <i class="fas fa-calendar-alt" style="font-size:28px;opacity:0.3;display:block;margin-bottom:8px;"></i>
+      Sin periodos registrados — crea el primero
+    </td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endblock %}

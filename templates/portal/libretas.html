@@ -1,0 +1,80 @@
+{% extends 'portal/base.html' %}
+{% block title %}Mis Libretas - Portal Bailarines{% endblock %}
+{% block content %}
+<div style="margin-bottom:16px;">
+  <a href="{% url 'portal_inicio' %}" style="color:var(--muted);text-decoration:none;font-size:12px;"><i class="fas fa-arrow-left"></i> Inicio</a>
+  <h1 style="font-size:18px;font-weight:800;margin-top:6px;">Mis Libretas y Aportes</h1>
+</div>
+{% if libretas %}
+<div class="account-tabs">
+  {% for lib in libretas %}
+  <a href="?libreta={{ lib.pk }}" class="account-tab {% if libreta_actual.pk == lib.pk %}active{% endif %}">#{{ lib.numero }} — {{ lib.periodo.anio }}</a>
+  {% endfor %}
+</div>
+{% endif %}
+{% if libreta_actual %}
+<div class="pcard" style="background:linear-gradient(135deg,#0B3D91,#1557C0);border:none;">
+  <div class="pcard-body" style="color:white;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;padding:20px;">
+    <div>
+      <div style="font-size:11px;opacity:0.65;">Libreta #{{ libreta_actual.numero }} · Periodo {{ libreta_actual.periodo.anio }}</div>
+      <div style="font-size:11px;opacity:0.55;margin-bottom:4px;">Saldo acumulado ($20 × aportes verificados)</div>
+      <div style="font-size:36px;font-weight:900;">${{ libreta_actual.saldo_ahorro|floatformat:2 }}</div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:10px;opacity:0.6;">Inscripción $20</div>
+      <div style="font-size:14px;font-weight:700;">{% if libreta_actual.inscripcion_pagada %}✅ Pagada{% else %}❌ Pendiente{% endif %}</div>
+      <div style="font-size:10px;opacity:0.6;margin-top:8px;">Estado libreta</div>
+      <div style="font-size:14px;font-weight:700;">{{ libreta_actual.get_estado_display }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="pcard">
+  <div class="pcard-header">
+    <h3><i class="fas fa-calendar-check" style="color:var(--success);"></i> Aportes Mensuales — $22/mes ($20 ahorro + $1 lotería + $1 cumpleaños)</h3>
+  </div>
+  <div style="overflow-x:auto;"><table>
+    <thead><tr><th>Mes</th><th>Total</th><th>Estado</th><th>Comprobante</th><th>Acción</th></tr></thead>
+    <tbody>
+    {% for a in aportes %}
+    <tr>
+      <td style="font-weight:600;">{{ a.get_mes_display }}</td>
+      <td><strong>${{ a.monto_total|floatformat:2 }}</strong><span style="font-size:10px;color:var(--muted);"> (${{ a.monto_ahorro }}+${{ a.monto_loteria }}+${{ a.monto_cumpleanos }})</span></td>
+      <td>
+        {% if a.estado == 'verificado' %}<span class="badge badge-success"><i class="fas fa-check"></i> Verificado por admin</span>
+        {% elif a.estado == 'reportado' %}<span class="badge badge-warning"><i class="fas fa-clock"></i> Reportado — En revisión</span>
+        {% elif a.estado == 'atrasado' %}<span class="badge badge-danger"><i class="fas fa-exclamation"></i> Atrasado</span>
+        {% else %}<span class="badge badge-secondary">Pendiente de pago</span>{% endif %}
+        {% if a.observacion and 'Rechazado' in a.observacion %}
+        <div style="margin-top:5px;padding:5px 8px;background:rgba(198,40,40,0.08);border-left:3px solid var(--danger);border-radius:4px;font-size:11px;color:var(--danger);">
+          <i class="fas fa-times-circle"></i> <strong>Rechazado:</strong> {{ a.observacion|slice:"11:" }}
+        </div>
+        {% endif %}
+      </td>
+      <td class="mono" style="font-size:11px;color:var(--muted);">{{ a.comprobante_referencia|default:"—" }}</td>
+      <td>
+        {% if a.estado == 'verificado' %}
+          <span style="color:var(--success);font-size:11px;"><i class="fas fa-check-double"></i> Listo</span>
+        {% elif a.estado == 'reportado' %}
+          <span style="color:var(--muted);font-size:11px;"><i class="fas fa-clock"></i> En revisión</span>
+        {% else %}
+          <a href="{% url 'portal_reportar_aporte' libreta_actual.pk a.mes %}" class="btn btn-success btn-sm">
+            <i class="fas fa-upload"></i> Reportar Pago
+          </a>
+        {% endif %}
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5" style="text-align:center;padding:20px;color:var(--muted);">Sin aportes</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  <div style="padding:12px 16px;background:rgba(11,61,145,0.04);border-top:1px solid var(--border);">
+    <div style="font-size:11px;color:var(--muted);"><i class="fas fa-info-circle" style="color:var(--primary);margin-right:5px;"></i>
+    Haga clic en <strong>"Reportar Pago"</strong> después de realizar su depósito/transferencia de $22 a la cuenta de la cooperativa. La administración verificará su comprobante.</div>
+  </div>
+</div>
+{% else %}
+<div class="pcard"><div class="pcard-body" style="text-align:center;padding:36px;"><i class="fas fa-book" style="font-size:36px;color:var(--border);display:block;margin-bottom:10px;"></i><p style="color:var(--muted);">No tiene libretas registradas</p></div></div>
+{% endif %}
+{% endblock %}

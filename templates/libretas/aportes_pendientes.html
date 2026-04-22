@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block page_title %}Verificar Aportes Reportados{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <h5><i class="fas fa-check-circle" style="color:var(--warning);margin-right:7px;"></i>Aportes Reportados por Socios — Pendientes de Verificación</h5>
+    <span style="font-size:12px;color:var(--warning);font-weight:700;">{{ aportes.count }} pendiente(s)</span>
+  </div>
+  <div style="overflow-x:auto;"><table>
+    <thead><tr><th>Libreta #</th><th>Socio</th><th>Mes/Año</th><th>Total</th><th>Comprobante Socio</th><th>Reportado</th><th>Acción</th></tr></thead>
+    <tbody>
+    {% for a in aportes %}
+    <tr style="background:rgba(242,169,0,0.04);">
+      <td><strong class="mono">#{{ a.libreta.numero }}</strong></td>
+      <td>{{ a.libreta.socio.nombre_completo }}</td>
+      <td style="font-weight:600;">{{ a.get_mes_display }} {{ a.anio }}</td>
+      <td><strong>${{ a.monto_total|floatformat:2 }}</strong></td>
+      <td class="mono" style="color:var(--muted);">{{ a.comprobante_referencia|default:"No indicó" }}</td>
+      <td style="font-size:11px;color:var(--muted);">{{ a.fecha_reporte|date:"d/m/Y H:i"|default:"—" }}</td>
+      <td style="white-space:nowrap;">
+        <a href="{% url 'aporte_accion' a.pk %}" class="btn btn-success btn-sm"><i class="fas fa-check"></i> Verificar</a>
+        <a href="{% url 'libreta_detalle' a.libreta.pk %}" class="btn btn-outline btn-sm"><i class="fas fa-eye"></i></a>
+      </td>
+    </tr>
+    {% empty %}<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted);">🎉 No hay aportes pendientes de verificación</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</div>{% endblock %}

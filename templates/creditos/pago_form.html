@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block page_title %}Registrar Pago{% endblock %}
+{% block content %}
+<div style="max-width:480px;">
+  <div style="margin-bottom:14px;"><a href="{% url 'credito_detalle' credito.pk %}" style="color:var(--muted);text-decoration:none;font-size:13px;"><i class="fas fa-arrow-left"></i> Volver</a></div>
+  <div class="card" style="margin-bottom:14px;background:rgba(0,137,123,0.05);border-color:rgba(0,137,123,0.2);">
+    <div class="card-body" style="display:flex;justify-content:space-between;align-items:center;padding:16px 18px;">
+      <div>
+        <div style="font-size:11px;color:var(--muted);">{{ credito.socio.nombre_completo }} — Lib. #{{ credito.libreta.numero }}</div>
+        <div style="font-size:11px;color:var(--muted);">{{ credito.get_tipo_display }} — {{ credito.plazo_meses }} mes(es)</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:3px;">Saldo pendiente:</div>
+        <div style="font-size:28px;font-weight:900;color:var(--warning);">${{ credito.saldo_pendiente|floatformat:2 }}</div>
+      </div>
+      <div style="text-align:right;">
+        {% if credito.tipo == 'mensualizado' %}
+        <div style="font-size:11px;color:var(--muted);">Cuota sugerida</div>
+        <div style="font-size:22px;font-weight:800;color:var(--primary);">${{ credito.cuota_mensual|floatformat:2 }}</div>
+        {% else %}
+        <div style="font-size:11px;color:var(--muted);">Pago único / abono</div>
+        <div style="font-size:22px;font-weight:800;color:var(--primary);">${{ credito.monto_pago_final|floatformat:2 }}</div>
+        {% endif %}
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">Vence: {{ credito.fecha_pago_limite|date:"d/m/Y"|default:"N/D" }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="card"><div class="card-header"><h5><i class="fas fa-dollar-sign" style="color:var(--success);margin-right:7px;"></i>Datos del Pago (Reportado por Socio)</h5></div>
+  <div class="card-body"><form method="post" enctype="multipart/form-data">{% csrf_token %}
+    <div class="form-group"><label class="form-label">Monto Pagado ($) *</label>
+      <input type="number" name="monto_pagado" class="form-control" min="0.01" step="0.01" value="{% if credito.tipo == 'mensualizado' %}{{ credito.cuota_mensual }}{% else %}{{ credito.saldo_pendiente }}{% endif %}" required style="font-size:22px;font-weight:700;text-align:center;color:var(--success);">
+    </div>
+    <div class="form-group"><label class="form-label">Comprobante / N° de Transferencia *</label>
+      <input type="text" name="comprobante_referencia" class="form-control" required placeholder="Número de transacción">
+    </div>
+    <div class="form-group"><label class="form-label">Adjuntar Comprobante</label>
+      <input type="file" name="comprobante_archivo" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.webp">
+    </div>
+    <div class="form-group"><label class="form-label">Observaciones</label><input type="text" name="observaciones" class="form-control"></div>
+    <div class="alert alert-warning"><i class="fas fa-clock"></i> El pago quedará como <strong>Reportado</strong> hasta que la administración lo verifique.</div>
+    <div style="display:flex;gap:10px;"><button type="submit" class="btn btn-success" style="flex:1;justify-content:center;padding:12px;"><i class="fas fa-check-circle"></i> Reportar Pago</button><a href="{% url 'credito_detalle' credito.pk %}" class="btn btn-outline">Cancelar</a></div>
+  </form></div></div>
+</div>{% endblock %}

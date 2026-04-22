@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block page_title %}{% if multa %}Editar{% else %}Agregar{% endif %} Multa de CrÃ©dito{% endblock %}
+{% block content %}
+<div style="margin-bottom:14px;">
+  <a href="{% url 'credito_detalle' credito.pk %}" style="color:var(--muted);text-decoration:none;font-size:13px;">
+    <i class="fas fa-arrow-left"></i> Volver al credito
+  </a>
+</div>
+
+<div class="card" style="max-width:680px;margin:0 auto;">
+  <div class="card-header">
+    <h5><i class="fas fa-pen-to-square" style="color:var(--warning);margin-right:7px;"></i>{% if multa %}Multa cuota #{{ multa.numero_cuota }}{% else %}Nueva multa{% endif %} - {{ credito.numero }}</h5>
+  </div>
+  <div class="card-body">
+    {% if mora_info and mora_info.cuotas_vencidas %}
+    <div class="alert alert-info">
+      <i class="fas fa-circle-info"></i>
+      El credito presenta {{ mora_info.cuotas_vencidas|length }} cuota(s) vencida(s) y {{ mora_info.dias_atraso }} dia(s) de atraso.
+    </div>
+    {% endif %}
+
+    <form method="post" style="display:grid;gap:14px;">
+      {% csrf_token %}
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div>
+          <label class="form-label">N de cuota</label>
+          <input type="number" min="1" name="numero_cuota" value="{% if multa %}{{ multa.numero_cuota }}{% else %}{{ numero_cuota_sugerida|default:1 }}{% endif %}" class="form-control" required>
+        </div>
+        <div>
+          <label class="form-label">Tipo de multa</label>
+          <select name="tipo" class="form-control form-select">
+            {% for value, label in tipos_multa %}
+            <option value="{{ value }}" {% if multa and multa.tipo == value %}selected{% elif not multa and value == 'primera' %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div>
+          <label class="form-label">Monto</label>
+          <input type="number" step="0.01" min="0" name="monto" value="{% if multa %}{{ multa.monto }}{% else %}10.00{% endif %}" class="form-control" required>
+        </div>
+        <div>
+          <label class="form-label">Estado</label>
+          <select name="pagada" class="form-control form-select">
+            <option value="0" {% if not multa or not multa.pagada %}selected{% endif %}>Pendiente</option>
+            <option value="1" {% if multa and multa.pagada %}selected{% endif %}>Pagada</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class="form-label">Observaciones</label>
+        <textarea name="observaciones" rows="3" class="form-control">{% if multa %}{{ multa.observaciones }}{% endif %}</textarea>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;">
+        <a href="{% url 'credito_detalle' credito.pk %}" class="btn btn-outline">Cancelar</a>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> {% if multa %}Guardar Cambios{% else %}Registrar Multa{% endif %}</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

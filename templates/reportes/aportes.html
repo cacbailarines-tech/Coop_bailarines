@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block page_title %}Reporte Aportes{% endblock %}
+{% block content %}
+<div style="margin-bottom:14px;"><a href="{% url 'reportes_index' %}" style="color:var(--muted);text-decoration:none;font-size:13px;"><i class="fas fa-arrow-left"></i> Volver</a></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px;">
+  <div class="stat-card stat-green"><div class="stat-icon"><i class="fas fa-check-circle"></i></div><div class="stat-value">{{ verificados }}</div><div class="stat-label">Aportes Verificados</div></div>
+  <div class="stat-card stat-red"><div class="stat-icon"><i class="fas fa-clock"></i></div><div class="stat-value">{{ pendientes }}</div><div class="stat-label">Aportes Pendientes/Atrasados</div></div>
+</div>
+<div class="card"><div class="card-header"><h5>Estado de Aportes Mensuales ($22/mes)</h5>
+  <form method="get" style="display:flex;gap:8px;">
+    <select name="periodo" class="form-control form-select" style="width:120px;">
+      <option value="">Todos</option>{% for p in periodos %}<option value="{{ p.pk }}" {% if periodo_id == p.pk|stringformat:"s" %}selected{% endif %}>{{ p.anio }}</option>{% endfor %}
+    </select>
+    <select name="mes" class="form-control form-select" style="width:130px;">
+      <option value="">Todos los meses</option>
+      <option value="1" {% if mes == '1' %}selected{% endif %}>Enero</option><option value="2" {% if mes == '2' %}selected{% endif %}>Febrero</option>
+      <option value="3" {% if mes == '3' %}selected{% endif %}>Marzo</option><option value="4" {% if mes == '4' %}selected{% endif %}>Abril</option>
+      <option value="5" {% if mes == '5' %}selected{% endif %}>Mayo</option><option value="6" {% if mes == '6' %}selected{% endif %}>Junio</option>
+      <option value="7" {% if mes == '7' %}selected{% endif %}>Julio</option><option value="8" {% if mes == '8' %}selected{% endif %}>Agosto</option>
+      <option value="9" {% if mes == '9' %}selected{% endif %}>Septiembre</option><option value="10" {% if mes == '10' %}selected{% endif %}>Octubre</option>
+      <option value="11" {% if mes == '11' %}selected{% endif %}>Noviembre</option><option value="12" {% if mes == '12' %}selected{% endif %}>Diciembre</option>
+    </select>
+    <button type="submit" class="btn btn-outline btn-sm"><i class="fas fa-filter"></i></button>
+  </form>
+</div>
+<div style="overflow-x:auto;"><table>
+  <thead><tr><th>Libreta #</th><th>Socio</th><th>Mes</th><th>Ahorro</th><th>Lotería</th><th>Cumple</th><th>Total</th><th>Estado</th><th>Comprobante</th></tr></thead>
+  <tbody>
+  {% for a in aportes %}
+  <tr>
+    <td><strong class="mono">#{{ a.libreta.numero }}</strong></td>
+    <td style="font-size:12px;">{{ a.libreta.socio.nombre_completo }}</td>
+    <td>{{ a.get_mes_display }}</td>
+    <td>${{ a.monto_ahorro|floatformat:2 }}</td>
+    <td>${{ a.monto_loteria|floatformat:2 }}</td>
+    <td>${{ a.monto_cumpleanos|floatformat:2 }}</td>
+    <td><strong>${{ a.monto_total|floatformat:2 }}</strong></td>
+    <td>
+      {% if a.estado == 'verificado' %}<span class="badge badge-success">Verificado</span>
+      {% elif a.estado == 'reportado' %}<span class="badge badge-warning">Reportado</span>
+      {% elif a.estado == 'atrasado' %}<span class="badge badge-danger">Atrasado</span>
+      {% else %}<span class="badge badge-secondary">Pendiente</span>{% endif %}
+    </td>
+    <td class="mono" style="font-size:11px;">{{ a.comprobante_referencia|default:"—" }}</td>
+  </tr>
+  {% empty %}<tr><td colspan="9" style="text-align:center;padding:28px;color:var(--muted);">Sin aportes</td></tr>{% endfor %}
+  </tbody>
+</table></div></div>{% endblock %}

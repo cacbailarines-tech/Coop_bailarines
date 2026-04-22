@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% block page_title %}{{ accion }} Movimiento{% endblock %}
+{% block content %}
+<div style="max-width:600px;">
+  <div style="margin-bottom:14px;"><a href="{% url 'movimientos_list' %}" style="color:var(--muted);text-decoration:none;font-size:13px;"><i class="fas fa-arrow-left"></i> Volver</a></div>
+  <div class="card">
+    <div class="card-header"><h5><i class="fas fa-arrow-right-arrow-left" style="color:var(--primary);margin-right:7px;"></i>{{ accion }} Movimiento de Tesorería</h5></div>
+    <div class="card-body">
+      <form method="post" enctype="multipart/form-data">{% csrf_token %}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="form-group">
+            <label class="form-label">Tipo *</label>
+            <select name="tipo" class="form-control form-select" required id="sel_tipo" onchange="actualizarCategorias()">
+              <option value="ingreso" {% if mov.tipo == 'ingreso' %}selected{% endif %}>📥 Ingreso</option>
+              <option value="egreso" {% if mov.tipo == 'egreso' %}selected{% endif %}>📤 Egreso</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Categoría *</label>
+            <select name="categoria" class="form-control form-select" required id="sel_categoria">
+              <optgroup label="--- Ingresos ---" id="grp_ingresos">
+                <option value="aporte_mensual" {% if mov.categoria == 'aporte_mensual' %}selected{% endif %}>Aporte Mensual Socio</option>
+                <option value="inscripcion" {% if mov.categoria == 'inscripcion' %}selected{% endif %}>Inscripción de Libreta</option>
+                <option value="interes_credito" {% if mov.categoria == 'interes_credito' %}selected{% endif %}>Interés de Crédito</option>
+                <option value="comision_banco" {% if mov.categoria == 'comision_banco' %}selected{% endif %}>Beneficio Comisión Bancaria</option>
+                <option value="multa" {% if mov.categoria == 'multa' %}selected{% endif %}>Multa</option>
+                <option value="rifa" {% if mov.categoria == 'rifa' %}selected{% endif %}>Rifa / Lotería</option>
+                <option value="otro_ingreso" {% if mov.categoria == 'otro_ingreso' %}selected{% endif %}>Otro Ingreso</option>
+              </optgroup>
+              <optgroup label="--- Egresos ---" id="grp_egresos">
+                <option value="desembolso_credito" {% if mov.categoria == 'desembolso_credito' %}selected{% endif %}>Desembolso de Crédito</option>
+                <option value="devolucion_ahorro" {% if mov.categoria == 'devolucion_ahorro' %}selected{% endif %}>Devolución de Ahorro</option>
+                <option value="premio_rifa" {% if mov.categoria == 'premio_rifa' %}selected{% endif %}>Premio Rifa</option>
+                <option value="cumpleanos" {% if mov.categoria == 'cumpleanos' %}selected{% endif %}>Regalo Cumpleaños</option>
+                <option value="gasto_operativo" {% if mov.categoria == 'gasto_operativo' %}selected{% endif %}>Gasto Operativo</option>
+                <option value="otro_egreso" {% if mov.categoria == 'otro_egreso' %}selected{% endif %}>Otro Egreso</option>
+              </optgroup>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Descripción *</label>
+          <input type="text" name="descripcion" class="form-control" required value="{{ mov.descripcion|default:'' }}" placeholder="Descripción del movimiento">
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="form-group">
+            <label class="form-label">Monto ($) *</label>
+            <input type="number" name="monto" class="form-control" min="0.01" step="0.01" required value="{{ mov.monto|default:'' }}" style="font-size:18px;font-weight:700;text-align:center;">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fecha *</label>
+            <div style="display:flex;gap:8px;margin-bottom:6px;">
+              <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;flex:1;justify-content:center;" id="lbl_hoy">
+                <input type="radio" name="fecha_tipo" value="hoy" {% if not mov %}checked{% endif %} onchange="toggleFecha(this)"> Hoy ({{ hoy|date:"d/m/Y" }})
+              </label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;flex:1;justify-content:center;" id="lbl_manual">
+                <input type="radio" name="fecha_tipo" value="manual" {% if mov %}checked{% endif %} onchange="toggleFecha(this)"> Seleccionar
+              </label>
+            </div>
+            <input type="date" name="fecha_manual" id="fecha_manual" class="form-control"
+              value="{{ mov.fecha|default:hoy }}"
+              {% if not mov %}style="display:none;"{% endif %}>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="form-group">
+            <label class="form-label">Comprobante / Referencia</label>
+            <input type="text" name="comprobante" class="form-control" value="{{ mov.comprobante|default:'' }}" placeholder="N° de transacción">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Adjuntar Comprobante</label>
+            <input type="file" name="comprobante_archivo" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.webp">
+            {% if mov.comprobante_archivo %}<div class="form-text"><a href="{{ mov.comprobante_archivo.url }}" target="_blank">Ver archivo actual</a></div>{% endif %}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Socio Relacionado</label>
+            <input type="text" name="socio_ref" class="form-control" value="{{ mov.socio_ref|default:'' }}" placeholder="Nombre del socio">
+          </div>
+          <div class="form-group">
+            <label class="form-label">N° Libreta</label>
+            <input type="text" name="libreta_ref" class="form-control" value="{{ mov.libreta_ref|default:'' }}" placeholder="Ej: #42">
+          </div>
+          <div class="form-group">
+            <label class="form-label">N° Crédito</label>
+            <input type="text" name="credito_ref" class="form-control" value="{{ mov.credito_ref|default:'' }}" placeholder="Ej: CRD-2026-05">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Observaciones</label>
+          <textarea name="observaciones" class="form-control" rows="2">{{ mov.observaciones|default:'' }}</textarea>
+        </div>
+
+        <div style="display:flex;gap:10px;">
+          <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> {{ accion }} Movimiento</button>
+          <a href="{% url 'movimientos_list' %}" class="btn btn-outline">Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+function toggleFecha(radio) {
+  const fd = document.getElementById('fecha_manual');
+  fd.style.display = (radio.value === 'manual') ? 'block' : 'none';
+  if (radio.value === 'hoy') fd.removeAttribute('required');
+  else fd.setAttribute('required','required');
+}
+// Init
+document.addEventListener('DOMContentLoaded', () => {
+  const sel = document.querySelector('input[name="fecha_tipo"]:checked');
+  if (sel) toggleFecha(sel);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block page_title %}Reportes{% endblock %}
+{% block content %}
+
+<!-- Reporte General destacado -->
+<a href="{% url 'reporte_general' %}" style="text-decoration:none;display:block;margin-bottom:20px;">
+  <div style="background:linear-gradient(135deg,#0B3D91,#1557C0);border-radius:16px;padding:24px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 20px rgba(11,61,145,0.3);" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+    <div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.6);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Reporte Completo</div>
+      <div style="font-size:22px;font-weight:900;color:white;margin-bottom:4px;"><i class="fas fa-chart-pie" style="margin-right:10px;"></i>Reporte General del Sistema</div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.7);">Todos los datos: socios, libretas, aportes, créditos, multas, ingresos/egresos y rifas</div>
+    </div>
+    <div style="text-align:right;flex-shrink:0;">
+      <div style="background:rgba(255,255,255,0.15);border-radius:12px;padding:12px 20px;">
+        <div style="font-size:11px;color:rgba(255,255,255,0.6);">Exporta</div>
+        <div style="font-size:16px;font-weight:800;color:white;">7 hojas Excel</div>
+      </div>
+    </div>
+  </div>
+</a>
+
+<!-- Reportes individuales -->
+<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;">Reportes Específicos</div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;">
+
+  <a href="{% url 'reporte_cartera' %}" style="text-decoration:none;">
+    <div class="card" style="padding:20px;text-align:center;border:2px solid var(--border);transition:all 0.2s;" onmouseover="this.style.borderColor='#0B3D91';this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='var(--border)';this.style.transform='none'">
+      <i class="fas fa-chart-bar" style="font-size:24px;color:#0B3D91;display:block;margin-bottom:8px;"></i>
+      <div style="font-size:13px;font-weight:800;">Cartera de Créditos</div>
+      <div style="font-size:11px;color:var(--muted);">Estado de todos los créditos</div>
+    </div>
+  </a>
+
+  <a href="{% url 'reporte_morosidad' %}" style="text-decoration:none;">
+    <div class="card" style="padding:20px;text-align:center;border:2px solid var(--border);transition:all 0.2s;" onmouseover="this.style.borderColor='#C62828';this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='var(--border)';this.style.transform='none'">
+      <i class="fas fa-triangle-exclamation" style="font-size:24px;color:#C62828;display:block;margin-bottom:8px;"></i>
+      <div style="font-size:13px;font-weight:800;">Morosidad</div>
+      <div style="font-size:11px;color:var(--muted);">Créditos en mora</div>
+    </div>
+  </a>
+
+  <a href="{% url 'reporte_ahorros' %}" style="text-decoration:none;">
+    <div class="card" style="padding:20px;text-align:center;border:2px solid var(--border);transition:all 0.2s;" onmouseover="this.style.borderColor='#00897B';this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='var(--border)';this.style.transform='none'">
+      <i class="fas fa-book" style="font-size:24px;color:#00897B;display:block;margin-bottom:8px;"></i>
+      <div style="font-size:13px;font-weight:800;">Ahorros por Libreta</div>
+      <div style="font-size:11px;color:var(--muted);">Saldos acumulados</div>
+    </div>
+  </a>
+
+  <a href="{% url 'reporte_aportes' %}" style="text-decoration:none;">
+    <div class="card" style="padding:20px;text-align:center;border:2px solid var(--border);transition:all 0.2s;" onmouseover="this.style.borderColor='#00897B';this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='var(--border)';this.style.transform='none'">
+      <i class="fas fa-calendar-check" style="font-size:24px;color:#00897B;display:block;margin-bottom:8px;"></i>
+      <div style="font-size:13px;font-weight:800;">Aportes Mensuales</div>
+      <div style="font-size:11px;color:var(--muted);">Estado de pagos $22/mes</div>
+    </div>
+  </a>
+
+  <a href="{% url 'reporte_multas' %}" style="text-decoration:none;">
+    <div class="card" style="padding:20px;text-align:center;border:2px solid var(--border);transition:all 0.2s;" onmouseover="this.style.borderColor='#F57F17';this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='var(--border)';this.style.transform='none'">
+      <i class="fas fa-exclamation-triangle" style="font-size:24px;color:#F57F17;display:block;margin-bottom:8px;"></i>
+      <div style="font-size:13px;font-weight:800;">Multas Pendientes</div>
+      <div style="font-size:11px;color:var(--muted);">Por cobrar a socios</div>
+    </div>
+  </a>
+
+  <a href="{% url 'reporte_movimientos' %}" style="text-decoration:none;">
+    <div class="card" style="padding:20px;text-align:center;border:2px solid var(--border);transition:all 0.2s;" onmouseover="this.style.borderColor='#1A5276';this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='var(--border)';this.style.transform='none'">
+      <i class="fas fa-chart-line" style="font-size:24px;color:#1A5276;display:block;margin-bottom:8px;"></i>
+      <div style="font-size:13px;font-weight:800;">Ingresos y Egresos</div>
+      <div style="font-size:11px;color:var(--muted);">Todos los movimientos</div>
+    </div>
+  </a>
+</div>
+
+<!-- Exportaciones rápidas -->
+<div class="card">
+  <div class="card-header"><h5><i class="fas fa-file-excel" style="color:#217346;margin-right:7px;"></i>Exportación Rápida a Excel</h5></div>
+  <div class="card-body">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <a href="{% url 'exportar_general' %}" class="btn btn-success"><i class="fas fa-file-excel"></i> Todo (7 hojas)</a>
+      <a href="{% url 'exportar_socios' %}" class="btn btn-outline" style="border-color:#217346;color:#217346;"><i class="fas fa-users"></i> Socios</a>
+      <a href="{% url 'exportar_creditos' %}" class="btn btn-outline" style="border-color:#217346;color:#217346;"><i class="fas fa-hand-holding-dollar"></i> Créditos</a>
+      <a href="{% url 'exportar_multas' %}" class="btn btn-outline" style="border-color:#217346;color:#217346;"><i class="fas fa-exclamation-triangle"></i> Multas</a>
+      <a href="{% url 'exportar_movimientos' %}" class="btn btn-outline" style="border-color:#217346;color:#217346;"><i class="fas fa-chart-line"></i> Movimientos</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

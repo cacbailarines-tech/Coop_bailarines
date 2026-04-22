@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block title %}Acceso al Portal - {{ socio.nombre_completo }}{% endblock %}
+{% block page_title %}Configurar Acceso al Portal{% endblock %}
+{% block content %}
+<div style="max-width:480px;">
+  <div style="margin-bottom:16px;">
+    <a href="{% url 'socio_detalle' socio.pk %}" style="color:var(--text-muted);text-decoration:none;font-size:13px;"><i class="fas fa-arrow-left"></i> Volver al Socio</a>
+  </div>
+
+  <div class="card" style="margin-bottom:16px;background:rgba(11,61,145,0.04);border-color:rgba(11,61,145,0.2);">
+    <div class="card-body" style="display:flex;align-items:center;gap:14px;padding:18px 20px;">
+      <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary-light));display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:white;flex-shrink:0;">
+        {{ socio.nombres|first }}{{ socio.apellidos|first }}
+      </div>
+      <div>
+        <div style="font-size:16px;font-weight:800;">{{ socio.nombre_completo }}</div>
+        <div style="font-size:12px;color:var(--text-muted);">Cédula: {{ socio.cedula }} · {{ socio.numero_socio }}</div>
+        {% if has_access %}
+        <span class="badge badge-success" style="margin-top:4px;"><i class="fas fa-circle-check"></i> Ya tiene acceso al portal</span>
+        {% else %}
+        <span class="badge badge-secondary" style="margin-top:4px;"><i class="fas fa-circle-xmark"></i> Sin acceso al portal</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h5><i class="fas fa-key" style="color:var(--accent);margin-right:8px;"></i>
+        {% if has_access %}Actualizar PIN de Acceso{% else %}Crear Acceso al Portal{% endif %}
+      </h5>
+    </div>
+    <div class="card-body">
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:20px;">
+        El socio usará su <strong>número de cédula</strong> y este PIN para ingresar al portal en
+        <strong>http://localhost:8000/portal/</strong>
+      </p>
+      <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+          <label class="form-label">Nuevo PIN (mínimo 4 dígitos) *</label>
+          <input type="password" name="pin" class="form-control" minlength="4" maxlength="10"
+            placeholder="Ej: 1234" required
+            style="font-size:20px;letter-spacing:6px;text-align:center;">
+          <div class="form-text">El socio deberá cambiarlo cuando ingrese por primera vez (recomendado)</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirmar PIN *</label>
+          <input type="password" name="confirmar" class="form-control" minlength="4" maxlength="10"
+            placeholder="Repita el PIN" required
+            style="font-size:20px;letter-spacing:6px;text-align:center;">
+        </div>
+        <div style="background:rgba(242,169,0,0.1);border:1.5px solid rgba(242,169,0,0.3);border-radius:10px;padding:12px 16px;margin-bottom:20px;">
+          <div style="font-size:12px;font-weight:700;color:#8B6914;margin-bottom:4px;"><i class="fas fa-triangle-exclamation"></i> Importante</div>
+          <div style="font-size:12px;color:#8B6914;">Comunique este PIN al socio de forma segura (en persona o por mensaje privado). No lo envíe por medios inseguros.</div>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button type="submit" class="btn btn-primary"><i class="fas fa-key"></i>
+            {% if has_access %}Actualizar PIN{% else %}Crear Acceso{% endif %}
+          </button>
+          <a href="{% url 'socio_detalle' socio.pk %}" class="btn btn-outline">Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px;">
+    <div class="card-body" style="padding:16px 20px;">
+      <div style="font-size:12px;font-weight:700;margin-bottom:8px;"><i class="fas fa-globe" style="color:var(--primary);"></i> URL del Portal para el Socio</div>
+      <div style="background:var(--bg);border-radius:8px;padding:10px 14px;font-family:'DM Mono',monospace;font-size:13px;color:var(--primary);">
+        http://localhost:8000/portal/
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

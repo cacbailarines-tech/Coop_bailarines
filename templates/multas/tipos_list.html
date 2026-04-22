@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block page_title %}Tipos de Multa{% endblock %}
+{% block topbar_actions %}<a href="{% url 'tipo_multa_crear' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Nuevo Tipo</a>{% endblock %}
+{% block content %}
+<div class="card"><div class="card-header"><h5><i class="fas fa-list" style="color:var(--warning);margin-right:7px;"></i>Tipos de Multa Configurados</h5></div>
+<div style="overflow-x:auto;"><table>
+  <thead><tr><th>Nombre</th><th>Monto</th><th>Aplica a</th><th>Activo</th><th>Descripción</th></tr></thead>
+  <tbody>
+  {% for t in tipos %}
+  <tr>
+    <td style="font-weight:600;">{{ t.nombre }}</td>
+    <td class="amount-neg">${{ t.monto|floatformat:2 }}</td>
+    <td><span class="badge {% if t.aplica_a == 'socio' %}badge-primary{% else %}badge-warning{% endif %}">{{ t.get_aplica_a_display }}</span></td>
+    <td>{% if t.activo %}<span class="badge badge-success">Sí</span>{% else %}<span class="badge badge-secondary">No</span>{% endif %}</td>
+    <td style="font-size:12px;color:var(--muted);">{{ t.descripcion|default:"—" }}</td>
+  </tr>
+  {% empty %}<tr><td colspan="5" style="text-align:center;padding:28px;color:var(--muted);">Sin tipos configurados</td></tr>{% endfor %}
+  </tbody>
+</table></div></div>{% endblock %}

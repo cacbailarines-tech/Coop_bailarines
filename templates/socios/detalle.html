@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% block page_title %}Socio: {{ socio.nombre_completo }}{% endblock %}
+{% block topbar_actions %}<a href="{% url 'socio_editar' socio.pk %}" class="btn btn-primary"><i class="fas fa-pen"></i> Editar</a>{% endblock %}
+{% block content %}
+<div style="margin-bottom:14px;"><a href="{% url 'socios_list' %}" style="color:var(--muted);text-decoration:none;font-size:13px;"><i class="fas fa-arrow-left"></i> Volver a Socios</a></div>
+<div style="display:grid;grid-template-columns:280px 1fr;gap:16px;align-items:start;">
+  <div>
+    <div class="card" style="margin-bottom:12px;">
+      <div class="card-body" style="text-align:center;padding:24px 18px;">
+        <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary-light));display:inline-flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:white;margin-bottom:12px;">{{ socio.nombres|first }}{{ socio.apellidos|first }}</div>
+        <h2 style="font-size:16px;font-weight:800;margin-bottom:3px;">{{ socio.nombre_completo }}</h2>
+        {% if socio.es_menor %}<div style="font-size:11px;color:var(--warning);margin-bottom:6px;">Representante: {{ socio.representante_nombre }}</div>{% endif %}
+        <span class="badge {% if socio.estado == 'activo' %}badge-success{% else %}badge-secondary{% endif %}">{{ socio.get_estado_display }}</span>
+      </div>
+      <div style="border-top:1px solid var(--border);">
+        {% for label, val in datos_socio %}
+        <div style="padding:9px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;">
+          <span style="font-size:11px;color:var(--muted);">{{ label }}</span>
+          <span style="font-size:12px;font-weight:600;">{{ val }}</span>
+        </div>
+        {% endfor %}
+        <div style="padding:9px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;">
+          <span style="font-size:11px;color:var(--muted);">Cédula</span><span style="font-size:12px;font-weight:600;">{{ socio.cedula }}</span>
+        </div>
+        <div style="padding:9px 16px;display:flex;justify-content:space-between;">
+          <span style="font-size:11px;color:var(--muted);">Teléfono</span><span style="font-size:12px;font-weight:600;">{{ socio.telefono }}</span>
+        </div>
+      </div>
+    </div>
+    {% if total_multas > 0 %}
+    <div style="background:rgba(198,40,40,0.08);border:1.5px solid rgba(198,40,40,0.3);border-radius:10px;padding:12px 14px;margin-bottom:12px;">
+      <div style="font-size:12px;font-weight:700;color:var(--danger);"><i class="fas fa-exclamation-triangle"></i> Multas Pendientes</div>
+      <div style="font-size:20px;font-weight:800;color:var(--danger);">${{ total_multas|floatformat:2 }}</div>
+    </div>
+    {% endif %}
+    <div style="display:grid;gap:8px;">
+      <a href="{% url 'libreta_crear' %}?socio={{ socio.pk }}" class="btn btn-success" style="justify-content:center;"><i class="fas fa-book-medical"></i> Nueva Libreta</a>
+      <a href="{% url 'credito_crear' %}?socio={{ socio.pk }}" class="btn btn-warning" style="justify-content:center;"><i class="fas fa-hand-holding-dollar"></i> Solicitar Crédito</a>
+      <a href="{% url 'socio_crear_acceso' socio.pk %}" class="btn btn-primary" style="justify-content:center;"><i class="fas fa-key"></i> {% if socio.acceso %}Actualizar PIN Portal{% else %}Dar Acceso Portal{% endif %}</a>
+    </div>
+  </div>
+  <div>
+    <div class="card" style="margin-bottom:14px;">
+      <div class="card-header"><h5><i class="fas fa-book" style="color:var(--success);margin-right:7px;"></i>Libretas ({{ libretas.count }})</h5></div>
+      <div style="overflow-x:auto;"><table>
+        <thead><tr><th>#</th><th>Periodo</th><th>Estado</th><th>Saldo Ahorro</th><th>Aportes OK</th><th>Crédito Activo</th><th>Acciones</th></tr></thead>
+        <tbody>
+        {% for lib in libretas %}
+        <tr>
+          <td><strong class="mono">#{{ lib.numero }}</strong></td>
+          <td>{{ lib.periodo.anio }}</td>
+          <td><span class="badge {% if lib.estado == 'activa' %}badge-success{% else %}badge-secondary{% endif %}">{{ lib.get_estado_display }}</span></td>
+          <td class="amount-pos">${{ lib.saldo_ahorro|floatformat:2 }}</td>
+          <td>{{ lib.aportes.filter.count }}<span style="color:var(--muted);">/12</span></td>
+          <td>{% if lib.tiene_credito_activo %}<span class="badge badge-warning">Sí</span>{% else %}<span class="badge badge-secondary">No</span>{% endif %}</td>
+          <td><a href="{% url 'libreta_detalle' lib.pk %}" class="btn btn-outline btn-sm"><i class="fas fa-eye"></i></a></td>
+        </tr>
+        {% empty %}<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted);">Sin libretas</td></tr>{% endfor %}
+        </tbody>
+      </table></div>
+    </div>
+    <div class="card" style="margin-bottom:14px;">
+      <div class="card-header"><h5><i class="fas fa-hand-holding-dollar" style="color:var(--warning);margin-right:7px;"></i>Créditos Activos</h5></div>
+      <div style="overflow-x:auto;"><table>
+        <thead><tr><th>Crédito</th><th>Libreta</th><th>Tipo</th><th>Monto</th><th>Saldo</th><th>Estado</th><th></th></tr></thead>
+        <tbody>
+        {% for c in creditos_activos %}
+        <tr>
+          <td class="mono"><a href="{% url 'credito_detalle' c.pk %}" style="color:var(--primary);text-decoration:none;">{{ c.numero }}</a></td>
+          <td>#{{ c.libreta.numero }}</td>
+          <td>{{ c.get_tipo_display }}</td>
+          <td>${{ c.monto_solicitado|floatformat:2 }}</td>
+          <td class="amount-neg">${{ c.saldo_pendiente|floatformat:2 }}</td>
+          <td><span class="badge {% if 'mora' in c.estado %}badge-danger{% else %}badge-primary{% endif %}">{{ c.get_estado_display }}</span></td>
+          <td><a href="{% url 'registrar_pago' c.pk %}" class="btn btn-success btn-sm"><i class="fas fa-dollar-sign"></i></a></td>
+        </tr>
+        {% empty %}<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted);">Sin créditos activos</td></tr>{% endfor %}
+        </tbody>
+      </table></div>
+    </div>
+    {% if multas_pendientes %}
+    <div class="card">
+      <div class="card-header"><h5><i class="fas fa-exclamation-triangle" style="color:var(--danger);margin-right:7px;"></i>Multas Pendientes</h5></div>
+      <div style="overflow-x:auto;"><table>
+        <thead><tr><th>Descripción</th><th>Libreta</th><th>Monto</th><th>Fecha</th><th></th></tr></thead>
+        <tbody>
+        {% for m in multas_pendientes %}
+        <tr>
+          <td>{{ m.descripcion }}</td>
+          <td>{% if m.libreta %}#{{ m.libreta.numero }}{% else %}<span style="color:var(--muted);">Por socio</span>{% endif %}</td>
+          <td class="amount-neg">${{ m.monto|floatformat:2 }}</td>
+          <td style="font-size:11px;color:var(--muted);">{{ m.fecha_generacion|date:"d/m/Y" }}</td>
+          <td><a href="{% url 'multa_pagar' m.pk %}" class="btn btn-success btn-sm">Pagar</a></td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+    </div>{% endif %}
+  </div>
+</div>{% endblock %}

@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block page_title %}Reporte Morosidad{% endblock %}
+{% block content %}
+<div style="margin-bottom:14px;"><a href="{% url 'reportes_index' %}" style="color:var(--muted);text-decoration:none;font-size:13px;"><i class="fas fa-arrow-left"></i> Volver</a></div>
+{% if creditos %}<div class="alert alert-danger"><i class="fas fa-triangle-exclamation"></i> <strong>{{ creditos.count }} crédito(s) en mora</strong> — Saldo total: <strong>${{ total|floatformat:2 }}</strong></div>
+{% else %}<div class="alert alert-success"><i class="fas fa-circle-check"></i> ¡Sin mora actualmente!</div>{% endif %}
+<div class="card"><div class="card-header"><h5>Créditos en Mora</h5></div>
+<div style="overflow-x:auto;"><table>
+  <thead><tr><th>Crédito</th><th>Socio</th><th>Teléfono</th><th>Libreta</th><th>Tipo Mora</th><th>Saldo</th><th>Cuota</th><th></th></tr></thead>
+  <tbody>
+  {% for c in creditos %}
+  <tr style="background:rgba(198,40,40,0.03);">
+    <td class="mono"><a href="{% url 'credito_detalle' c.pk %}" style="color:var(--primary);text-decoration:none;">{{ c.numero }}</a></td>
+    <td style="font-weight:600;">{{ c.socio.nombre_completo }}</td>
+    <td style="font-size:12px;">{{ c.socio.telefono }}</td>
+    <td>#{{ c.libreta.numero }}</td>
+    <td><span class="badge badge-danger">{{ c.get_estado_display }}</span></td>
+    <td class="amount-neg"><strong>${{ c.saldo_pendiente|floatformat:2 }}</strong></td>
+    <td>${{ c.cuota_mensual|floatformat:2 }}</td>
+    <td><a href="{% url 'registrar_pago' c.pk %}" class="btn btn-success btn-sm"><i class="fas fa-dollar-sign"></i> Pago</a></td>
+  </tr>
+  {% empty %}<tr><td colspan="8" style="text-align:center;padding:28px;color:var(--muted);">Sin mora</td></tr>{% endfor %}
+  </tbody>
+</table></div></div>{% endblock %}

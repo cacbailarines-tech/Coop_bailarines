@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block page_title %}Gestionar Crédito{% endblock %}
+{% block content %}
+<div style="max-width:540px;">
+  <div style="margin-bottom:14px;"><a href="{% url 'credito_detalle' credito.pk %}" style="color:var(--muted);text-decoration:none;font-size:13px;"><i class="fas fa-arrow-left"></i> Volver</a></div>
+  <div class="card" style="margin-bottom:14px;">
+    <div class="card-body" style="padding:18px;">
+      <div class="mono" style="font-size:11px;color:var(--muted);">{{ credito.numero }}</div>
+      <div style="font-size:16px;font-weight:800;">{{ credito.socio.nombre_completo }}</div>
+      <div style="font-size:12px;color:var(--muted);">Libreta #{{ credito.libreta.numero }} — {{ credito.get_tipo_display }} — {{ credito.plazo_meses }} mes(es)</div>
+      <div style="margin-top:12px;background:var(--bg);border-radius:9px;padding:12px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center;">
+        <div><div style="font-size:10px;color:var(--muted);">Monto</div><div style="font-weight:800;color:var(--text);font-size:16px;">${{ credito.monto_solicitado|floatformat:2 }}</div></div>
+        <div><div style="font-size:10px;color:var(--muted);">Interés Total</div><div style="font-weight:800;color:var(--warning);font-size:16px;">${{ credito.interes_total|floatformat:2 }}</div></div>
+        <div><div style="font-size:10px;color:var(--muted);">Transfiere</div><div style="font-weight:800;color:var(--success);font-size:16px;">${{ credito.monto_transferir|floatformat:2 }}</div></div>
+      </div>
+      {% if credito.tipo == 'mensualizado' %}
+      <div style="text-align:center;margin-top:10px;padding:10px;background:rgba(11,61,145,0.06);border-radius:9px;">
+        <div style="font-size:10px;color:var(--muted);">Cuota mensual</div>
+        <div style="font-size:22px;font-weight:900;color:var(--primary);">${{ credito.cuota_mensual|floatformat:2 }}</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h5><i class="fas fa-gavel" style="color:var(--primary);margin-right:7px;"></i>Estado actual: <span style="color:var(--primary);">{{ credito.get_estado_display }}</span></h5></div>
+    <div class="card-body">
+      <form method="post" enctype="multipart/form-data">{% csrf_token %}
+        {% if credito.estado == 'pendiente' %}
+        <div class="alert alert-info"><i class="fas fa-info-circle"></i> Revise los datos del solicitante antes de aprobar o rechazar.</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <button name="accion" value="aprobar" class="btn btn-primary" style="justify-content:center;padding:13px;font-size:14px;"><i class="fas fa-check-circle"></i> Aprobar Crédito</button>
+          <div>
+            <input type="text" name="motivo" class="form-control" placeholder="Motivo de rechazo (si aplica)" style="margin-bottom:8px;">
+            <button name="accion" value="cancelar" class="btn btn-danger" style="width:100%;justify-content:center;padding:12px;"><i class="fas fa-times-circle"></i> Rechazar Solicitud</button>
+          </div>
+        </div>
+
+        {% elif credito.estado == 'aprobado' %}
+        <div class="alert alert-success"><i class="fas fa-check-circle"></i> Crédito aprobado por {{ credito.aprobado_por.get_full_name|default:credito.aprobado_por.username }} el {{ credito.fecha_aprobacion|date:"d/m/Y" }}.</div>
+        <div class="form-group">
+          <label class="form-label">Fecha de Desembolso *</label>
+          <input type="date" name="fecha_desembolso" class="form-control" value="{{ hoy }}" required
+            style="font-size:16px;font-weight:600;text-align:center;">
+          <div class="form-text">Ingrese la fecha en que realizó la transferencia al socio</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Adjuntar foto o comprobante del desembolso</label>
+          <input type="file" name="comprobante_desembolso" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.webp">
+          <div class="form-text">Puede subir una imagen, foto o PDF de respaldo del crédito entregado.</div>
+        </div>
+        <div style="background:rgba(0,137,123,0.06);border:1.5px solid rgba(0,137,123,0.25);border-radius:10px;padding:14px;margin-bottom:14px;">
+          <div style="font-size:12px;font-weight:700;color:var(--success);margin-bottom:6px;"><i class="fas fa-money-bill-wave"></i> Al confirmar el desembolso:</div>
+          <div style="font-size:12px;color:var(--text);">
+            • Se registrará que se transfirieron <strong>${{ credito.monto_transferir|floatformat:2 }}</strong> a la cuenta <strong>{{ credito.numero_cuenta_bancaria }}</strong><br>
+            • Se calculará automáticamente la fecha de vencimiento<br>
+            {% if credito.tipo == 'mensualizado' %}• Las cuotas mensuales de <strong>${{ credito.cuota_mensual|floatformat:2 }}</strong> serán visibles al socio{% endif %}
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <button name="accion" value="desembolsar" class="btn btn-success" style="justify-content:center;padding:13px;font-size:14px;"><i class="fas fa-money-bill-wave"></i> Confirmar Desembolso — ${{ credito.monto_transferir|floatformat:2 }} transferidos</button>
+          <button name="accion" value="cancelar" class="btn btn-danger" style="justify-content:center;padding:12px;"><i class="fas fa-times-circle"></i> Cancelar Crédito</button>
+        </div>
+
+        {% else %}
+        <div class="alert alert-info"><i class="fas fa-info-circle"></i> No hay acciones disponibles para el estado "{{ credito.get_estado_display }}".</div>
+        {% endif %}
+        <a href="{% url 'credito_detalle' credito.pk %}" class="btn btn-outline" style="width:100%;justify-content:center;margin-top:10px;">Volver sin cambios</a>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

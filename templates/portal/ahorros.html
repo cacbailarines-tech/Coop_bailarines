@@ -1,0 +1,89 @@
+{% extends 'portal/base.html' %}
+{% block title %}Mis Ahorros - Portal Bailarines{% endblock %}
+{% block content %}
+
+<div style="margin-bottom:20px;">
+  <a href="{% url 'portal_inicio' %}" style="color:var(--muted);text-decoration:none;font-size:13px;"><i class="fas fa-arrow-left"></i> Volver al inicio</a>
+  <h1 style="font-size:20px;font-weight:800;margin-top:8px;">Mis Cuentas de Ahorro</h1>
+</div>
+
+<!-- Selector de cuenta -->
+{% if cuentas %}
+<div class="account-tabs">
+  {% for c in cuentas %}
+  <a href="?cuenta={{ c.pk }}" class="account-tab {% if cuenta_actual.pk == c.pk %}active{% endif %}">
+    <i class="fas fa-piggy-bank"></i>
+    {{ c.numero_cuenta }} — ${{ c.saldo|floatformat:2 }}
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if cuenta_actual %}
+<!-- Saldo destacado -->
+<div class="pcard" style="background:linear-gradient(135deg,#0B3D91,#1557C0);border:none;margin-bottom:20px;">
+  <div class="pcard-body" style="padding:28px;color:white;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
+    <div>
+      <div style="font-size:12px;opacity:0.7;margin-bottom:6px;">Saldo disponible</div>
+      <div style="font-size:40px;font-weight:800;line-height:1;">${{ cuenta_actual.saldo|floatformat:2 }}</div>
+      <div style="font-size:12px;opacity:0.6;margin-top:6px;">Cuenta {{ cuenta_actual.get_tipo_display }} · <span class="mono">{{ cuenta_actual.numero_cuenta }}</span></div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:11px;opacity:0.6;margin-bottom:4px;">Saldo mínimo</div>
+      <div style="font-size:18px;font-weight:700;">${{ cuenta_actual.saldo_minimo|floatformat:2 }}</div>
+      <div style="font-size:11px;opacity:0.6;margin-top:8px;">Tasa interés anual</div>
+      <div style="font-size:18px;font-weight:700;">{{ cuenta_actual.tasa_interes }}%</div>
+    </div>
+  </div>
+</div>
+
+<!-- Historial -->
+<div class="pcard">
+  <div class="pcard-header">
+    <h3><i class="fas fa-list" style="color:var(--primary);"></i> Historial de Movimientos</h3>
+    <span style="font-size:12px;color:var(--muted);">Últimos {{ transacciones|length }} movimientos</span>
+  </div>
+  <div style="overflow-x:auto;">
+    <table>
+      <thead>
+        <tr><th>Fecha</th><th>Comprobante</th><th>Tipo</th><th>Monto</th><th>Saldo</th><th>Descripción</th></tr>
+      </thead>
+      <tbody>
+        {% for t in transacciones %}
+        <tr>
+          <td style="font-size:12px;color:var(--muted);white-space:nowrap;">{{ t.fecha|date:"d/m/Y H:i" }}</td>
+          <td><span class="mono">{{ t.comprobante }}</span></td>
+          <td>
+            {% if t.tipo == 'deposito' %}
+            <span class="badge badge-success"><i class="fas fa-arrow-down"></i> Depósito</span>
+            {% elif t.tipo == 'retiro' %}
+            <span class="badge badge-danger"><i class="fas fa-arrow-up"></i> Retiro</span>
+            {% else %}
+            <span class="badge badge-primary"><i class="fas fa-percent"></i> Interés</span>
+            {% endif %}
+          </td>
+          <td class="{% if t.tipo == 'deposito' or t.tipo == 'interes' %}amount-pos{% else %}amount-neg{% endif %}" style="font-size:15px;">
+            {% if t.tipo == 'deposito' or t.tipo == 'interes' %}+{% else %}-{% endif %}${{ t.monto|floatformat:2 }}
+          </td>
+          <td><strong>${{ t.saldo_posterior|floatformat:2 }}</strong></td>
+          <td style="font-size:12px;color:var(--muted);">{{ t.descripcion|default:"—" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted);">No hay movimientos registrados</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% else %}
+<div class="pcard">
+  <div class="pcard-body" style="text-align:center;padding:48px;">
+    <i class="fas fa-piggy-bank" style="font-size:48px;color:var(--border);display:block;margin-bottom:16px;"></i>
+    <h3 style="font-size:16px;font-weight:700;margin-bottom:8px;">No tiene cuentas de ahorro</h3>
+    <p style="color:var(--muted);font-size:13px;">Acérquese a la cooperativa para abrir su primera cuenta.</p>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

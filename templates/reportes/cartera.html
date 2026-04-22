@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block page_title %}Reporte Cartera{% endblock %}
+{% block topbar_actions %}<a href="{% url 'exportar_creditos' %}" class="btn btn-outline" style="border-color:#217346;color:#217346;"><i class="fas fa-file-excel"></i> Exportar</a>{% endblock %}
+{% block content %}
+<div style="margin-bottom:14px;"><a href="{% url 'reportes_index' %}" style="color:var(--muted);text-decoration:none;font-size:13px;"><i class="fas fa-arrow-left"></i> Volver</a></div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;">
+  <div class="stat-card stat-blue"><div class="stat-icon"><i class="fas fa-money-bill-wave"></i></div><div class="stat-value">${{ total_activo|floatformat:0 }}</div><div class="stat-label">Cartera Activa</div></div>
+  <div class="stat-card stat-red"><div class="stat-icon"><i class="fas fa-triangle-exclamation"></i></div><div class="stat-value">${{ total_mora|floatformat:0 }}</div><div class="stat-label">En Mora</div></div>
+  <div class="stat-card stat-green"><div class="stat-icon"><i class="fas fa-check-circle"></i></div><div class="stat-value">${{ total_recuperado|floatformat:0 }}</div><div class="stat-label">Recuperado</div></div>
+</div>
+<div class="card"><div class="card-header"><h5>Detalle de Cartera</h5>
+  <form method="get" style="display:flex;gap:8px;">
+    <select name="periodo" class="form-control form-select" style="width:120px;">
+      <option value="">Todos</option>{% for p in periodos %}<option value="{{ p.pk }}" {% if periodo_id == p.pk|stringformat:"s" %}selected{% endif %}>{{ p.anio }}</option>{% endfor %}
+    </select>
+    <button type="submit" class="btn btn-outline btn-sm"><i class="fas fa-filter"></i></button>
+  </form>
+</div>
+<div style="overflow-x:auto;"><table>
+  <thead><tr><th>Crédito</th><th>Socio</th><th>Libreta</th><th>Tipo</th><th>Monto</th><th>Interés</th><th>Transfirió</th><th>Saldo</th><th>Estado</th></tr></thead>
+  <tbody>
+  {% for c in creditos %}
+  <tr>
+    <td class="mono"><a href="{% url 'credito_detalle' c.pk %}" style="color:var(--primary);text-decoration:none;">{{ c.numero }}</a></td>
+    <td>{{ c.socio.nombre_completo }}</td>
+    <td>#{{ c.libreta.numero }}</td>
+    <td>{{ c.get_tipo_display }}</td>
+    <td>${{ c.monto_solicitado|floatformat:2 }}</td>
+    <td style="color:var(--warning);">${{ c.interes_total|floatformat:2 }}</td>
+    <td class="amount-pos">${{ c.monto_transferir|floatformat:2 }}</td>
+    <td><strong>${{ c.saldo_pendiente|floatformat:2 }}</strong></td>
+    <td><span class="badge {% if c.estado == 'pagado' %}badge-success{% elif 'mora' in c.estado %}badge-danger{% elif c.estado == 'desembolsado' %}badge-primary{% else %}badge-secondary{% endif %}">{{ c.get_estado_display }}</span></td>
+  </tr>
+  {% empty %}<tr><td colspan="9" style="text-align:center;padding:28px;color:var(--muted);">Sin créditos en cartera</td></tr>{% endfor %}
+  </tbody>
+</table></div></div>{% endblock %}

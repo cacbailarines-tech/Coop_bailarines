@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block page_title %}Verificar Aporte{% endblock %}
+{% block content %}
+<div style="max-width:480px;">
+  <div style="margin-bottom:14px;"><a href="{% url 'aportes_list' %}" style="color:var(--muted);text-decoration:none;font-size:13px;"><i class="fas fa-arrow-left"></i> Volver</a></div>
+  <div class="card"><div class="card-header"><h5>Aporte: Libreta #{{ aporte.libreta.numero }} — {{ aporte.get_mes_display }} {{ aporte.anio }}</h5></div>
+  <div class="card-body"><p style="font-size:13px;margin-bottom:16px;">Socio: <strong>{{ aporte.libreta.socio.nombre_completo }}</strong> — Total: <strong>${{ aporte.monto_total|floatformat:2 }}</strong><br>Comprobante del socio: <span class="mono">{{ aporte.comprobante_referencia|default:"No indicó" }}</span></p>
+    <form method="post">{% csrf_token %}
+      <div class="form-group"><label class="form-label">Comprobante verificado</label><input type="text" name="comprobante" class="form-control" value="{{ aporte.comprobante_referencia }}" placeholder="Confirmar o corregir número"></div>
+      <div class="form-group"><label class="form-label">Observación (si rechaza)</label><input type="text" name="observacion" class="form-control"></div>
+      <div style="display:flex;gap:10px;margin-top:16px;">
+        <button type="submit" name="accion" value="verificar" class="btn btn-success" style="flex:1;justify-content:center;"><i class="fas fa-check-circle"></i> Comprobado — Verificar</button>
+        <button type="submit" name="accion" value="rechazar" class="btn btn-danger"><i class="fas fa-times"></i> Rechazar</button>
+      </div>
+    </form>
+  </div></div>
+</div>{% endblock %}

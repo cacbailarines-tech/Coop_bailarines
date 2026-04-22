@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block page_title %}Registrar Asistencia{% endblock %}
+{% block content %}
+<div>
+  <div style="margin-bottom:14px;"><a href="{% url 'reunion_detalle' reunion.pk %}" style="color:var(--muted);text-decoration:none;font-size:13px;"><i class="fas fa-arrow-left"></i> Volver</a></div>
+  <div class="card">
+    <div class="card-header">
+      <h5><i class="fas fa-user-check" style="color:var(--success);margin-right:7px;"></i>Asistencia de Reunion - {{ reunion.fecha|date:"d/m/Y" }}</h5>
+    </div>
+    <div class="card-body">
+      <div class="alert alert-info" style="margin-bottom:14px;">
+        <i class="fas fa-circle-info"></i> Marque el estado de cada socio en una sola tabla. Puede guardar y volver a modificar esta planilla cuando quiera antes de cerrar la reunion.
+      </div>
+      <form method="post">
+        {% csrf_token %}
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th style="min-width:240px;">Nombres</th>
+                <th style="text-align:center;min-width:120px;">Asistencia</th>
+                <th style="text-align:center;min-width:110px;">Atrasado</th>
+                <th style="text-align:center;min-width:160px;">Falta Justificada</th>
+                <th style="text-align:center;min-width:170px;">Falta Injustificada</th>
+                <th style="min-width:220px;">Observacion</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for fila in filas_asistencia %}
+              <tr>
+                <td style="font-weight:600;">{{ fila.socio.nombre_completo }}</td>
+                <td style="text-align:center;">
+                  <input type="radio" name="estado_{{ fila.socio.pk }}" value="presente" {% if fila.estado == 'presente' %}checked{% endif %}>
+                </td>
+                <td style="text-align:center;">
+                  <input type="radio" name="estado_{{ fila.socio.pk }}" value="atrasado_11" {% if 'atrasado' in fila.estado %}checked{% endif %}>
+                </td>
+                <td style="text-align:center;">
+                  <input type="radio" name="estado_{{ fila.socio.pk }}" value="falta_justificada" {% if fila.estado == 'falta_justificada' %}checked{% endif %}>
+                </td>
+                <td style="text-align:center;">
+                  <input type="radio" name="estado_{{ fila.socio.pk }}" value="falta_injustificada" {% if fila.estado == 'falta_injustificada' %}checked{% endif %}>
+                </td>
+                <td>
+                  <input type="text" name="justificacion_{{ fila.socio.pk }}" class="form-control" value="{{ fila.justificacion }}" placeholder="Detalle opcional">
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:16px;">
+          <button type="submit" class="btn btn-success"><i class="fas fa-floppy-disk"></i> Guardar Asistencia</button>
+          <a href="{% url 'reunion_detalle' reunion.pk %}" class="btn btn-outline">Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

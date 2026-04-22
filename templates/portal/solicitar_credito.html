@@ -1,0 +1,197 @@
+{% extends 'portal/base.html' %}
+{% block title %}Solicitar Cr&eacute;dito - Portal Bailarines{% endblock %}
+{% block content %}
+<div style="margin-bottom:16px;">
+  <a href="{% url 'portal_creditos' %}" style="color:var(--muted);text-decoration:none;font-size:12px;"><i class="fas fa-arrow-left"></i> Volver a Cr&eacute;ditos</a>
+  <h1 style="font-size:18px;font-weight:800;margin-top:6px;">Solicitar Cr&eacute;dito</h1>
+</div>
+
+<div style="background:rgba(11,61,145,0.07);border:1.5px solid rgba(11,61,145,0.2);border-radius:12px;padding:14px 16px;margin-bottom:16px;font-size:12px;">
+  <div style="font-weight:700;color:var(--primary);margin-bottom:6px;"><i class="fas fa-info-circle"></i> Condiciones del Cr&eacute;dito</div>
+  <div style="color:var(--text);line-height:1.7;">
+    • Monto m?ximo: <strong>$500 por libreta</strong><br>
+    • Tasa de interes: <strong>5% mensual fija</strong><br>
+    • Comisi&oacute;n bancaria: <strong>$0.50 Banco Pichincha / $1.00 otros bancos</strong><br>
+    • Aprobaci?n en <strong>24 horas</strong> sujeto a saldo disponible
+  </div>
+</div>
+
+<div class="pcard">
+  <div class="pcard-header">
+    <h3><i class="fas fa-hand-holding-dollar" style="color:var(--warning);"></i> Datos de la Solicitud</h3>
+    <a href="{% url 'portal_mis_datos' %}" class="btn btn-outline btn-sm"><i class="fas fa-id-card"></i> Mis Datos</a>
+  </div>
+  <div class="pcard-body">
+    <form method="post" id="fSolicitud">
+      {% csrf_token %}
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">Libreta *</label>
+        <select name="libreta" class="form-control form-select" required>
+          <option value="">Seleccionar libreta...</option>
+          {% for lib in libretas %}
+          <option value="{{ lib.pk }}" {% if data.libreta == lib.pk|stringformat:'s' %}selected{% endif %}>#{{ lib.numero }} - Periodo {{ lib.periodo.anio }} (Saldo ahorro: ${{ lib.saldo_ahorro|floatformat:2 }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">Tipo de Pago *</label>
+          <select name="tipo" id="tipo" class="form-control form-select" required onchange="calcular()">
+            <option value="mensualizado" {% if data.tipo != 'no_mensualizado' %}selected{% endif %}>Mensualizado</option>
+            <option value="no_mensualizado" {% if data.tipo == 'no_mensualizado' %}selected{% endif %}>No Mensualizado</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">Monto ($) *</label>
+          <input type="number" name="monto_solicitado" id="monto" class="form-control" min="10" max="500" step="0.01" required oninput="calcular()" value="{{ data.monto_solicitado }}" placeholder="500.00">
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">Plazo (meses) *</label>
+          <input type="number" name="plazo_meses" id="plazo" class="form-control" min="1" max="10" required oninput="calcular()" value="{{ data.plazo_meses|default:'1' }}">
+        </div>
+      </div>
+
+      <div style="margin-top:16px;padding:14px;border:1px solid var(--border);border-radius:12px;background:rgba(11,61,145,0.03);">
+        <div style="font-size:13px;font-weight:800;color:var(--primary);margin-bottom:10px;">A donde desea recibir el desembolso</div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;">
+          <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;">
+            <input type="radio" name="origen_datos" value="mis_datos" {% if data.origen_datos != 'otro' %}checked{% endif %} onchange="toggleDestino()">
+            Mis datos guardados
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;">
+            <input type="radio" name="origen_datos" value="otro" {% if data.origen_datos == 'otro' %}checked{% endif %} onchange="toggleDestino()">
+            Otro beneficiario
+          </label>
+        </div>
+
+        <div id="mis-datos-box" style="padding:12px;border-radius:10px;background:white;border:1px solid var(--border);">
+          <div style="font-size:12px;font-weight:700;margin-bottom:6px;">Datos guardados del socio</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.7;">
+            Banco: <strong>{{ socio.banco_preferido|default:'No configurado' }}</strong><br>
+            Cuenta: <strong>{{ socio.cuenta_bancaria_preferida|default:'No configurada' }}</strong><br>
+            Titular: <strong>{{ socio.titular_cuenta_preferida|default:socio.nombre_completo }}</strong><br>
+            CÃ©dula titular: <strong>{{ socio.cedula_titular_preferida|default:socio.cedula }}</strong>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:8px;">Si falta algo, puede completarlo en <a href="{% url 'portal_mis_datos' %}" style="font-weight:700;">Mis Datos</a>.</div>
+        </div>
+
+        <div id="otro-box" style="display:none;margin-top:12px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">Banco *</label>
+              <select name="banco" id="banco" class="form-control form-select" onchange="calcular()">
+                {% for val, lab in bancos %}<option value="{{ val }}" {% if data.banco == val %}selected{% endif %}>{{ lab }}</option>{% endfor %}
+              </select>
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">NÃºmero de cuenta *</label>
+              <input type="text" name="numero_cuenta_bancaria" class="form-control" value="{{ data.numero_cuenta_bancaria }}">
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">Nombre del titular *</label>
+              <input type="text" name="titular_cuenta" class="form-control" value="{{ data.titular_cuenta }}">
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">CÃ©dula del titular *</label>
+              <input type="text" name="cedula_titular" class="form-control" value="{{ data.cedula_titular }}">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="resumen" style="display:none;background:linear-gradient(135deg,rgba(11,61,145,0.08),rgba(11,61,145,0.04));border:1.5px solid rgba(11,61,145,0.2);border-radius:12px;padding:16px;margin:16px 0;">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:12px;">Resumen de su Solicitud</div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px;">
+          <div style="background:white;border-radius:9px;padding:12px;text-align:center;">
+            <div style="font-size:10px;color:var(--muted);">Inter&eacute;s Total</div>
+            <div style="font-size:18px;font-weight:800;color:var(--warning);" id="rInteres">$0</div>
+          </div>
+          <div style="background:white;border-radius:9px;padding:12px;text-align:center;">
+            <div style="font-size:10px;color:var(--muted);">Comisi&oacute;n Bancaria</div>
+            <div style="font-size:18px;font-weight:800;color:var(--danger);" id="rComision">$0</div>
+          </div>
+        </div>
+        <div style="background:rgba(0,137,123,0.1);border-radius:9px;padding:14px;text-align:center;margin-bottom:10px;">
+          <div style="font-size:11px;color:var(--muted);">Usted recibir?</div>
+          <div style="font-size:28px;font-weight:900;color:var(--success);" id="rRecibe">$0</div>
+        </div>
+        <div id="cuotaDiv" style="background:rgba(11,61,145,0.08);border-radius:9px;padding:12px;text-align:center;">
+          <div style="font-size:11px;color:var(--muted);">Cuota mensual</div>
+          <div style="font-size:24px;font-weight:900;color:var(--primary);" id="rCuota">$0</div>
+        </div>
+        <div id="pagoDiv" style="display:none;background:rgba(245,127,23,0.08);border-radius:9px;padding:12px;text-align:center;">
+          <div style="font-size:11px;color:var(--muted);">Pago Ãnico al vencimiento</div>
+          <div style="font-size:24px;font-weight:900;color:var(--warning);" id="rPago">$0</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">Prop&oacute;sito del cr&eacute;dito (opcional)</label>
+        <textarea name="observaciones" class="form-control" rows="2">{{ data.observaciones }}</textarea>
+      </div>
+
+      <div style="display:flex;gap:10px;">
+        <button type="submit" class="btn btn-primary" style="flex:1;justify-content:center;padding:12px;font-size:14px;">
+          <i class="fas fa-paper-plane"></i> Enviar Solicitud
+        </button>
+        <a href="{% url 'portal_creditos' %}" class="btn btn-outline">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+const COMISIONES = {'pichincha':0.50,'guayaquil':1.00,'pacifico':1.00,'bolivariano':1.00,'produbanco':1.00,'internacional':1.00,'otro':1.00};
+
+function bancoActual() {
+  const origen = document.querySelector('input[name="origen_datos"]:checked')?.value;
+  if (origen === 'otro') {
+    return document.getElementById('banco').value;
+  }
+  return '{{ socio.banco_preferido|default:"otro" }}';
+}
+
+function toggleDestino() {
+  const origen = document.querySelector('input[name="origen_datos"]:checked')?.value;
+  document.getElementById('mis-datos-box').style.display = origen === 'mis_datos' ? 'block' : 'none';
+  document.getElementById('otro-box').style.display = origen === 'otro' ? 'block' : 'none';
+  calcular();
+}
+
+function calcular() {
+  const m = parseFloat(document.getElementById('monto').value) || 0;
+  const p = parseInt(document.getElementById('plazo').value) || 0;
+  const tipo = document.getElementById('tipo').value;
+  const banco = bancoActual();
+  if (m > 0 && p > 0) {
+    const interes = m * 0.05 * p;
+    const comision = COMISIONES[banco] || 1;
+    let recibe = 0;
+    if (tipo === 'mensualizado') {
+      recibe = m - comision;
+      let cuota = Math.ceil(((m + interes) / p) * 100) / 100;
+      if ((cuota * p) < (m + interes)) cuota += 0.01;
+      document.getElementById('cuotaDiv').style.display = 'block';
+      document.getElementById('pagoDiv').style.display = 'none';
+      document.getElementById('rCuota').textContent = '$' + cuota.toFixed(2);
+    } else {
+      recibe = m - interes - comision;
+      document.getElementById('cuotaDiv').style.display = 'none';
+      document.getElementById('pagoDiv').style.display = 'block';
+      document.getElementById('rPago').textContent = '$' + m.toFixed(2);
+    }
+    document.getElementById('rInteres').textContent = '$' + interes.toFixed(2);
+    document.getElementById('rComision').textContent = '$' + comision.toFixed(2);
+    document.getElementById('rRecibe').textContent = '$' + Math.max(recibe, 0).toFixed(2);
+    document.getElementById('resumen').style.display = 'block';
+  } else {
+    document.getElementById('resumen').style.display = 'none';
+  }
+}
+
+toggleDestino();
+calcular();
+</script>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block page_title %}Reporte Ahorros{% endblock %}
+{% block topbar_actions %}<a href="{% url 'exportar_socios' %}" class="btn btn-outline" style="border-color:#217346;color:#217346;"><i class="fas fa-file-excel"></i> Exportar</a>{% endblock %}
+{% block content %}
+<div style="margin-bottom:14px;">
+  <a href="{% url 'reportes_index' %}" style="color:var(--muted);text-decoration:none;font-size:13px;">
+    <i class="fas fa-arrow-left"></i> Volver
+  </a>
+</div>
+
+<div class="stat-card stat-green" style="margin-bottom:18px;display:inline-block;min-width:240px;">
+  <div class="stat-icon"><i class="fas fa-book"></i></div>
+  <div class="stat-value">${{ total|floatformat:2 }}</div>
+  <div class="stat-label">Total Ahorros en Libretas &mdash; {{ libretas.count }} libreta(s)</div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h5>Saldos por Libreta</h5>
+    <form method="get" style="display:flex;gap:8px;">
+      <select name="periodo" class="form-control form-select" style="width:120px;">
+        <option value="">Todos</option>
+        {% for p in periodos %}
+          <option value="{{ p.pk }}" {% if periodo_id == p.pk|stringformat:"s" %}selected{% endif %}>{{ p.anio }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-outline btn-sm"><i class="fas fa-filter"></i></button>
+    </form>
+  </div>
+
+  <div style="overflow-x:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Libreta #</th>
+          <th>Socio</th>
+          <th>Periodo</th>
+          <th>Estado</th>
+          <th>Saldo Ahorro</th>
+          <th>Aportes Verificados</th>
+          <th>&Uacute;ltimo Verificado</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for lib in libretas %}
+          <tr>
+            <td><strong class="mono">#{{ lib.numero }}</strong></td>
+            <td><a href="{% url 'socio_detalle' lib.socio.pk %}" style="color:var(--primary);text-decoration:none;">{{ lib.socio.nombre_completo }}</a></td>
+            <td>{{ lib.periodo.anio }}</td>
+            <td><span class="badge {% if lib.estado == 'activa' %}badge-success{% else %}badge-secondary{% endif %}">{{ lib.get_estado_display }}</span></td>
+            <td class="amount-pos"><strong>${{ lib.saldo_ahorro|floatformat:2 }}</strong></td>
+            <td>{{ lib.aportes_verificados_count }}/12</td>
+            <td>
+              {% if lib.ultimo_aporte_verificado %}
+                {{ lib.ultimo_aporte_verificado|date:"d/m/Y H:i" }}
+              {% else %}
+                &mdash;
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7" style="text-align:center;padding:28px;color:var(--muted);">Sin libretas</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

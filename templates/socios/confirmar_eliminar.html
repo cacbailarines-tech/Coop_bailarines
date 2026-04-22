@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Desactivar Socio{% endblock %}
+{% block page_title %}Desactivar Socio{% endblock %}
+{% block content %}
+<div style="max-width:480px;margin:0 auto;">
+  <div class="card">
+    <div class="card-body" style="text-align:center;padding:40px;">
+      <div style="width:72px;height:72px;background:rgba(198,40,40,0.1);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:32px;margin-bottom:20px;">
+        <i class="fas fa-user-slash" style="color:var(--danger);"></i>
+      </div>
+      <h2 style="font-size:20px;font-weight:800;margin-bottom:8px;">¿Desactivar socio?</h2>
+      <p style="color:var(--text-muted);margin-bottom:24px;">
+        El socio <strong>{{ socio.nombre_completo }}</strong> ({{ socio.numero_socio }}) será marcado como inactivo. Esta acción se puede revertir editando el socio.
+      </p>
+      <form method="post" style="display:flex;gap:10px;justify-content:center;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger"><i class="fas fa-user-slash"></i> Sí, desactivar</button>
+        <a href="{% url 'socios_list' %}" class="btn btn-outline">Cancelar</a>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

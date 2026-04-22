@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Usuarios del Sistema{% endblock %}
+{% block page_title %}Gestión de Usuarios{% endblock %}
+{% block topbar_actions %}
+<a href="{% url 'usuario_crear' %}" class="btn btn-primary"><i class="fas fa-user-plus"></i> Nuevo Usuario</a>
+{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <h5><i class="fas fa-user-shield" style="color:var(--primary);margin-right:8px;"></i>Usuarios del Sistema</h5>
+    <span style="font-size:12px;color:var(--text-muted);">{{ usuarios.count }} usuario(s)</span>
+  </div>
+  <div style="overflow-x:auto;">
+    <table>
+      <thead>
+        <tr><th>Usuario</th><th>Nombre Completo</th><th>Email</th><th>Rol</th><th>Activo</th><th>Último Acceso</th><th>Acción</th></tr>
+      </thead>
+      <tbody>
+        {% for u in usuarios %}
+        <tr>
+          <td><strong class="mono">{{ u.username }}</strong></td>
+          <td>{{ u.get_full_name|default:"—" }}</td>
+          <td style="color:var(--text-muted);">{{ u.email|default:"—" }}</td>
+          <td>
+            {% if u.is_superuser %}
+            <span class="badge badge-danger">Superusuario</span>
+            {% elif u.perfil %}
+            <span class="badge {% if u.perfil.rol == 'admin' %}badge-primary{% elif u.perfil.rol == 'gerente' %}badge-warning{% else %}badge-secondary{% endif %}">
+              {{ u.perfil.get_rol_display }}
+            </span>
+            {% else %}
+            <span class="badge badge-secondary">Sin rol</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if u.is_active %}<span class="badge badge-success">Activo</span>{% else %}<span class="badge badge-secondary">Inactivo</span>{% endif %}
+          </td>
+          <td style="font-size:12px;color:var(--text-muted);">{{ u.last_login|date:"d/m/Y H:i"|default:"Nunca" }}</td>
+          <td>
+            <a href="{% url 'usuario_editar' u.pk %}" class="btn btn-outline btn-sm"><i class="fas fa-pen"></i></a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" style="text-align:center;padding:32px;">No hay usuarios</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

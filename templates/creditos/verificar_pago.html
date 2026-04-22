@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block page_title %}Verificar Pago{% endblock %}
+{% block content %}
+<div style="max-width:480px;">
+  <div style="margin-bottom:14px;"><a href="{% url 'credito_detalle' credito.pk %}" style="color:var(--muted);text-decoration:none;font-size:13px;"><i class="fas fa-arrow-left"></i> Volver</a></div>
+  <div class="card"><div class="card-header"><h5>Verificar Pago #{{ pago.numero_pago }} — {{ credito.numero }}</h5></div>
+  <div class="card-body">
+    <p style="font-size:13px;margin-bottom:14px;">Socio: <strong>{{ credito.socio.nombre_completo }}</strong><br>
+    Monto reportado: <strong class="amount-pos">${{ pago.monto_pagado|floatformat:2 }}</strong><br>
+    Comprobante del socio: <span class="mono">{{ pago.comprobante_referencia|default:"No indicó" }}</span>
+    {% if pago.comprobante_archivo %}<br><a href="{{ pago.comprobante_archivo.url }}" target="_blank">Ver adjunto</a>{% endif %}</p>
+    <form method="post">{% csrf_token %}
+      <div class="form-group"><label class="form-label">Observación (obligatoria si rechaza)</label><input type="text" name="observacion" class="form-control"></div>
+      <div style="display:flex;gap:10px;"><button type="submit" name="accion" value="verificar" class="btn btn-success" style="flex:1;justify-content:center;"><i class="fas fa-check-circle"></i> Comprobado — Verificar</button>
+      <button type="submit" name="accion" value="rechazar" class="btn btn-danger"><i class="fas fa-times"></i> Rechazar</button></div>
+    </form>
+  </div></div>
+</div>{% endblock %}
