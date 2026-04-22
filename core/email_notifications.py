@@ -1,3 +1,5 @@
+import logging
+import threading
 from datetime import date, timedelta
 from email.mime.image import MIMEImage
 from html import escape
@@ -5,6 +7,9 @@ from pathlib import Path
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
+
+logger = logging.getLogger(__name__)
+
 
 def _portal_url(path='/portal/'):
     base_url = getattr(settings, 'APP_BASE_URL', 'http://127.0.0.1:8000').rstrip('/')
@@ -19,8 +24,11 @@ def _email_configured():
 
 
 def _logo_path():
-    logo_path = Path(settings.BASE_DIR) / 'static' / 'img' / 'logo.png'
-    return logo_path if logo_path.exists() else None
+    for file_name in ('logo-app-full-192.png', 'logo.png'):
+        logo_path = Path(settings.BASE_DIR) / 'static' / 'img' / file_name
+        if logo_path.exists():
+            return logo_path
+    return None
 
 
 def _logo_cid():
@@ -33,7 +41,7 @@ def _logo_attachment():
         return None
     image = MIMEImage(logo_path.read_bytes(), _subtype='png')
     image.add_header('Content-ID', f'<{_logo_cid()}>')
-    image.add_header('Content-Disposition', 'inline', filename='logo.png')
+    image.add_header('Content-Disposition', 'inline', filename=logo_path.name)
     return image
 
 
@@ -140,21 +148,32 @@ def _email_shell(title, intro, sections=None, cta_label='Ir al portal', cta_url=
 
 def _send_email(recipient, subject, text_body, html_body=None, attachments=None):
     if not recipient or not _email_configured():
+        if not recipient:
+            logger.info('Correo omitido: destinatario vacio para asunto %s', subject)
+        else:
+            logger.warning('Correo omitido: EMAIL_* no configurado para asunto %s', subject)
         return False
-    try:
-        message = EmailMultiAlternatives(subject, text_body, settings.DEFAULT_FROM_EMAIL, [recipient])
-        if html_body:
-            message.attach_alternative(html_body, 'text/html')
-            logo_attachment = _logo_attachment()
-            if logo_attachment:
-                message.attach(logo_attachment)
-        for attachment in attachments or []:
-            filename, content, mimetype = attachment
-            message.attach(filename, content, mimetype)
-        message.send(fail_silently=False)
-        return True
-    except Exception:
-        return False
+
+    attachments = list(attachments or [])
+
+    def worker():
+        try:
+            message = EmailMultiAlternatives(subject, text_body, settings.DEFAULT_FROM_EMAIL, [recipient])
+            if html_body:
+                message.attach_alternative(html_body, 'text/html')
+                logo_attachment = _logo_attachment()
+                if logo_attachment:
+                    message.attach(logo_attachment)
+            for attachment in attachments:
+                filename, content, mimetype = attachment
+                message.attach(filename, content, mimetype)
+            message.send(fail_silently=False)
+            logger.info('Correo enviado a %s con asunto %s', recipient, subject)
+        except Exception:
+            logger.exception('Error enviando correo a %s con asunto %s', recipient, subject)
+
+    threading.Thread(target=worker, daemon=True).start()
+    return True
 
 
 def _credito_pdf_attachment(credito):
