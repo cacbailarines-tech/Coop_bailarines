@@ -89,10 +89,10 @@ def generar_pdf_credito(credito):
     ]
     logo_path = next((path for path in logo_candidates if os.path.exists(path)), None)
     if logo_path:
-        logo = Image(logo_path, width=4.8 * cm, height=1.55 * cm)
+        logo = Image(logo_path, width=5.6 * cm, height=2.05 * cm)
         logo.hAlign = 'CENTER'
         story.append(logo)
-        story.append(Spacer(1, 12))
+        story.append(Spacer(1, 8))
 
     header_table = Table([[
         Paragraph("COOPERATIVA DE AHORRO Y CREDITO", title_style),
