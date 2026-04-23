@@ -1,5 +1,6 @@
 import json
 
+from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
@@ -60,7 +61,8 @@ def portal_login(request):
         acceso.save()
         request.session['portal_socio_id'] = socio.pk
         request.session['portal_socio_nombre'] = socio.nombre_completo
-        request.session.set_expiry(0)
+        keep_signed_in = request.POST.get('keep_signed_in')
+        request.session.set_expiry(settings.SESSION_COOKIE_AGE if keep_signed_in else 0)
         return redirect('portal_inicio')
     return render(request, 'portal/login.html')
 

@@ -37,6 +37,12 @@
             <input type="password" name="password" class="form-control" style="padding-left:38px;" placeholder="Ingrese su contraseña" required>
           </div>
         </div>
+        <div style="display:flex;align-items:flex-start;gap:9px;margin:4px 0 16px 0;padding:10px 12px;background:#F8FAFF;border:1px solid #DDE3EF;border-radius:10px;">
+          <input type="checkbox" id="keep_signed_in" name="keep_signed_in" style="margin-top:3px;">
+          <label for="keep_signed_in" style="font-size:12px;color:#41506B;line-height:1.45;cursor:pointer;">
+            Mantener sesiÃ³n iniciada en este equipo.
+          </label>
+        </div>
         <input type="hidden" name="next" value="{{ next }}">
         <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:13px;font-size:14px;margin-top:6px;border-radius:10px;">
           <i class="fas fa-right-to-bracket"></i> Ingresar al Sistema

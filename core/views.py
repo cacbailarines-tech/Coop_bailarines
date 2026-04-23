@@ -102,6 +102,12 @@ class LoginView(BaseLoginView):
     template_name = 'core/login.html'
     redirect_authenticated_user = True
 
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        keep_signed_in = self.request.POST.get('keep_signed_in')
+        self.request.session.set_expiry(settings.SESSION_COOKIE_AGE if keep_signed_in else 0)
+        return response
+
 
 def logout_view(request):
     logout(request)
