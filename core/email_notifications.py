@@ -1,11 +1,12 @@
 import json
 import logging
 import threading
-from base64 import b64encode
+from base64 import b64encode, urlsafe_b64encode
 from datetime import date, timedelta
 from email.mime.image import MIMEImage
 from html import escape
 from pathlib import Path
+from urllib.parse import urlencode
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -21,11 +22,22 @@ def _portal_url(path='/portal/'):
 
 
 def _email_configured():
+    if _using_gmail_api():
+        return True
     if getattr(settings, 'RESEND_API_KEY', '').strip():
         return True
     return bool(
         getattr(settings, 'EMAIL_HOST_USER', '').strip()
         and getattr(settings, 'EMAIL_HOST_PASSWORD', '').strip()
+    )
+
+
+def _using_gmail_api():
+    return bool(
+        getattr(settings, 'GMAIL_CLIENT_ID', '').strip()
+        and getattr(settings, 'GMAIL_CLIENT_SECRET', '').strip()
+        and getattr(settings, 'GMAIL_REFRESH_TOKEN', '').strip()
+        and getattr(settings, 'GMAIL_SENDER_EMAIL', '').strip()
     )
 
 
@@ -168,6 +180,57 @@ def _send_email(recipient, subject, text_body, html_body=None, attachments=None)
 
     def worker():
         try:
+            if _using_gmail_api():
+                message = EmailMultiAlternatives(
+                    subject,
+                    text_body,
+                    getattr(settings, 'DEFAULT_FROM_EMAIL', '') or f'Cooperativa Bailarines <{settings.GMAIL_SENDER_EMAIL}>',
+                    [recipient],
+                    reply_to=[settings.GMAIL_SENDER_EMAIL],
+                )
+                if html_body:
+                    message.attach_alternative(html_body, 'text/html')
+                    logo_attachment = _logo_attachment()
+                    if logo_attachment:
+                        message.attach(logo_attachment)
+                for attachment in attachments:
+                    filename, content, mimetype = attachment
+                    message.attach(filename, content, mimetype)
+
+                token_request = Request(
+                    'https://oauth2.googleapis.com/token',
+                    data=urlencode({
+                        'client_id': settings.GMAIL_CLIENT_ID,
+                        'client_secret': settings.GMAIL_CLIENT_SECRET,
+                        'refresh_token': settings.GMAIL_REFRESH_TOKEN,
+                        'grant_type': 'refresh_token',
+                    }).encode('utf-8'),
+                    headers={
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'User-Agent': 'cooperativa-bailarines/1.0',
+                    },
+                    method='POST',
+                )
+                with urlopen(token_request, timeout=settings.EMAIL_TIMEOUT) as response:
+                    token_payload = json.loads(response.read().decode('utf-8'))
+                access_token = token_payload['access_token']
+
+                raw_message = urlsafe_b64encode(message.message().as_bytes()).decode('ascii').rstrip('=')
+                gmail_request = Request(
+                    'https://gmail.googleapis.com/gmail/v1/users/me/messages/send',
+                    data=json.dumps({'raw': raw_message}).encode('utf-8'),
+                    headers={
+                        'Authorization': f'Bearer {access_token}',
+                        'Content-Type': 'application/json',
+                        'User-Agent': 'cooperativa-bailarines/1.0',
+                    },
+                    method='POST',
+                )
+                with urlopen(gmail_request, timeout=settings.EMAIL_TIMEOUT) as response:
+                    response.read()
+                logger.info('Correo enviado por Gmail API a %s con asunto %s', recipient, subject)
+                return
+
             if _using_resend():
                 resend_payload = {
                     'from': getattr(settings, 'RESEND_FROM_EMAIL', '').strip() or settings.DEFAULT_FROM_EMAIL,
@@ -212,7 +275,8 @@ def _send_email(recipient, subject, text_body, html_body=None, attachments=None)
             logger.info('Correo enviado por SMTP a %s con asunto %s', recipient, subject)
         except HTTPError as exc:
             detalle = exc.read().decode('utf-8', errors='ignore')
-            logger.error('Error Resend enviando correo a %s con asunto %s: %s', recipient, subject, detalle)
+            proveedor = 'Gmail API' if _using_gmail_api() else 'Resend'
+            logger.error('Error %s enviando correo a %s con asunto %s: %s', proveedor, recipient, subject, detalle)
         except URLError as exc:
             logger.exception('Error de red enviando correo a %s con asunto %s: %s', recipient, subject, exc)
         except Exception:

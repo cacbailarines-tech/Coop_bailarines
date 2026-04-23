@@ -128,6 +128,10 @@ EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
 EMAIL_USE_TLS = env_bool('EMAIL_USE_TLS', True)
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '').strip()
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '').strip()
+GMAIL_CLIENT_ID = os.getenv('GMAIL_CLIENT_ID', '').strip()
+GMAIL_CLIENT_SECRET = os.getenv('GMAIL_CLIENT_SECRET', '').strip()
+GMAIL_REFRESH_TOKEN = os.getenv('GMAIL_REFRESH_TOKEN', '').strip()
+GMAIL_SENDER_EMAIL = os.getenv('GMAIL_SENDER_EMAIL', '').strip()
 RESEND_API_KEY = os.getenv('RESEND_API_KEY', '').strip()
 RESEND_FROM_EMAIL = os.getenv('RESEND_FROM_EMAIL', '').strip()
 WEBPUSH_ENABLED = env_bool('WEBPUSH_ENABLED', True)
@@ -136,7 +140,9 @@ WEBPUSH_VAPID_PRIVATE_KEY = os.getenv('WEBPUSH_VAPID_PRIVATE_KEY', '').replace('
 WEBPUSH_VAPID_ADMIN_EMAIL = os.getenv('WEBPUSH_VAPID_ADMIN_EMAIL', EMAIL_HOST_USER or 'no-reply@bailarines.local').strip()
 DEFAULT_FROM_EMAIL = os.getenv(
     'DEFAULT_FROM_EMAIL',
-    RESEND_FROM_EMAIL or f'Cooperativa Bailarines <{EMAIL_HOST_USER or "no-reply@bailarines.local"}>'
+    RESEND_FROM_EMAIL
+    or (f'Cooperativa Bailarines <{GMAIL_SENDER_EMAIL}>' if GMAIL_SENDER_EMAIL else '')
+    or f'Cooperativa Bailarines <{EMAIL_HOST_USER or "no-reply@bailarines.local"}>'
 )
 EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '20'))
 
