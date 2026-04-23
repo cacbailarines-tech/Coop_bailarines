@@ -60,6 +60,7 @@ def portal_login(request):
         acceso.save()
         request.session['portal_socio_id'] = socio.pk
         request.session['portal_socio_nombre'] = socio.nombre_completo
+        request.session.set_expiry(0)
         return redirect('portal_inicio')
     return render(request, 'portal/login.html')
 
