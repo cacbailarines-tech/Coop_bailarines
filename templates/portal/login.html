@@ -8,7 +8,7 @@
     <!-- Logo -->
     <div style="text-align:center;margin-bottom:28px;">
       <div style="background:linear-gradient(135deg,#0B3D91,#1557C0);border-radius:20px;padding:20px 28px;display:inline-block;box-shadow:0 8px 32px rgba(11,61,145,0.35);">
-<img src="{% static 'img/logo.png' %}" alt="Cooperativa Bailarines"
+<img src="{{ web_logo_src|default:'' }}" alt="Cooperativa Bailarines"
              style="height:70px;width:auto;max-width:250px;object-fit:contain;display:block;margin:0 auto;filter:brightness(1.15) drop-shadow(0 2px 8px rgba(0,0,0,0.3));">
       </div>
       <div style="margin-top:12px;">
