@@ -16,4 +16,4 @@ class Command(BaseCommand):
         if send_test_email(destino):
             self.stdout.write(self.style.SUCCESS(f'Correo de prueba enviado a {destino}'))
             return
-        raise CommandError('No se pudo enviar el correo de prueba. Revise RESEND_API_KEY o las variables EMAIL_* y APP_BASE_URL.')
+        raise CommandError('No se pudo enviar el correo de prueba. Revise las variables GMAIL_*, EMAIL_* y APP_BASE_URL.')
