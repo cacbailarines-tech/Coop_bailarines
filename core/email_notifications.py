@@ -190,6 +190,7 @@ def _send_email(recipient, subject, text_body, html_body=None, attachments=None)
                     headers={
                         'Authorization': f'Bearer {settings.RESEND_API_KEY}',
                         'Content-Type': 'application/json',
+                        'User-Agent': 'cooperativa-bailarines/1.0',
                     },
                     method='POST',
                 )
