@@ -37,9 +37,7 @@ def generar_pdf_credito(credito):
     gris_fondo = colors.HexColor('#F6F9FF')
     rosa = colors.HexColor('#E83E74')
 
-    title_style = ParagraphStyle('title', fontName='Helvetica-Bold', fontSize=10, leading=9, textColor=azul_oscuro, alignment=TA_CENTER, spaceAfter=6)
-    brand_style = ParagraphStyle('bigname', fontName='Helvetica-Bold', fontSize=24, leading=26, textColor=rosa, alignment=TA_CENTER, spaceAfter=4)
-    subtitle_style = ParagraphStyle('subtitle', fontName='Helvetica-Bold', fontSize=10, leading=12, textColor=verde, alignment=TA_CENTER, spaceBefore=2, spaceAfter=14)
+    subtitle_style = ParagraphStyle('subtitle', fontName='Helvetica-Bold', fontSize=13, leading=15, textColor=verde, alignment=TA_CENTER, spaceBefore=2, spaceAfter=14)
     section_style = ParagraphStyle('section', fontName='Helvetica-Bold', fontSize=11, textColor=azul_oscuro, spaceBefore=12, spaceAfter=6)
     small_style = ParagraphStyle('small', fontName='Helvetica', fontSize=8, textColor=gris, alignment=TA_CENTER)
     body_style = ParagraphStyle('body', fontName='Helvetica', fontSize=9, leading=12, textColor=colors.black, alignment=TA_LEFT)
@@ -95,10 +93,6 @@ def generar_pdf_credito(credito):
         story.append(Spacer(1, 8))
 
     header_table = Table([[
-        Paragraph("COOPERATIVA DE AHORRO Y CREDITO", title_style),
-    ], [
-        Paragraph("BAILARINES", brand_style),
-    ], [
         Paragraph("SOLICITUD DE CREDITO", subtitle_style),
     ]], colWidths=[17 * cm])
     header_table.setStyle(TableStyle([
