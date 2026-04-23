@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Bailarines">
 <link rel="manifest" href="{% url 'pwa_manifest' %}">
-<link rel="apple-touch-icon" href="{% static 'img/logo-app-full-192.png' %}">
+<link rel="apple-touch-icon" href="{% static 'img/logo.png' %}">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -81,7 +81,7 @@ tbody tr:last-child td{border-bottom:none;}
 {% if request.session.portal_socio_id %}
 <nav class="portal-nav">
   <a href="{% url 'portal_inicio' %}" class="nav-brand">
-    <img src="{% static 'img/logo-app-full-192.png' %}" alt="Cooperativa Bailarines" style="height:38px;width:auto;object-fit:contain;filter:brightness(1.1) drop-shadow(0 1px 4px rgba(0,0,0,0.3));">
+    <img src="{% static 'img/logo.png' %}" alt="Cooperativa Bailarines" style="height:38px;width:auto;object-fit:contain;filter:brightness(1.1) drop-shadow(0 1px 4px rgba(0,0,0,0.3));">
     <div style="margin-left:4px;"><div class="sub" style="font-size:10px;color:rgba(255,255,255,0.6);">Portal del Socio</div></div>
   </a>
   <div class="nav-links">

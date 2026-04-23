@@ -84,12 +84,12 @@ def generar_pdf_credito(credito):
 
     base_static = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'img')
     logo_candidates = [
-        os.path.join(base_static, 'logo-app-full-192.png'),
         os.path.join(base_static, 'logo.png'),
+        os.path.join(base_static, 'logo-app-full-192.png'),
     ]
     logo_path = next((path for path in logo_candidates if os.path.exists(path)), None)
     if logo_path:
-        logo = Image(logo_path, width=2.8 * cm, height=1.0 * cm)
+        logo = Image(logo_path, width=4.8 * cm, height=1.55 * cm)
         logo.hAlign = 'CENTER'
         story.append(logo)
         story.append(Spacer(1, 12))

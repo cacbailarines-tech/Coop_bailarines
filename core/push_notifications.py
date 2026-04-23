@@ -48,8 +48,8 @@ def notify_socio_push(socio, title, body, url='/portal/inicio/', tag='portal-ale
         'body': body,
         'url': url,
         'tag': tag,
-        'icon': '/static/img/logo-app-full-192.png',
-        'badge': '/static/img/logo-app-full-192.png',
+        'icon': '/static/img/logo.png',
+        'badge': '/static/img/logo.png',
     }
     sent = 0
     for subscription in socio.push_subscriptions.filter(activa=True):

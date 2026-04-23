@@ -40,7 +40,7 @@ def _using_gmail_api():
 
 
 def _logo_path():
-    for file_name in ('logo-app-full-192.png', 'logo.png'):
+    for file_name in ('logo.png', 'logo-app-full-192.png'):
         logo_path = Path(settings.BASE_DIR) / 'static' / 'img' / file_name
         if logo_path.exists():
             return logo_path

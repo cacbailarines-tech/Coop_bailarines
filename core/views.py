@@ -50,13 +50,13 @@ def pwa_manifest(request):
         "orientation": "portrait",
         "icons": [
             {
-                "src": "/static/img/logo-app-full-192.png",
+                "src": "/static/img/logo.png",
                 "sizes": "192x192",
                 "type": "image/png",
                 "purpose": "any"
             },
             {
-                "src": "/static/img/logo-app-full-512.png",
+                "src": "/static/img/logo.png",
                 "sizes": "512x512",
                 "type": "image/png",
                 "purpose": "any"
@@ -67,13 +67,13 @@ def pwa_manifest(request):
                 "name": "Portal del Socio",
                 "short_name": "Portal",
                 "url": "/portal/",
-                "icons": [{"src": "/static/img/logo-app-full-192.png", "sizes": "192x192", "type": "image/png"}]
+                "icons": [{"src": "/static/img/logo.png", "sizes": "192x192", "type": "image/png"}]
             },
             {
                 "name": "Panel Principal",
                 "short_name": "Dashboard",
                 "url": "/dashboard/",
-                "icons": [{"src": "/static/img/logo-app-full-192.png", "sizes": "192x192", "type": "image/png"}]
+                "icons": [{"src": "/static/img/logo.png", "sizes": "192x192", "type": "image/png"}]
             }
         ]
     })

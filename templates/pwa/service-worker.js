@@ -62,8 +62,8 @@ self.addEventListener('push', event => {
   const title = data.title || 'Cooperativa Bailarines';
   const options = {
     body: data.body || 'Tiene una nueva notificación.',
-    icon: data.icon || '/static/img/logo-app-full-192.png',
-    badge: data.badge || '/static/img/logo-app-full-192.png',
+    icon: data.icon || '/static/img/logo.png',
+    badge: data.badge || '/static/img/logo.png',
     tag: data.tag || 'bailarines-push',
     data: {
       url: data.url || '/portal/inicio/',
