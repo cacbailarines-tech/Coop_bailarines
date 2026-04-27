@@ -42,6 +42,7 @@
             <label class="form-label">Rol *</label>
             <select name="rol" class="form-control form-select" required>
               <option value="cajero" {% if obj.perfil.rol == 'cajero' %}selected{% endif %}>Cajero</option>
+              <option value="tesorero" {% if obj.perfil.rol == 'tesorero' %}selected{% endif %}>Tesorero</option>
               <option value="gerente" {% if obj.perfil.rol == 'gerente' %}selected{% endif %}>Gerente</option>
               <option value="admin" {% if obj.perfil.rol == 'admin' %}selected{% endif %}>Administrador</option>
             </select>
