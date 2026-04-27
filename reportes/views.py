@@ -5,17 +5,20 @@ from django.db.models import Sum, Count, Q, Max
 from socios.models import Socio, Libreta, AporteMensual, Periodo
 from creditos.models import Credito
 from multas.models import Multa
+from core.utils import require_roles
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment
 from io import BytesIO
 
 
 @login_required
+@require_roles('admin', 'tesorero', 'gerente')
 def reportes_index(request):
     return render(request, 'reportes/index.html')
 
 
 @login_required
+@require_roles('admin', 'tesorero', 'gerente')
 def reporte_cartera(request):
     periodo_id = request.GET.get('periodo')
     creditos = Credito.objects.select_related('socio','libreta')
@@ -34,6 +37,7 @@ def reporte_cartera(request):
 
 
 @login_required
+@require_roles('admin', 'tesorero', 'gerente')
 def reporte_morosidad(request):
     creditos = Credito.objects.select_related('socio','libreta').filter(estado__in=['mora_leve','mora_media','mora_grave'])
     total = creditos.aggregate(t=Sum('saldo_pendiente'))['t'] or 0
@@ -41,6 +45,7 @@ def reporte_morosidad(request):
 
 
 @login_required
+@require_roles('admin', 'tesorero', 'gerente')
 def reporte_ahorros(request):
     periodo_id = request.GET.get('periodo')
     libretas = Libreta.objects.select_related('socio','periodo').annotate(
@@ -55,6 +60,7 @@ def reporte_ahorros(request):
 
 
 @login_required
+@require_roles('admin', 'tesorero', 'gerente')
 def reporte_multas(request):
     multas = Multa.objects.select_related('socio','libreta','periodo').filter(estado='pendiente')
     total = multas.aggregate(t=Sum('monto'))['t'] or 0
@@ -62,6 +68,7 @@ def reporte_multas(request):
 
 
 @login_required
+@require_roles('admin', 'tesorero', 'gerente')
 def reporte_aportes(request):
     periodo_id = request.GET.get('periodo')
     mes = request.GET.get('mes','')
@@ -99,6 +106,7 @@ def make_excel(title, headers, rows, fill_color="1B4F72"):
 
 
 @login_required
+@require_roles('admin', 'tesorero', 'gerente')
 def exportar_socios(request):
     socios = Socio.objects.all()
     headers = ['Cédula','Nombres','Apellidos','Teléfono','WhatsApp','Email','Ciudad','Estado','Registro']
@@ -110,6 +118,7 @@ def exportar_socios(request):
 
 
 @login_required
+@require_roles('admin', 'tesorero', 'gerente')
 def exportar_creditos(request):
     creditos = Credito.objects.select_related('socio','libreta').all()
     headers = ['N° Crédito','Socio','Cédula','Libreta','Tipo','Banco','Monto','Interés Total','Comisión','Transfiere','Cuota','Saldo','Estado','Fecha']
@@ -121,6 +130,7 @@ def exportar_creditos(request):
 
 
 @login_required
+@require_roles('admin', 'tesorero', 'gerente')
 def exportar_multas(request):
     multas = Multa.objects.select_related('socio','libreta').all()
     headers = ['Socio','Cédula','Libreta','Origen','Descripción','Monto','Estado','Fecha']
@@ -132,6 +142,7 @@ def exportar_multas(request):
 
 
 @login_required
+@require_roles('admin', 'tesorero', 'gerente')
 def reporte_movimientos(request):
     from core.models import Movimiento
     tipo = request.GET.get('tipo','')
@@ -164,6 +175,7 @@ def reporte_movimientos(request):
 
 
 @login_required
+@require_roles('admin', 'tesorero', 'gerente')
 def exportar_movimientos(request):
     from core.models import Movimiento
     movs = Movimiento.objects.all()
@@ -178,6 +190,7 @@ def exportar_movimientos(request):
 
 
 @login_required
+@require_roles('admin', 'tesorero', 'gerente')
 def reporte_general(request):
     """Reporte completo de todos los movimientos del sistema"""
     from django.utils import timezone
@@ -312,6 +325,7 @@ def reporte_general(request):
 
 
 @login_required
+@require_roles('admin', 'tesorero', 'gerente')
 def exportar_general_excel(request):
     """Exportar reporte general completo a Excel con múltiples hojas"""
     from socios.models import Socio, Libreta, AporteMensual
