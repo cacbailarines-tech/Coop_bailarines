@@ -1,28 +1,28 @@
 {% extends 'portal/base.html' %}
-{% block title %}Mis CrÃ©ditos - Portal Bailarines{% endblock %}
+{% block title %}Mis Cr&eacute;ditos - Portal Bailarines{% endblock %}
 {% block content %}
 <div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:8px;">
   <div>
     <a href="{% url 'portal_inicio' %}" style="color:var(--muted);text-decoration:none;font-size:12px;"><i class="fas fa-arrow-left"></i> Inicio</a>
-    <h1 style="font-size:18px;font-weight:800;margin-top:6px;">Mis CrÃ©ditos</h1>
+    <h1 style="font-size:18px;font-weight:800;margin-top:6px;">Mis Cr&eacute;ditos</h1>
   </div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;">
     <a href="{% url 'portal_pago_combinado' %}" class="btn btn-outline"><i class="fas fa-layer-group"></i> Pago Combinado</a>
     {% if libretas_disponibles %}
-    <a href="{% url 'portal_solicitar_credito' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Solicitar CrÃ©dito</a>
+    <a href="{% url 'portal_solicitar_credito' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Solicitar Cr&eacute;dito</a>
     {% endif %}
   </div>
 </div>
 
 {% if not libretas_disponibles and not creditos %}
-<div class="alert alert-info"><i class="fas fa-info-circle"></i> No tiene libretas disponibles para solicitar un credito. Cada libreta puede tener un credito activo a la vez.</div>
+<div class="alert alert-info"><i class="fas fa-info-circle"></i> No tiene libretas disponibles para solicitar un cr&eacute;dito. Cada libreta puede tener un cr&eacute;dito activo a la vez.</div>
 {% endif %}
 
 {% if creditos %}
 <div class="account-tabs">
   {% for c in creditos %}
   <a href="?credito={{ c.pk }}" class="account-tab {% if credito_actual.pk == c.pk %}active{% endif %}">
-    {{ c.numero }} <span style="font-size:9px;opacity:0.8;">· {{ c.get_estado_display }}</span>
+    {{ c.numero }} <span style="font-size:9px;opacity:0.8;">&middot; {{ c.get_estado_display }}</span>
   </a>
   {% endfor %}
 </div>
@@ -30,14 +30,14 @@
 
 {% if credito_actual %}
 {% if 'mora' in credito_actual.estado %}
-<div class="alert alert-danger"><i class="fas fa-triangle-exclamation"></i> Su crÃ©dito estÃ¡ en <strong>mora</strong>. ContÃ¡ctese con administraciÃ³n.</div>
+<div class="alert alert-danger"><i class="fas fa-triangle-exclamation"></i> Su cr&eacute;dito est&aacute; en <strong>mora</strong>. Cont&aacute;ctese con administraci&oacute;n.</div>
 {% elif credito_actual.estado == 'pendiente' %}
-<div class="alert alert-info"><i class="fas fa-clock"></i> Su solicitud estÃ¡ <strong>pendiente de revisiÃ³n</strong>.</div>
+<div class="alert alert-info"><i class="fas fa-clock"></i> Su solicitud est&aacute; <strong>pendiente de revisi&oacute;n</strong>.</div>
 {% elif credito_actual.estado == 'aprobado' %}
-<div class="alert alert-success"><i class="fas fa-check-circle"></i> CrÃ©dito <strong>aprobado</strong>. La administraciÃ³n realizarÃ¡ el desembolso pronto.</div>
+<div class="alert alert-success"><i class="fas fa-check-circle"></i> Cr&eacute;dito <strong>aprobado</strong>. La administraci&oacute;n realizar&aacute; el desembolso pronto.</div>
 {% endif %}
 {% if credito_actual.comprobante_desembolso %}
-<div class="alert alert-info"><i class="fas fa-image"></i> La administraciÃ³n adjuntÃ³ el comprobante o foto del desembolso. <a href="{{ credito_actual.comprobante_desembolso.url }}" target="_blank" style="font-weight:700;">Ver archivo</a></div>
+<div class="alert alert-info"><i class="fas fa-image"></i> La administraci&oacute;n adjunt&oacute; el comprobante o foto del desembolso. <a href="{{ credito_actual.comprobante_desembolso.url }}" target="_blank" style="font-weight:700;">Ver archivo</a></div>
 {% endif %}
 
 <div class="pcard" style="margin-bottom:14px;">
@@ -87,7 +87,7 @@
       <td>${{ p.saldo_posterior|floatformat:2 }}</td>
       <td>
         {% if p.estado == 'verificado' %}<span class="badge badge-success"><i class="fas fa-check"></i> Verificado</span>
-        {% elif p.estado == 'reportado' %}<span class="badge badge-warning"><i class="fas fa-clock"></i> En revisiÃ³n</span>
+        {% elif p.estado == 'reportado' %}<span class="badge badge-warning"><i class="fas fa-clock"></i> En revisi&oacute;n</span>
         {% else %}<span class="badge badge-danger"><i class="fas fa-times"></i> Rechazado</span>
         {% if p.observaciones %}<div style="font-size:10px;color:var(--danger);margin-top:3px;"><i class="fas fa-info-circle"></i> {{ p.observaciones }}</div>{% endif %}
         {% endif %}
@@ -102,8 +102,8 @@
 {% else %}
 <div class="pcard"><div class="pcard-body" style="text-align:center;padding:36px;">
   <i class="fas fa-hand-holding-dollar" style="font-size:36px;color:var(--border);display:block;margin-bottom:10px;"></i>
-  <p style="color:var(--muted);margin-bottom:14px;">No tiene crÃ©ditos registrados</p>
-  {% if libretas_disponibles %}<a href="{% url 'portal_solicitar_credito' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Solicitar CrÃ©dito</a>{% endif %}
+  <p style="color:var(--muted);margin-bottom:14px;">No tiene cr&eacute;ditos registrados</p>
+  {% if libretas_disponibles %}<a href="{% url 'portal_solicitar_credito' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Solicitar Cr&eacute;dito</a>{% endif %}
 </div></div>
 {% endif %}
 {% endblock %}
