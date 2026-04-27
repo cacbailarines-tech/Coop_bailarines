@@ -26,71 +26,84 @@
   <i class="fas fa-circle-info"></i> Las solicitudes se revisan en <strong>orden de ingreso</strong>.
 </div>
 
-<div class="pcard">
-  <div class="pcard-body" style="padding:0;">
-    {% for item in solicitudes_info %}
-    {% with c=item.credito pos=item.posicion %}
-    <div style="padding:16px 18px;{% if not forloop.last %}border-bottom:1px solid var(--border);{% endif %}">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:10px;">
-        <div>
-          <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">{{ c.fecha_solicitud|date:"d/m/Y H:i" }}</div>
-          <div style="font-size:18px;font-weight:800;color:var(--primary);line-height:1.15;">{{ c.numero }}</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:4px;">Libreta #{{ c.libreta.numero }} &middot; {{ c.get_tipo_display }} &middot; {{ c.plazo_meses }} mes(es)</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
-          {% if c.estado == 'pendiente' %}
-          <span class="badge badge-warning" style="font-size:12px;padding:7px 12px;">En revisi&oacute;n</span>
-          <span style="font-size:11px;color:var(--muted);">Cola: <strong style="color:#F57F17;">{% if pos %}#{{ pos }}{% else %}-{% endif %}</strong></span>
-          {% elif c.estado == 'aprobado' %}
-          <span class="badge badge-primary" style="font-size:12px;padding:7px 12px;">Aprobado</span>
-          {% elif c.estado == 'desembolsado' %}
-          <span class="badge badge-success" style="font-size:12px;padding:7px 12px;">Desembolsado</span>
-          {% elif c.estado == 'pagado' %}
-          <span class="badge badge-success" style="font-size:12px;padding:7px 12px;">Pagado</span>
-          {% elif 'mora' in c.estado %}
-          <span class="badge badge-danger" style="font-size:12px;padding:7px 12px;">{{ c.get_estado_display }}</span>
-          {% elif c.estado == 'cancelado' %}
-          <span class="badge badge-secondary" style="font-size:12px;padding:7px 12px;">Cancelado</span>
-          {% endif %}
-        </div>
-      </div>
-
-      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:10px;">
-        <div>
-          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;">Monto</div>
-          <div style="font-size:18px;font-weight:800;">${{ c.monto_solicitado|floatformat:2 }}</div>
-        </div>
-        <div>
-          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;">Recibir&aacute;</div>
-          <div style="font-size:18px;font-weight:800;color:var(--success);">${{ c.monto_transferir|floatformat:2 }}</div>
-        </div>
-        <div>
-          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;">{% if c.tipo == 'mensualizado' %}Cuota{% else %}Pago &uacute;nico{% endif %}</div>
-          <div style="font-size:18px;font-weight:800;color:var(--primary);">{% if c.tipo == 'mensualizado' %}${{ c.cuota_mensual|floatformat:2 }}{% else %}${{ c.monto_solicitado|floatformat:2 }}{% endif %}</div>
-        </div>
-      </div>
-
-      <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-bottom:12px;">
-        <span>Banco: <strong style="color:var(--text);font-weight:700;">{{ c.get_banco_display }}</strong></span>
-        <span>Inter&eacute;s: <strong style="color:var(--text);font-weight:700;">${{ c.interes_total|floatformat:2 }}</strong></span>
-        <span>Valor transferencia: <strong style="color:var(--text);font-weight:700;">${{ c.comision_bancaria|floatformat:2 }}</strong></span>
-        <span>Beneficio coop.: <strong style="color:var(--text);font-weight:700;">${{ c.beneficio_transferencia|floatformat:2 }}</strong></span>
-        {% if c.fecha_pago_limite %}<span>Vence: <strong style="color:var(--text);font-weight:700;">{{ c.fecha_pago_limite|date:"d/m/Y" }}</strong></span>{% endif %}
-      </div>
-
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <a href="{% url 'portal_credito_pdf' c.pk %}" class="btn btn-outline btn-sm" target="_blank"><i class="fas fa-file-pdf" style="color:#C62828;"></i> PDF</a>
-        {% if c.estado in 'desembolsado,mora_leve,mora_media,mora_grave' %}
-        <a href="{% url 'portal_reportar_pago' c.pk %}" class="btn btn-success btn-sm"><i class="fas fa-dollar-sign"></i> Reportar Pago</a>
-        {% endif %}
-        {% if c.comprobante_desembolso %}
-        <a href="{{ c.comprobante_desembolso.url }}" target="_blank" class="btn btn-outline btn-sm"><i class="fas fa-paperclip"></i> Desembolso</a>
-        {% endif %}
-        <a href="{% url 'portal_creditos' %}?credito={{ c.pk }}" class="btn btn-outline btn-sm"><i class="fas fa-eye"></i> Ver Detalle</a>
-      </div>
+<div class="pcard" style="margin-bottom:14px;">
+  <div class="pcard-body" style="padding:14px 16px;">
+    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px;">Filtrar por estado</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      {% for filtro in filtros_estado %}
+      <a href="{% url 'portal_mis_solicitudes' %}{% if filtro.value %}?estado={{ filtro.value }}{% endif %}"
+         class="btn {% if estado_actual == filtro.value %}btn-primary{% else %}btn-outline{% endif %} btn-sm"
+         style="border-radius:999px;">
+        {{ filtro.label }} <span style="opacity:0.8;">{{ filtro.count }}</span>
+      </a>
+      {% endfor %}
     </div>
-    {% endwith %}
-    {% endfor %}
+  </div>
+</div>
+
+<div class="pcard">
+  <div style="overflow-x:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Crédito</th>
+          <th>Fecha</th>
+          <th>Libreta</th>
+          <th>Tipo</th>
+          <th>Monto</th>
+          <th>Recibirá</th>
+          <th>{% if estado_actual == 'pagado' %}Pagó{% else %}Cuota{% endif %}</th>
+          <th>Estado</th>
+          <th>Dato clave</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in solicitudes_info %}
+        {% with c=item.credito pos=item.posicion %}
+        <tr>
+          <td>
+            <div style="font-weight:800;color:var(--primary);">{{ c.numero }}</div>
+            <div style="font-size:11px;color:var(--muted);">{{ c.get_banco_display }}</div>
+          </td>
+          <td>
+            <div>{{ c.fecha_solicitud|date:"d/m/Y" }}</div>
+            <div style="font-size:11px;color:var(--muted);">{{ c.fecha_solicitud|date:"H:i" }}</div>
+          </td>
+          <td>#{{ c.libreta.numero }}</td>
+          <td>{{ c.get_tipo_display }}</td>
+          <td style="font-weight:700;">${{ c.monto_solicitado|floatformat:2 }}</td>
+          <td class="amount-pos" style="font-weight:700;">${{ c.monto_transferir|floatformat:2 }}</td>
+          <td style="font-weight:700;">{% if c.tipo == 'mensualizado' %}${{ c.cuota_mensual|floatformat:2 }}{% else %}${{ c.monto_solicitado|floatformat:2 }}{% endif %}</td>
+          <td><span class="badge {{ item.estado_badge }}">{{ item.estado_texto }}</span></td>
+          <td style="font-size:11px;">
+            {% if c.estado == 'pendiente' %}
+            Cola: <strong style="color:#F57F17;">{% if pos %}#{{ pos }}{% else %}-{% endif %}</strong>
+            {% elif c.fecha_pago_limite %}
+            Vence: <strong>{{ c.fecha_pago_limite|date:"d/m/Y" }}</strong>
+            {% else %}
+            Interés: <strong>${{ c.interes_total|floatformat:2 }}</strong>
+            {% endif %}
+          </td>
+          <td>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <a href="{% url 'portal_credito_pdf' c.pk %}" class="btn btn-outline btn-sm" target="_blank"><i class="fas fa-file-pdf" style="color:#C62828;"></i> PDF</a>
+              {% if c.estado in 'desembolsado,mora_leve,mora_media,mora_grave' %}
+              <a href="{% url 'portal_reportar_pago' c.pk %}" class="btn btn-success btn-sm"><i class="fas fa-dollar-sign"></i> Pago</a>
+              {% endif %}
+              {% if c.comprobante_desembolso %}
+              <a href="{{ c.comprobante_desembolso.url }}" target="_blank" class="btn btn-outline btn-sm"><i class="fas fa-paperclip"></i> Desembolso</a>
+              {% endif %}
+              <a href="{% url 'portal_creditos' %}?credito={{ c.pk }}" class="btn btn-outline btn-sm"><i class="fas fa-eye"></i> Detalle</a>
+            </div>
+          </td>
+        </tr>
+        {% endwith %}
+        {% empty %}
+        <tr><td colspan="10" style="text-align:center;padding:28px;color:var(--muted);">No hay solicitudes para este estado.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
 </div>
 {% endif %}

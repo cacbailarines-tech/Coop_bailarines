@@ -590,19 +590,50 @@ def portal_mis_solicitudes(request):
     socio, redir = get_socio_or_redirect(request)
     if redir:
         return redir
-    # All credits of this socio
+
+    estado = request.GET.get('estado', '').strip()
     mis_creditos = Credito.objects.filter(socio=socio).select_related('libreta').order_by('-fecha_solicitud')
-    # Pending credits in queue - find position
+    conteos_estado = {}
+    for key, _label in Credito.ESTADO_CHOICES:
+        conteos_estado[key] = mis_creditos.filter(estado=key).count()
+    total_solicitudes = mis_creditos.count()
+
+    if estado:
+        mis_creditos = mis_creditos.filter(estado=estado)
+
     pendientes_cola = list(Credito.objects.filter(estado='pendiente').order_by('fecha_solicitud').values_list('pk', flat=True))
-    
+
     solicitudes_info = []
     for c in mis_creditos:
         posicion = None
         if c.estado == 'pendiente' and c.pk in pendientes_cola:
             posicion = pendientes_cola.index(c.pk) + 1
-        solicitudes_info.append({'credito': c, 'posicion': posicion})
-    
+        solicitudes_info.append({
+            'credito': c,
+            'posicion': posicion,
+            'estado_badge': (
+                'badge-warning' if c.estado == 'pendiente'
+                else 'badge-primary' if c.estado == 'aprobado'
+                else 'badge-success' if c.estado in ['desembolsado', 'pagado']
+                else 'badge-danger' if 'mora' in c.estado
+                else 'badge-secondary'
+            ),
+            'estado_texto': 'En revisión' if c.estado == 'pendiente' else c.get_estado_display(),
+        })
+
     return render(request, 'portal/mis_solicitudes.html', {
         'socio': socio,
         'solicitudes_info': solicitudes_info,
+        'estado_actual': estado,
+        'filtros_estado': [
+            {'value': '', 'label': 'Todas', 'count': total_solicitudes},
+            {'value': 'pendiente', 'label': 'Pendiente', 'count': conteos_estado.get('pendiente', 0)},
+            {'value': 'aprobado', 'label': 'Aprobado', 'count': conteos_estado.get('aprobado', 0)},
+            {'value': 'desembolsado', 'label': 'Desembolsado', 'count': conteos_estado.get('desembolsado', 0)},
+            {'value': 'pagado', 'label': 'Pagado', 'count': conteos_estado.get('pagado', 0)},
+            {'value': 'mora_leve', 'label': 'Mora leve', 'count': conteos_estado.get('mora_leve', 0)},
+            {'value': 'mora_media', 'label': 'Mora media', 'count': conteos_estado.get('mora_media', 0)},
+            {'value': 'mora_grave', 'label': 'Mora grave', 'count': conteos_estado.get('mora_grave', 0)},
+            {'value': 'cancelado', 'label': 'Cancelado', 'count': conteos_estado.get('cancelado', 0)},
+        ],
     })
