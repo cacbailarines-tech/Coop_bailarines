@@ -260,6 +260,8 @@ def _send_admin_email(subject, title, intro, sections=None, cta_label='Revisar e
         logger.warning('Correo administrativo omitido: no hay usuarios administrativos con email para %s', subject)
         return 0
 
+    resumen = ' | '.join(f'{section["label"]}: {section["value"]}' for section in (sections or [])[:4])
+    preheader = f'{intro} {resumen}'.strip()
     text_lines = [intro, '', 'Detalles:']
     for section in sections or []:
         text_lines.append(f'- {section["label"]}: {section["value"]}')
@@ -272,7 +274,7 @@ def _send_admin_email(subject, title, intro, sections=None, cta_label='Revisar e
         cta_label=cta_label,
         cta_url=_portal_url(path),
         note='Este aviso se envia a los usuarios administrativos activos con correo registrado.',
-        preheader=intro,
+        preheader=preheader,
     )
 
     sent = 0
