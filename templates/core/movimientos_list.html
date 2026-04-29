@@ -61,11 +61,11 @@
     </form>
   </div>
   <div style="overflow-x:auto;"><table>
-    <thead><tr><th>Fecha</th><th>Tipo</th><th>Categoría</th><th>Descripción</th><th>Socio / Ref.</th><th>Comprobante</th><th>Adjunto</th><th>Monto</th><th>Origen</th><th>Usuario</th><th></th></tr></thead>
+    <thead><tr><th>Fecha verificada</th><th>Tipo</th><th>Categoría</th><th>Descripción</th><th>Socio / Ref.</th><th>Comprobante</th><th>Adjunto</th><th>Monto</th><th>Origen</th><th>Usuario</th><th></th></tr></thead>
     <tbody>
     {% for m in page_obj %}
     <tr>
-      <td style="font-weight:600;white-space:nowrap;">{{ m.fecha|date:"d/m/Y" }}</td>
+      <td style="font-weight:600;white-space:nowrap;">{{ m.fecha_registro|date:"d/m/Y H:i" }}<div style="font-size:10px;color:var(--muted);font-weight:500;">Movimiento: {{ m.fecha|date:"d/m/Y" }}</div></td>
       <td>{% if m.tipo == 'ingreso' %}<span class="badge badge-success">Ingreso</span>{% else %}<span class="badge badge-danger">Egreso</span>{% endif %}</td>
       <td style="font-size:11px;">{{ m.get_categoria_display }}</td>
       <td>{{ m.descripcion }}{% if m.observaciones %}<div style="font-size:10px;color:var(--muted);margin-top:4px;">{{ m.observaciones|truncatechars:60 }}</div>{% endif %}</td>

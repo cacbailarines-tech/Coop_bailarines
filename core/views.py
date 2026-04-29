@@ -538,6 +538,7 @@ def movimientos_list(request):
     total_ingresos = movs.filter(tipo='ingreso').aggregate(t=Sum('monto'))['t'] or 0
     total_egresos = movs.filter(tipo='egreso').aggregate(t=Sum('monto'))['t'] or 0
     saldo = total_ingresos - total_egresos
+    movs = movs.order_by('-fecha_registro', '-fecha', '-pk')
     paginator = Paginator(movs, 20)
     page = paginator.get_page(request.GET.get('page'))
     usuarios = User.objects.filter(movimientos__isnull=False).distinct().order_by('first_name', 'username')
