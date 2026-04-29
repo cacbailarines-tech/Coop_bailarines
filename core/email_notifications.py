@@ -65,9 +65,10 @@ def _saludo_socio(socio):
     return socio.nombre_preferido or socio.nombres.split()[0]
 
 
-def _email_shell(title, intro, sections=None, cta_label='Ir al portal', cta_url=None, note=None):
+def _email_shell(title, intro, sections=None, cta_label='Ir al portal', cta_url=None, note=None, preheader=None):
     sections = sections or []
     cta_url = cta_url or _portal_url()
+    preheader = preheader or intro
     logo_html = ''
     if _logo_path():
         logo_html = (
@@ -96,6 +97,7 @@ def _email_shell(title, intro, sections=None, cta_label='Ir al portal', cta_url=
 <!DOCTYPE html>
 <html lang="es">
 <body style="margin:0;padding:24px;background:#F0F4FA;font-family:'Plus Jakarta Sans',Arial,Helvetica,sans-serif;color:#1A2332;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;line-height:1px;mso-hide:all;">{escape(preheader)}</div>
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:760px;margin:0 auto;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid #DDE3EF;box-shadow:0 2px 8px rgba(11,61,145,0.06);">
     <tr>
       <td style="background:#0B3D91;padding:0 20px;height:58px;">
@@ -105,14 +107,11 @@ def _email_shell(title, intro, sections=None, cta_label='Ir al portal', cta_url=
               <table role="presentation" cellspacing="0" cellpadding="0">
                 <tr>
                   <td style="vertical-align:middle;">{logo_html}</td>
-                  <td style="vertical-align:middle;padding-left:10px;">
-                    <div style="font-size:10px;color:rgba(255,255,255,0.6);font-weight:600;">Portal del Socio</div>
-                  </td>
                 </tr>
               </table>
             </td>
             <td style="text-align:right;vertical-align:middle;">
-              <span style="display:inline-block;color:rgba(255,255,255,0.78);font-size:12px;font-weight:600;padding:6px 12px;border-radius:7px;background:rgba(255,255,255,0.12);">Notificación automática</span>
+              <span style="display:inline-block;color:rgba(255,255,255,0.78);font-size:12px;font-weight:600;padding:6px 12px;border-radius:7px;background:rgba(255,255,255,0.12);">Aviso</span>
             </td>
           </tr>
         </table>
@@ -128,17 +127,6 @@ def _email_shell(title, intro, sections=None, cta_label='Ir al portal', cta_url=
     <tr>
       <td style="padding:18px 18px 16px 18px;font-size:14px;line-height:1.7;color:#1A2332;">
         {escape(intro).replace(chr(10), '<br>')}
-      </td>
-    </tr>
-    <tr>
-      <td style="padding:0 18px 12px 18px;">
-        <table role="presentation" cellspacing="0" cellpadding="0">
-          <tr>
-            <td><span style="display:inline-block;background:rgba(11,61,145,0.1);color:#0B3D91;font-size:11px;font-weight:700;padding:5px 10px;border-radius:20px;">Portal del Socio</span></td>
-            <td style="width:8px;"></td>
-            <td><span style="display:inline-block;background:rgba(0,137,123,0.1);color:#00897B;font-size:11px;font-weight:700;padding:5px 10px;border-radius:20px;">Cooperativa Bailarines</span></td>
-          </tr>
-        </table>
       </td>
     </tr>
     {section_html}
@@ -284,6 +272,7 @@ def _send_admin_email(subject, title, intro, sections=None, cta_label='Revisar e
         cta_label=cta_label,
         cta_url=_portal_url(path),
         note='Este aviso se envia a los usuarios administrativos activos con correo registrado.',
+        preheader=intro,
     )
 
     sent = 0
@@ -445,7 +434,8 @@ def notify_credito_rechazado(credito):
             {'label': 'Solicitud', 'value': credito.numero, 'color': '#17479E'},
             {'label': 'Motivo', 'value': motivo, 'color': '#E83E74'},
         ],
-        note='Adjunto encontrará el PDF de la solicitud registrada para su referencia.'
+        note='Adjunto encontrará el PDF de la solicitud registrada para su referencia.',
+        preheader=f'Solicitud {credito.numero} no aprobada. Motivo: {motivo}'
     )
     return _send_email(
         socio.email,
@@ -490,7 +480,8 @@ def notify_credito_desembolsado(credito):
         f'Crédito desembolsado: {credito.numero}',
         f'Hola {_saludo_socio(socio)}, su desembolso ya fue confirmado por la cooperativa.',
         sections=html_sections,
-        note='Adjunto encontrará el PDF actualizado de su crédito con el detalle financiero.'
+        note='Adjunto encontrará el PDF actualizado de su crédito con el detalle financiero.',
+        preheader=f'Credito {credito.numero} desembolsado por ${credito.monto_transferir:.2f}. Vence: {credito.fecha_pago_limite.strftime("%d/%m/%Y") if credito.fecha_pago_limite else "Pendiente"}.'
     )
     return _send_email(
         socio.email,
@@ -528,10 +519,11 @@ def notify_pago_credito_verificado(pago):
             {'label': 'Monto verificado', 'value': f'${pago.monto_pagado:.2f}', 'color': '#0E8A6A'},
             {'label': 'Saldo pendiente', 'value': f'${credito.saldo_pendiente:.2f}', 'color': '#10336F'},
         ],
+        preheader=f'Pago #{pago.numero_pago} verificado: ${pago.monto_pagado:.2f}. Saldo pendiente: ${credito.saldo_pendiente:.2f}.',
     )
     return _send_email(
         socio.email,
-        f'Se verificó su pago #{pago.numero_pago} del crédito {credito.numero}',
+        f'Pago verificado - {credito.numero}',
         text_body,
         html_body,
     )
@@ -563,10 +555,11 @@ def notify_pago_credito_rechazado(pago, motivo):
             {'label': 'Pago', 'value': f'#{pago.numero_pago}', 'color': '#17479E'},
             {'label': 'Motivo', 'value': motivo, 'color': '#E83E74'},
         ],
+        preheader=f'Pago #{pago.numero_pago} rechazado en {credito.numero}. Motivo: {motivo}',
     )
     return _send_email(
         socio.email,
-        f'Se rechazó su pago #{pago.numero_pago} del crédito {credito.numero}',
+        f'Pago rechazado - {credito.numero}',
         text_body,
         html_body,
     )
@@ -596,10 +589,11 @@ def notify_aporte_verificado(aporte):
             {'label': 'Periodo', 'value': f'{aporte.get_mes_display()} {aporte.anio}', 'color': '#17479E'},
             {'label': 'Monto', 'value': f'${aporte.monto_total:.2f}', 'color': '#0E8A6A'},
         ],
+        preheader=f'Aporte verificado: {aporte.get_mes_display()} {aporte.anio}, libreta #{aporte.libreta.numero}, ${aporte.monto_total:.2f}.',
     )
     return _send_email(
         socio.email,
-        f'Se verificó su aporte de {aporte.get_mes_display()} {aporte.anio} - Libreta #{aporte.libreta.numero}',
+        f'Aporte verificado - Libreta #{aporte.libreta.numero}',
         text_body,
         html_body,
     )
@@ -630,10 +624,11 @@ def notify_aporte_rechazado(aporte, motivo):
             {'label': 'Periodo', 'value': f'{aporte.get_mes_display()} {aporte.anio}', 'color': '#17479E'},
             {'label': 'Motivo', 'value': motivo, 'color': '#E83E74'},
         ],
+        preheader=f'Aporte rechazado: {aporte.get_mes_display()} {aporte.anio}, libreta #{aporte.libreta.numero}. Motivo: {motivo}',
     )
     return _send_email(
         socio.email,
-        f'Se rechazó su aporte de {aporte.get_mes_display()} {aporte.anio} - Libreta #{aporte.libreta.numero}',
+        f'Aporte rechazado - Libreta #{aporte.libreta.numero}',
         text_body,
         html_body,
     )
@@ -663,6 +658,7 @@ def notify_multa_verificada(multa):
             {'label': 'Multa', 'value': multa.descripcion, 'color': '#17479E'},
             {'label': 'Monto', 'value': f'${multa.monto:.2f}', 'color': '#0E8A6A'},
         ],
+        preheader=f'Multa verificada: ${multa.monto:.2f}. {multa.descripcion}',
     )
     return _send_email(
         socio.email,
@@ -697,6 +693,7 @@ def notify_multa_rechazada(multa, motivo):
             {'label': 'Multa', 'value': multa.descripcion, 'color': '#17479E'},
             {'label': 'Motivo', 'value': motivo, 'color': '#E83E74'},
         ],
+        preheader=f'Multa rechazada: ${multa.monto:.2f}. Motivo: {motivo}',
     )
     return _send_email(
         socio.email,
@@ -733,6 +730,7 @@ def notify_cumpleanos_transferido(socio, monto_transferido, costo_operativo=0):
         'Incentivo de cumpleaños registrado',
         f'Hola {_saludo_socio(socio)}, ya registramos su incentivo de cumpleaños en el sistema.',
         sections=sections,
+        preheader=f'Incentivo registrado: ${monto_transferido:.2f}. Gracias por formar parte de la cooperativa.',
     )
     return _send_email(
         socio.email,
@@ -786,7 +784,8 @@ def send_payment_reminders():
                 f'Recordatorio de pago: {credito.numero}',
                 f'Hola {_saludo_socio(credito.socio)}, {urgencia.lower()} su crédito con la cooperativa.',
                 sections=sections,
-                note='Ingrese al portal para reportar su comprobante de pago.'
+                note='Ingrese al portal para reportar su comprobante de pago.',
+                preheader=f'{urgencia}: {credito.numero}. Saldo pendiente ${credito.saldo_pendiente:.2f}. Vence {credito.fecha_pago_limite.strftime("%d/%m/%Y")}.'
             )
             if _send_email(credito.socio.email, f'Recordatorio de pago - {credito.numero}', text_body, html_body):
                 sent += 1
@@ -823,7 +822,8 @@ def send_payment_reminders():
                         {'label': 'Monto total', 'value': f'${aporte.monto_total:.2f}', 'color': '#0E8A6A'},
                         {'label': 'Libreta', 'value': f'#{libreta.numero}', 'color': '#10336F'},
                     ],
-                    note='Recuerde reportar su comprobante en el portal del socio.'
+                    note='Recuerde reportar su comprobante en el portal del socio.',
+                    preheader=f'Aporte pendiente: {aporte.get_mes_display()} {aporte.anio}, libreta #{libreta.numero}, ${aporte.monto_total:.2f}.'
                 )
                 if _send_email(libreta.socio.email, f'Recordatorio de aporte - Libreta #{libreta.numero}', text_body, html_body):
                     sent += 1
