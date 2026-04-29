@@ -1,10 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.utils import timezone
-from .models import Credito, PagoCredito, MultaCredito, BANCO_CHOICES
+from .models import AprobacionCredito, Credito, PagoCredito, MultaCredito, BANCO_CHOICES
 from socios.models import Socio, Libreta, Periodo
 from decimal import Decimal
 import random, string
@@ -16,7 +17,10 @@ from core.email_notifications import (
     notify_pago_credito_rechazado,
     notify_pago_credito_verificado,
 )
-from core.utils import registrar_auditoria
+from core.utils import has_role, registrar_auditoria
+
+
+ROLES_APROBACION_CREDITO = ['admin', 'gerente', 'tesorero', 'cajero']
 
 
 def _fechas_cuotas_credito(credito):
@@ -35,6 +39,45 @@ def _fechas_cuotas_credito(credito):
             fecha_cuota = date(anio, mes, last_day)
         fechas.append((i, fecha_cuota))
     return fechas
+
+
+def _usuarios_aprobacion_credito():
+    return (
+        User.objects.filter(is_active=True)
+        .filter(Q(is_staff=True) | Q(is_superuser=True) | Q(perfil__rol__in=ROLES_APROBACION_CREDITO))
+        .distinct()
+        .order_by('first_name', 'last_name', 'username')
+    )
+
+
+def _estado_aprobaciones_credito(credito):
+    requeridos = list(_usuarios_aprobacion_credito())
+    aprobaciones = {
+        aprobacion.usuario_id: aprobacion
+        for aprobacion in credito.aprobaciones_admin.select_related('usuario').all()
+    }
+    aprobados = [usuario for usuario in requeridos if usuario.id in aprobaciones and aprobaciones[usuario.id].aprobado]
+    pendientes = [usuario for usuario in requeridos if usuario.id not in aprobaciones or not aprobaciones[usuario.id].aprobado]
+    forzada = next((aprobacion for aprobacion in aprobaciones.values() if aprobacion.forzada), None)
+    filas = [
+        {'usuario': usuario, 'aprobacion': aprobaciones.get(usuario.id)}
+        for usuario in requeridos
+    ]
+    return {
+        'requeridos': requeridos,
+        'aprobaciones': aprobaciones,
+        'filas': filas,
+        'aprobados': aprobados,
+        'pendientes': pendientes,
+        'total': len(requeridos),
+        'aprobados_count': len(aprobados),
+        'completa': bool(requeridos) and len(aprobados) == len(requeridos),
+        'forzada': forzada,
+    }
+
+
+def _puede_forzar_aprobacion(user):
+    return user.is_superuser or has_role(user, 'admin', 'gerente')
 
 
 def _estado_mora_por_dias(dias_atraso):
@@ -206,16 +249,53 @@ def credito_detalle(request, pk):
 @login_required
 def credito_aprobar(request, pk):
     credito = get_object_or_404(Credito, pk=pk)
+    aprobaciones_info = _estado_aprobaciones_credito(credito)
     if request.method == 'POST':
         accion = request.POST.get('accion')
         if accion == 'aprobar' and credito.estado == 'pendiente':
+            if request.user not in aprobaciones_info['requeridos']:
+                messages.error(request, 'Su usuario no forma parte del grupo requerido para aprobar creditos.')
+                return redirect('credito_aprobar', pk=credito.pk)
+            AprobacionCredito.objects.update_or_create(
+                credito=credito,
+                usuario=request.user,
+                defaults={'aprobado': True, 'forzada': False, 'observacion': request.POST.get('observacion', '')},
+            )
+            aprobaciones_info = _estado_aprobaciones_credito(credito)
+            registrar_auditoria(request.user, 'creditos', 'aprobar_credito_personal', f'{request.user.get_full_name() or request.user.username} aprobo el credito {credito.numero}.', 'Credito', credito.pk)
+            if aprobaciones_info['completa']:
+                credito.estado = 'aprobado'
+                credito.fecha_aprobacion = timezone.now().date()
+                credito.aprobado_por = request.user
+                credito.save(update_fields=['estado', 'fecha_aprobacion', 'aprobado_por'])
+                registrar_auditoria(request.user, 'creditos', 'aprobar_credito', f'El credito {credito.numero} quedo aprobado por todo el personal administrativo.', 'Credito', credito.pk)
+                messages.success(request, f'Credito {credito.numero} aprobado por todo el personal. Ya puede desembolsarse.')
+            else:
+                messages.success(request, f'Su aprobacion fue registrada. Faltan {len(aprobaciones_info["pendientes"])} aprobacion(es) para desembolsar.')
+        elif accion == 'forzar_aprobacion' and credito.estado in ['pendiente', 'aprobado']:
+            if not _puede_forzar_aprobacion(request.user):
+                messages.error(request, 'Solo Administrador o Gerente puede forzar una aprobacion.')
+                return redirect('credito_aprobar', pk=credito.pk)
+            motivo = request.POST.get('motivo_forzar', '').strip()
+            if not motivo:
+                messages.error(request, 'Debe indicar el motivo para forzar la aprobacion.')
+                return redirect('credito_aprobar', pk=credito.pk)
+            AprobacionCredito.objects.update_or_create(
+                credito=credito,
+                usuario=request.user,
+                defaults={'aprobado': True, 'forzada': True, 'observacion': motivo},
+            )
             credito.estado = 'aprobado'
             credito.fecha_aprobacion = timezone.now().date()
             credito.aprobado_por = request.user
-            credito.save()
-            registrar_auditoria(request.user, 'creditos', 'aprobar_credito', f'Se aprobó el crédito {credito.numero}.', 'Credito', credito.pk)
-            messages.success(request, f'Crédito {credito.numero} aprobado.')
+            credito.save(update_fields=['estado', 'fecha_aprobacion', 'aprobado_por'])
+            registrar_auditoria(request.user, 'creditos', 'forzar_aprobacion_credito', f'Se forzo la aprobacion del credito {credito.numero}.', 'Credito', credito.pk, {'motivo': motivo})
+            messages.warning(request, f'Aprobacion forzada registrada. {credito.numero} puede desembolsarse con respaldo de auditoria.')
         elif accion == 'desembolsar' and credito.estado == 'aprobado':
+            aprobaciones_info = _estado_aprobaciones_credito(credito)
+            if not aprobaciones_info['completa'] and not aprobaciones_info['forzada']:
+                messages.error(request, 'No se puede desembolsar: faltan aprobaciones administrativas.')
+                return redirect('credito_aprobar', pk=credito.pk)
             fecha_str = request.POST.get('fecha_desembolso', '')
             try:
                 fecha_desembolso = date.fromisoformat(fecha_str) if fecha_str else timezone.now().date()
@@ -281,7 +361,9 @@ def credito_aprobar(request, pk):
         return redirect('credito_detalle', pk=credito.pk)
     return render(request, 'creditos/aprobar.html', {
         'credito': credito,
-        'hoy': timezone.now().date()
+        'hoy': timezone.now().date(),
+        'aprobaciones_info': _estado_aprobaciones_credito(credito),
+        'puede_forzar_aprobacion': _puede_forzar_aprobacion(request.user),
     })
 
 

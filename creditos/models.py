@@ -179,6 +179,25 @@ class Credito(models.Model):
         ordering = ['-fecha_solicitud']
 
 
+class AprobacionCredito(models.Model):
+    credito = models.ForeignKey(Credito, on_delete=models.CASCADE, related_name='aprobaciones_admin')
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='aprobaciones_credito')
+    aprobado = models.BooleanField(default=True)
+    forzada = models.BooleanField(default=False)
+    observacion = models.CharField(max_length=300, blank=True)
+    fecha = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        estado = 'Forzada' if self.forzada else 'Aprobada'
+        return f"{estado} - {self.credito.numero} - {self.usuario.get_full_name() or self.usuario.username}"
+
+    class Meta:
+        unique_together = ('credito', 'usuario')
+        ordering = ['fecha']
+        verbose_name = 'Aprobacion administrativa de credito'
+        verbose_name_plural = 'Aprobaciones administrativas de creditos'
+
+
 class PagoCredito(models.Model):
     ESTADO_CHOICES = [('reportado','Reportado'),('verificado','Verificado'),('rechazado','Rechazado')]
 

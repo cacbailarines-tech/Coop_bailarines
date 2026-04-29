@@ -22,14 +22,64 @@
     </div>
   </div>
 
+  <div class="card" style="margin-bottom:14px;">
+    <div class="card-header"><h5><i class="fas fa-user-check" style="color:var(--success);margin-right:7px;"></i>Aprobaciones administrativas</h5></div>
+    <div class="card-body">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+        <div>
+          <div style="font-size:12px;color:var(--muted);">Avance requerido antes del desembolso</div>
+          <div style="font-size:20px;font-weight:900;color:var(--primary);">{{ aprobaciones_info.aprobados_count }}/{{ aprobaciones_info.total }}</div>
+        </div>
+        {% if aprobaciones_info.forzada %}
+        <span class="badge badge-warning">Aprobacion forzada</span>
+        {% elif aprobaciones_info.completa %}
+        <span class="badge badge-success">Completa</span>
+        {% else %}
+        <span class="badge badge-secondary">Faltan aprobaciones</span>
+        {% endif %}
+      </div>
+      <div style="display:grid;gap:8px;">
+        {% for fila in aprobaciones_info.filas %}
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid var(--border);border-radius:10px;padding:9px 11px;background:#fff;">
+          <div>
+            <div style="font-size:12px;font-weight:800;">{{ fila.usuario.get_full_name|default:fila.usuario.username }}</div>
+            <div style="font-size:10px;color:var(--muted);">{{ fila.usuario.perfil.get_rol_display|default:"Administrativo" }}</div>
+          </div>
+          {% if fila.aprobacion and fila.aprobacion.aprobado %}
+          <span class="badge {% if fila.aprobacion.forzada %}badge-warning{% else %}badge-success{% endif %}">{% if fila.aprobacion.forzada %}Forzada{% else %}Aprobó{% endif %}</span>
+          {% else %}
+          <span class="badge badge-secondary">Pendiente</span>
+          {% endif %}
+        </div>
+        {% empty %}
+        <div class="alert alert-danger"><i class="fas fa-triangle-exclamation"></i> No hay usuarios administrativos configurados para aprobar.</div>
+        {% endfor %}
+      </div>
+      {% if aprobaciones_info.forzada %}
+      <div class="alert alert-warning" style="margin-top:12px;"><i class="fas fa-shield-halved"></i> Forzada por {{ aprobaciones_info.forzada.usuario.get_full_name|default:aprobaciones_info.forzada.usuario.username }}. Motivo: {{ aprobaciones_info.forzada.observacion }}</div>
+      {% endif %}
+    </div>
+  </div>
+
   <div class="card">
     <div class="card-header"><h5><i class="fas fa-gavel" style="color:var(--primary);margin-right:7px;"></i>Estado actual: <span style="color:var(--primary);">{{ credito.get_estado_display }}</span></h5></div>
     <div class="card-body">
       <form method="post" enctype="multipart/form-data">{% csrf_token %}
         {% if credito.estado == 'pendiente' %}
-        <div class="alert alert-info"><i class="fas fa-info-circle"></i> Revise los datos del solicitante antes de aprobar o rechazar.</div>
+        <div class="alert alert-info"><i class="fas fa-info-circle"></i> Revise los datos del solicitante. Para desembolsar, todos los usuarios administrativos deben aprobar.</div>
         <div style="display:flex;flex-direction:column;gap:10px;">
-          <button name="accion" value="aprobar" class="btn btn-primary" style="justify-content:center;padding:13px;font-size:14px;"><i class="fas fa-check-circle"></i> Aprobar Crédito</button>
+          <div style="background:rgba(11,61,145,0.06);border:1.5px solid rgba(11,61,145,0.18);border-radius:10px;padding:14px;">
+            <div style="font-weight:900;margin-bottom:8px;">¿Aprueba esta solicitud?</div>
+            <input type="text" name="observacion" class="form-control" placeholder="Observacion opcional antes de aprobar" style="margin-bottom:10px;">
+            <button name="accion" value="aprobar" class="btn btn-primary" style="width:100%;justify-content:center;padding:13px;font-size:14px;"><i class="fas fa-check-circle"></i> Si, apruebo esta solicitud</button>
+          </div>
+          {% if puede_forzar_aprobacion %}
+          <div style="background:rgba(245,127,23,0.08);border:1.5px solid rgba(245,127,23,0.25);border-radius:10px;padding:14px;">
+            <div style="font-size:12px;font-weight:800;color:var(--warning);margin-bottom:8px;"><i class="fas fa-shield-halved"></i> Forzar aprobacion</div>
+            <input type="text" name="motivo_forzar" class="form-control" placeholder="Motivo obligatorio para forzar" style="margin-bottom:8px;">
+            <button name="accion" value="forzar_aprobacion" class="btn btn-warning" style="width:100%;justify-content:center;padding:12px;"><i class="fas fa-unlock"></i> Forzar aprobacion para desembolso</button>
+          </div>
+          {% endif %}
           <div>
             <input type="text" name="motivo" class="form-control" placeholder="Motivo de rechazo (si aplica)" style="margin-bottom:8px;">
             <button name="accion" value="cancelar" class="btn btn-danger" style="width:100%;justify-content:center;padding:12px;"><i class="fas fa-times-circle"></i> Rechazar Solicitud</button>
@@ -38,6 +88,9 @@
 
         {% elif credito.estado == 'aprobado' %}
         <div class="alert alert-success"><i class="fas fa-check-circle"></i> Crédito aprobado por {{ credito.aprobado_por.get_full_name|default:credito.aprobado_por.username }} el {{ credito.fecha_aprobacion|date:"d/m/Y" }}.</div>
+        {% if not aprobaciones_info.completa and not aprobaciones_info.forzada %}
+        <div class="alert alert-danger"><i class="fas fa-lock"></i> Todavia no se puede desembolsar. Faltan aprobaciones administrativas.</div>
+        {% endif %}
         <div class="form-group">
           <label class="form-label">Fecha de Desembolso *</label>
           <input type="date" name="fecha_desembolso" class="form-control" value="{{ hoy }}" required
@@ -58,7 +111,13 @@
           </div>
         </div>
         <div style="display:flex;flex-direction:column;gap:10px;">
-          <button name="accion" value="desembolsar" class="btn btn-success" style="justify-content:center;padding:13px;font-size:14px;"><i class="fas fa-money-bill-wave"></i> Confirmar Desembolso — ${{ credito.monto_transferir|floatformat:2 }} transferidos</button>
+          <button name="accion" value="desembolsar" class="btn btn-success" style="justify-content:center;padding:13px;font-size:14px;" {% if not aprobaciones_info.completa and not aprobaciones_info.forzada %}disabled{% endif %}><i class="fas fa-money-bill-wave"></i> Confirmar Desembolso — ${{ credito.monto_transferir|floatformat:2 }} transferidos</button>
+          {% if puede_forzar_aprobacion and not aprobaciones_info.completa and not aprobaciones_info.forzada %}
+          <div style="background:rgba(245,127,23,0.08);border:1.5px solid rgba(245,127,23,0.25);border-radius:10px;padding:14px;">
+            <input type="text" name="motivo_forzar" class="form-control" placeholder="Motivo obligatorio para forzar" style="margin-bottom:8px;">
+            <button name="accion" value="forzar_aprobacion" class="btn btn-warning" style="width:100%;justify-content:center;padding:12px;"><i class="fas fa-unlock"></i> Forzar aprobacion pendiente</button>
+          </div>
+          {% endif %}
           <button name="accion" value="cancelar" class="btn btn-danger" style="justify-content:center;padding:12px;"><i class="fas fa-times-circle"></i> Cancelar Crédito</button>
         </div>
 
