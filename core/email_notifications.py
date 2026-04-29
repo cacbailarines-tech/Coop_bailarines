@@ -249,6 +249,143 @@ def _send_email(recipient, subject, text_body, html_body=None, attachments=None)
     return True
 
 
+def _admin_recipients():
+    from django.contrib.auth.models import User
+
+    users = (
+        User.objects.filter(is_active=True)
+        .filter(email__isnull=False)
+        .exclude(email='')
+        .select_related('perfil')
+    )
+    recipients = []
+    for user in users:
+        rol = getattr(getattr(user, 'perfil', None), 'rol', '')
+        if user.is_staff or user.is_superuser or rol in ['admin', 'gerente', 'tesorero', 'cajero']:
+            recipients.append(user.email.strip())
+    return sorted(set(recipients))
+
+
+def _send_admin_email(subject, title, intro, sections=None, cta_label='Revisar en panel', path='/dashboard/'):
+    recipients = _admin_recipients()
+    if not recipients:
+        logger.warning('Correo administrativo omitido: no hay usuarios administrativos con email para %s', subject)
+        return 0
+
+    text_lines = [intro, '', 'Detalles:']
+    for section in sections or []:
+        text_lines.append(f'- {section["label"]}: {section["value"]}')
+    text_lines.extend(['', f'Panel: {_portal_url(path)}', '', 'Cooperativa Bailarines'])
+    text_body = '\n'.join(text_lines)
+    html_body = _email_shell(
+        title,
+        intro,
+        sections=sections,
+        cta_label=cta_label,
+        cta_url=_portal_url(path),
+        note='Este aviso se envia a los usuarios administrativos activos con correo registrado.',
+    )
+
+    sent = 0
+    for recipient in recipients:
+        if _send_email(recipient, subject, text_body, html_body):
+            sent += 1
+    return sent
+
+
+def notify_admin_credito_solicitado(credito):
+    socio = credito.socio
+    return _send_admin_email(
+        f'Nueva solicitud de credito {credito.numero}',
+        'Nueva solicitud de credito',
+        f'{socio.nombre_completo} envio una nueva solicitud de credito para revision.',
+        sections=[
+            {'label': 'Solicitud', 'value': credito.numero, 'color': '#17479E'},
+            {'label': 'Socio', 'value': socio.nombre_completo, 'color': '#10336F'},
+            {'label': 'Libreta', 'value': f'#{credito.libreta.numero}', 'color': '#17479E'},
+            {'label': 'Monto solicitado', 'value': f'${credito.monto_solicitado:.2f}', 'color': '#E83E74'},
+            {'label': 'Monto a transferir', 'value': f'${credito.monto_transferir:.2f}', 'color': '#0E8A6A'},
+        ],
+        cta_label='Revisar solicitud',
+        path='/solicitudes/',
+    )
+
+
+def notify_admin_aporte_reportado(aporte):
+    socio = aporte.libreta.socio
+    return _send_admin_email(
+        f'Aporte reportado - Libreta #{aporte.libreta.numero}',
+        'Aporte reportado por socio',
+        f'{socio.nombre_completo} reporto un aporte mensual pendiente de verificacion.',
+        sections=[
+            {'label': 'Socio', 'value': socio.nombre_completo, 'color': '#10336F'},
+            {'label': 'Libreta', 'value': f'#{aporte.libreta.numero}', 'color': '#17479E'},
+            {'label': 'Periodo', 'value': f'{aporte.get_mes_display()} {aporte.anio}', 'color': '#17479E'},
+            {'label': 'Monto', 'value': f'${aporte.monto_total:.2f}', 'color': '#0E8A6A'},
+            {'label': 'Comprobante', 'value': aporte.comprobante_referencia or 'Sin referencia', 'color': '#E83E74'},
+        ],
+        cta_label='Verificar aporte',
+        path='/verificar/',
+    )
+
+
+def notify_admin_pago_credito_reportado(pago):
+    credito = pago.credito
+    socio = credito.socio
+    return _send_admin_email(
+        f'Pago de credito reportado - {credito.numero}',
+        'Pago de credito reportado',
+        f'{socio.nombre_completo} reporto un pago de credito pendiente de verificacion.',
+        sections=[
+            {'label': 'Credito', 'value': credito.numero, 'color': '#17479E'},
+            {'label': 'Socio', 'value': socio.nombre_completo, 'color': '#10336F'},
+            {'label': 'Pago', 'value': f'#{pago.numero_pago}', 'color': '#17479E'},
+            {'label': 'Monto reportado', 'value': f'${pago.monto_pagado:.2f}', 'color': '#0E8A6A'},
+            {'label': 'Comprobante', 'value': pago.comprobante_referencia or 'Sin referencia', 'color': '#E83E74'},
+        ],
+        cta_label='Verificar pago',
+        path='/verificar/',
+    )
+
+
+def notify_admin_multa_reportada(multa):
+    socio = multa.socio
+    return _send_admin_email(
+        f'Pago de multa reportado - {socio.nombre_completo}',
+        'Pago de multa reportado',
+        f'{socio.nombre_completo} reporto el pago de una multa pendiente de verificacion.',
+        sections=[
+            {'label': 'Socio', 'value': socio.nombre_completo, 'color': '#10336F'},
+            {'label': 'Multa', 'value': multa.descripcion, 'color': '#17479E'},
+            {'label': 'Monto', 'value': f'${multa.monto:.2f}', 'color': '#0E8A6A'},
+            {'label': 'Comprobante', 'value': multa.comprobante_pago or 'Ver observaciones', 'color': '#E83E74'},
+        ],
+        cta_label='Revisar multa',
+        path='/verificar/',
+    )
+
+
+def notify_admin_pago_combinado_reportado(socio, total, aportes=None, pagos=None, multas=None, comprobante=''):
+    aportes = aportes or []
+    pagos = pagos or []
+    multas = multas or []
+    return _send_admin_email(
+        f'Pago combinado reportado - {socio.nombre_completo}',
+        'Pago combinado reportado',
+        f'{socio.nombre_completo} reporto un pago combinado pendiente de verificacion.',
+        sections=[
+            {'label': 'Socio', 'value': socio.nombre_completo, 'color': '#10336F'},
+            {'label': 'Total reportado', 'value': f'${total:.2f}', 'color': '#0E8A6A'},
+            {'label': 'Aportes', 'value': str(len(aportes)), 'color': '#17479E'},
+            {'label': 'Pagos de credito', 'value': str(len(pagos)), 'color': '#17479E'},
+            {'label': 'Multas', 'value': str(len(multas)), 'color': '#17479E'},
+            {'label': 'Comprobante', 'value': comprobante or 'Sin referencia', 'color': '#E83E74'},
+        ],
+        cta_label='Revisar reportes',
+        path='/verificar/',
+    )
+
+
 def _credito_pdf_attachment(credito):
     from creditos.pdf_views import generar_pdf_credito
 

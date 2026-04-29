@@ -16,6 +16,13 @@ import random, string
 
 from core.utils import registrar_auditoria
 from core.models import PushSubscription
+from core.email_notifications import (
+    notify_admin_aporte_reportado,
+    notify_admin_credito_solicitado,
+    notify_admin_multa_reportada,
+    notify_admin_pago_combinado_reportado,
+    notify_admin_pago_credito_reportado,
+)
 
 
 def hash_pin(pin):
@@ -252,6 +259,7 @@ def portal_reportar_aporte(request, lib_pk, mes):
             aporte.comprobante_archivo = request.FILES.get('comprobante_archivo')
         aporte.observacion = request.POST.get('observacion', '')
         aporte.save()
+        notify_admin_aporte_reportado(aporte)
         registrar_auditoria(None, 'verificaciones', 'reporte_aporte_portal', f'El socio {socio.nombre_completo} reportó un aporte.', 'AporteMensual', aporte.pk)
         messages.success(request, f'Aporte de {aporte.get_mes_display()} reportado. La administración lo verificará pronto.')
         return redirect('portal_libretas')
@@ -369,6 +377,7 @@ def portal_solicitar_credito(request):
         )
         credito.calcular_montos()
         credito.save()
+        notify_admin_credito_solicitado(credito)
         messages.success(request,
             f'Solicitud {credito.numero} enviada. '
             f'Monto solicitado: ${credito.monto_solicitado:.2f}. '
@@ -404,7 +413,7 @@ def portal_reportar_pago(request, cred_pk):
         saldo_ant = credito.saldo_pendiente
         nuevo_saldo = max(saldo_ant - monto, Decimal('0'))
         num_pago = credito.pagos.count() + 1
-        PagoCredito.objects.create(
+        pago = PagoCredito.objects.create(
             comprobante_archivo=request.FILES.get('comprobante_archivo'),
             credito=credito, numero_pago=num_pago,
             monto_pagado=monto,
@@ -421,6 +430,7 @@ def portal_reportar_pago(request, cred_pk):
             credito.estado = 'pagado'
         credito.save()
         registrar_auditoria(None, 'verificaciones', 'reporte_pago_portal', f'El socio {socio.nombre_completo} reportó un pago para el crédito {credito.numero}.', 'Credito', credito.pk, {'monto': str(monto)})
+        notify_admin_pago_credito_reportado(pago)
         messages.success(request,
             f'Pago de ${monto:.2f} reportado con comprobante {comprobante}. '
             f'Quedará como "En revisión" hasta que la administración lo verifique.')
@@ -467,6 +477,7 @@ def portal_pago_combinado(request):
         creditos_sel = list(creditos.filter(pk__in=credito_ids))
         multas_sel = list(multas.filter(pk__in=multa_ids))
         total_reportado = Decimal('0.00')
+        pagos_creados = []
 
         def reiniciar_archivo():
             if comprobante_archivo and hasattr(comprobante_archivo, 'seek'):
@@ -501,7 +512,7 @@ def portal_pago_combinado(request):
             if observacion:
                 detalle = f'{detalle} {observacion}'
             reiniciar_archivo()
-            PagoCredito.objects.create(
+            pago = PagoCredito.objects.create(
                 comprobante_archivo=comprobante_archivo,
                 credito=credito,
                 numero_pago=num_pago,
@@ -513,6 +524,7 @@ def portal_pago_combinado(request):
                 es_abono=es_abono,
                 observaciones=detalle,
             )
+            pagos_creados.append(pago)
             credito.saldo_pendiente = nuevo_saldo
             if nuevo_saldo <= 0:
                 credito.estado = 'pagado'
@@ -525,6 +537,7 @@ def portal_pago_combinado(request):
             if observacion:
                 detalle = f'{detalle} Obs: {observacion}'
             multa.observaciones = detalle
+            multa.comprobante_pago = comprobante
             if comprobante_archivo:
                 reiniciar_archivo()
                 multa.comprobante_archivo = comprobante_archivo
@@ -532,6 +545,14 @@ def portal_pago_combinado(request):
             total_reportado += multa.monto
             registrar_auditoria(None, 'verificaciones', 'reporte_multa_combinado_portal', f'El socio {socio.nombre_completo} reporto una multa dentro de un pago combinado.', 'Multa', multa.pk, {'comprobante': comprobante})
 
+        notify_admin_pago_combinado_reportado(
+            socio,
+            total_reportado,
+            aportes=aportes_sel,
+            pagos=pagos_creados,
+            multas=multas_sel,
+            comprobante=comprobante,
+        )
         messages.success(
             request,
             f'Pago combinado reportado por ${total_reportado:.2f}. '
@@ -577,9 +598,11 @@ def portal_reportar_multa(request, multa_pk):
             return render(request, 'portal/reportar_multa.html', {'multa': multa})
         # Store comprobante in observaciones and mark as "reported" (admin still must confirm)
         multa.observaciones = f'Pago reportado por socio. Comprobante: {comprobante}. Obs: {request.POST.get("observacion","")}'
+        multa.comprobante_pago = comprobante
         if request.FILES.get('comprobante_archivo'):
             multa.comprobante_archivo = request.FILES.get('comprobante_archivo')
         multa.save()
+        notify_admin_multa_reportada(multa)
         registrar_auditoria(None, 'verificaciones', 'reporte_multa_portal', f'El socio {socio.nombre_completo} reportó el pago de una multa.', 'Multa', multa.pk)
         messages.success(request, f'Pago de multa de ${multa.monto:.2f} reportado. La administración lo verificará.')
         return redirect('portal_multas')
