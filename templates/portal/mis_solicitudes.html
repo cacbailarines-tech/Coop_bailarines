@@ -3,7 +3,12 @@
 {% block content %}
 <style>
 .solicitudes-wrap{max-width:780px;margin:0 auto;}
+.solicitudes-table{border-collapse:separate;border-spacing:0;}
 .solicitudes-table th,.solicitudes-table td{white-space:nowrap;}
+.solicitudes-table tbody tr{position:relative;}
+.solicitudes-table tbody tr:not(:last-child) td{border-bottom:2px solid rgba(236,51,113,0.22);}
+.solicitudes-table tbody tr:not(:last-child) td:first-child{box-shadow:inset 4px 0 0 rgba(236,51,113,0.75);}
+.solicitudes-table tbody tr:hover td{background:rgba(236,51,113,0.035);}
 .solicitud-main{min-width:185px;white-space:normal;}
 .solicitud-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
 .solicitud-actions .btn{padding:4px 9px;}
@@ -13,7 +18,7 @@
   .solicitudes-wrap{max-width:100%;}
   .solicitudes-table thead{display:none;}
   .solicitudes-table,.solicitudes-table tbody,.solicitudes-table tr,.solicitudes-table td{display:block;width:100%;}
-  .solicitudes-table tr{border-bottom:1px solid var(--border);padding:13px 14px;}
+  .solicitudes-table tr{border-bottom:2px solid rgba(236,51,113,0.26);box-shadow:inset 4px 0 0 rgba(236,51,113,0.75);padding:13px 14px;}
   .solicitudes-table tr:last-child{border-bottom:none;}
   .solicitudes-table td{border:none;padding:4px 0;white-space:normal;}
   .solicitudes-table td[data-label]::before{content:attr(data-label);display:block;font-size:10px;text-transform:uppercase;color:var(--muted);font-weight:800;letter-spacing:0.6px;margin-bottom:2px;}
