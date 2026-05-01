@@ -82,6 +82,8 @@ class Multa(models.Model):
     monto = models.DecimalField(max_digits=8, decimal_places=2)
     reunion = models.ForeignKey(Reunion, null=True, blank=True, on_delete=models.SET_NULL)
     periodo = models.ForeignKey(Periodo, on_delete=models.CASCADE, related_name='multas')
+    mes_origen = models.IntegerField(null=True, blank=True, help_text='Mes que originó la multa')
+    anio_origen = models.IntegerField(null=True, blank=True)
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='pendiente')
     fecha_generacion = models.DateField(auto_now_add=True)
     fecha_pago = models.DateField(null=True, blank=True)
