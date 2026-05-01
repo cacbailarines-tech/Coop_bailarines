@@ -20,4 +20,5 @@ urlpatterns = [
     path('salir/', portal_views.portal_logout, name='portal_logout'),
     path('solicitudes/', portal_views.portal_mis_solicitudes, name='portal_mis_solicitudes'),
     path('creditos/<int:pk>/pdf/', portal_credito_pdf, name='portal_credito_pdf'),
+    path('chat/', portal_views.portal_chat_api, name='portal_chat_api'),
 ]

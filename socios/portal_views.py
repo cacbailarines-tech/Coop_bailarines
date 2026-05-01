@@ -732,3 +732,72 @@ def portal_mis_solicitudes(request):
             {'value': 'cancelado', 'label': 'Cancelado', 'count': conteos_estado.get('cancelado', 0)},
         ],
     })
+
+import os
+import json
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+
+@csrf_exempt
+def portal_chat_api(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Solo POST'}, status=405)
+        
+    socio_id = request.session.get('portal_socio_id')
+    if not socio_id:
+        return JsonResponse({'error': 'No autorizado'}, status=401)
+        
+    try:
+        data = json.loads(request.body)
+        mensaje_usuario = data.get('message', '')
+        
+        if not mensaje_usuario:
+            return JsonResponse({'error': 'Mensaje vacío'}, status=400)
+            
+        socio = Socio.objects.get(id=socio_id)
+        
+        # Recopilar contexto
+        libretas = Libreta.objects.filter(socio=socio)
+        info_libretas = ", ".join([f"Libreta #{l.numero} (Ahorro: ${l.ahorro_acumulado})" for l in libretas])
+        
+        creditos = Credito.objects.filter(socio=socio, estado__in=['desembolsado', 'mora_leve', 'mora_media', 'mora_grave'])
+        info_creditos = ", ".join([f"Crédito {c.numero} (Saldo: ${c.saldo_pendiente}, Estado: {c.get_estado_display()})" for c in creditos])
+        if not info_creditos: info_creditos = "No tiene créditos activos."
+        
+        multas = Multa.objects.filter(socio=socio, estado='pendiente')
+        info_multas = ", ".join([f"${m.monto} ({m.descripcion})" for m in multas])
+        if not info_multas: info_multas = "No tiene multas pendientes."
+        
+        contexto_sistema = f"""Eres el asistente virtual de la Cooperativa Bailarines. 
+Estás hablando con el socio: {socio.nombre_completo}.
+Reglamento clave de la cooperativa:
+- Aportes mensuales de $22 por libreta (hasta el 20 de cada mes). Multa por atraso es $5.
+- Créditos tienen multas por atraso de $10 (1ra vez) o $30 (reincidente).
+- Créditos no mensualizados tienen multa única de $30 por atraso.
+- Incumplimiento general a fin de mes genera multa de $20.
+Información financiera actual de {socio.nombre_completo}:
+- Libretas Activas: {info_libretas}
+- Créditos Activos: {info_creditos}
+- Multas Pendientes: {info_multas}
+
+Responde de forma amable, directa y concisa a su pregunta basándote estrictamente en esta información. Si te pregunta algo que no sabes o no está en tu contexto, dile amablemente que consulte con administración."""
+
+        api_key = os.environ.get("GEMINI_API_KEY")
+        if not api_key:
+            return JsonResponse({'reply': 'La clave de IA (GEMINI_API_KEY) no está configurada en el servidor. Por favor, dile al administrador que la configure para que yo pueda pensar.'})
+
+        try:
+            from google import genai
+            client = genai.Client(api_key=api_key)
+            
+            response = client.models.generate_content(
+                model='gemini-1.5-flash',
+                contents=[contexto_sistema, mensaje_usuario]
+            )
+            respuesta = response.text
+            return JsonResponse({'reply': respuesta})
+        except Exception as api_e:
+            return JsonResponse({'reply': f'Hubo un problema procesando tu mensaje con la IA. Error: {str(api_e)}'})
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
