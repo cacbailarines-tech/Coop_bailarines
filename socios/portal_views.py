@@ -758,7 +758,7 @@ def portal_chat_api(request):
         
         # Recopilar contexto
         libretas = Libreta.objects.filter(socio=socio)
-        info_libretas = ", ".join([f"Libreta #{l.numero} (Ahorro: ${l.ahorro_acumulado})" for l in libretas])
+        info_libretas = ", ".join([f"Libreta #{l.numero} (Ahorro: ${l.saldo_ahorro})" for l in libretas])
         
         creditos = Credito.objects.filter(socio=socio, estado__in=['desembolsado', 'mora_leve', 'mora_media', 'mora_grave'])
         info_creditos = ", ".join([f"Crédito {c.numero} (Saldo: ${c.saldo_pendiente}, Estado: {c.get_estado_display()})" for c in creditos])
