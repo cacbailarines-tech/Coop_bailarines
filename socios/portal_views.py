@@ -758,39 +758,74 @@ def portal_chat_api(request):
             
         socio = Socio.objects.get(id=socio_id)
         
-        # Recopilar contexto
+        # Recopilar contexto detallado
         libretas = Libreta.objects.filter(socio=socio)
         info_libretas_list = []
         for l in libretas:
             ahorro_real = AporteMensual.objects.filter(libreta=l, estado='verificado').aggregate(t=Sum('monto_ahorro'))['t'] or 0
-            info_libretas_list.append(f"Libreta #{l.numero} (Ahorro: ${ahorro_real})")
-        info_libretas = ", ".join(info_libretas_list)
+            pagos_detalles = AporteMensual.objects.filter(libreta=l).values_list('mes', 'estado')
+            detalle_meses = ", ".join([f"M{m[0]}:{m[1]}" for m in pagos_detalles])
+            info_libretas_list.append(f"Libreta #{l.numero} (Ahorro Puro: ${ahorro_real}) [Meses: {detalle_meses}]")
+        info_libretas = " | ".join(info_libretas_list)
         
-        creditos = Credito.objects.filter(socio=socio, estado__in=['desembolsado', 'mora_leve', 'mora_media', 'mora_grave'])
-        info_creditos = ", ".join([f"Crédito {c.numero} (Saldo: ${c.saldo_pendiente}, Estado: {c.get_estado_display()})" for c in creditos])
-        if not info_creditos: info_creditos = "No tiene créditos activos."
+        creditos = Credito.objects.filter(socio=socio)
+        info_creditos = " | ".join([f"Crédito {c.numero} ({c.get_tipo_display()}) - Saldo: ${c.saldo_pendiente} - Estado: {c.get_estado_display()} - Plazo: {c.plazo_meses} meses" for c in creditos])
+        if not info_creditos: info_creditos = "Sin historial de créditos."
         
-        multas = Multa.objects.filter(socio=socio, estado='pendiente')
-        info_multas = ", ".join([f"${m.monto} ({m.descripcion})" for m in multas])
-        if not info_multas: info_multas = "No tiene multas pendientes."
+        multas = Multa.objects.filter(socio=socio)
+        info_multas = " | ".join([f"${m.monto} ({m.descripcion}) - Estado: {m.estado}" for m in multas])
+        if not info_multas: info_multas = "Sin historial de multas."
         
-        contexto_sistema = f"""Eres el asistente virtual de la Cooperativa Bailarines. 
-Estás hablando con el socio: {socio.nombre_completo}.
-Reglamento clave de la cooperativa:
-- Aportes mensuales de $22 por libreta (hasta el 20 de cada mes). Multa por atraso es $5.
-- Créditos tienen multas por atraso de $10 (1ra vez) o $30 (reincidente).
-- Créditos no mensualizados tienen multa única de $30 por atraso.
-- Incumplimiento general a fin de mes genera multa de $20.
-Información financiera actual de {socio.nombre_completo}:
-- Libretas Activas: {info_libretas}
-- Créditos Activos: {info_creditos}
-- Multas Pendientes: {info_multas}
+        contexto_sistema = f"""Eres el Asistente Virtual Oficial de la Cooperativa Bailarines.
+Estás hablando con el socio: {socio.nombre_completo} (Cédula: {socio.cedula}, Banco: {socio.banco_preferido}, Teléfono: {socio.telefono}).
+Si pregunta por su fecha de nacimiento: {socio.fecha_nacimiento}.
 
-Responde de forma amable, directa y concisa a su pregunta basándote estrictamente en esta información. Si te pregunta algo que no sabes o no está en tu contexto, dile amablemente que consulte con administración."""
+TUS REGLAS DE CONOCIMIENTO (LOS 34 REGLAMENTOS DE LA COOPERATIVA):
+1. Reuniones último domingo de cada mes.
+2. Multas reuniones: justificada $1, injustificada $3, atraso min 11 ($1), min 21 ($3).
+3. Faltas se justifican 24hr antes.
+4. Inscripción $20 (plazo 20 enero).
+5. Ahorro mensual $22 ($20 ahorro, $1 lotería, $1 cumpleaños) hasta el 20 de cada mes.
+6. Pagos depositados a cuenta autorizada.
+7. Enviar comprobantes detallados al grupo.
+8. Multa crédito mensualizado atrasado: 1ra vez $10, reincidente $30.
+9. Multa crédito trimestral atrasado: $30.
+10. Retiro: se devuelve ahorro (no inscripción), si hay deudas se descuenta.
+11. Mensualidad hasta el 20, atraso multa de $5 por libreta.
+12. Fin de mes sin pagar = multa general de $20 por incumplimiento.
+13. Rifa fin de mes $50 con últimos 3 números de lotería (debe estar al día para ganar).
+14. Préstamos trimestrales: interés descontado por adelantado.
+15. Préstamos mensualizados: interés sumado al valor y dividido para los meses.
+16. Mínimo préstamo $500, si no saca préstamo en el periodo paga interés mínimo de $100 en noviembre.
+17. Para solicitar préstamo debe estar al día.
+18. Tiempo de aprobación de préstamo: 24hrs (depende de saldo).
+19. Aprobación por orden de ingreso.
+20. Solicitudes llenas correctamente.
+21. Última solicitud de préstamo: 31 de octubre.
+22. Al día hasta 30 noviembre para cierres.
+23. Mensualidad diciembre pago máximo hasta 06/12.
+24. Incumplir pagos de préstamos reduce valores en futuras solicitudes.
+25. Valores pendientes a fin de periodo se descuentan de otras libretas del socio y pierde la libreta.
+26. Integrantes nuevos recomendados por socio activo (1 recomendación por cada 2 libretas).
+27. Nuevos socios inician con 1 sola libreta.
+28. El garante/recomendante asume las deudas si el nuevo socio no paga.
+29. Menor de edad requiere representante adulto.
+30. Reuniones: asistir con buena presencia.
+31. Mal comportamiento en reunión (cámaras apagadas, gorras, alcohol, etc) = multa $1.
+32. Regalo de Cumpleaños = $12 en el mes de su cumpleaños (después del 6 dic, se entrega en el cierre).
+33. Pago mensualidad de todo el año adelantado = opción de no hacer préstamo obligatorio.
+34. Multa directiva si incumple = $10.
+
+DATOS FINANCIEROS DE {socio.nombre_completo}:
+- Libretas: {info_libretas}
+- Créditos (Activos e Históricos): {info_creditos}
+- Multas (Pendientes y Pagadas): {info_multas}
+
+Responde siempre basándote EN ESTA INFORMACIÓN EXACTA. No inventes. Sé amable, claro y directo. Responde como un humano experto de la cooperativa. Si te preguntan sobre reglas, explícalas detalladamente."""
 
         api_key = os.environ.get("GEMINI_API_KEY")
         if not api_key:
-            return JsonResponse({'reply': 'La clave de IA (GEMINI_API_KEY) no está configurada en el servidor. Por favor, dile al administrador que la configure para que yo pueda pensar.'})
+            return JsonResponse({'reply': 'La clave de IA (GEMINI_API_KEY) no está configurada. Avisa a administración.'})
 
         try:
             from google import genai
