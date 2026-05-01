@@ -200,7 +200,7 @@ def portal_inicio(request):
         return redir
     periodo_activo = Periodo.objects.filter(activo=True).first()
     libretas = Libreta.objects.filter(socio=socio).select_related('periodo').order_by('-periodo__anio')
-    total_ahorro = libretas.aggregate(t=Sum('saldo_ahorro'))['t'] or 0
+    total_ahorro = AporteMensual.objects.filter(libreta__socio=socio, estado='verificado').aggregate(t=Sum('monto_ahorro'))['t'] or 0
     creditos_activos = Credito.objects.filter(
         socio=socio, estado__in=['desembolsado', 'mora_leve', 'mora_media', 'mora_grave'])
     total_deuda = creditos_activos.aggregate(t=Sum('saldo_pendiente'))['t'] or 0
@@ -291,6 +291,8 @@ def portal_libretas(request):
     if not libreta_actual and libretas.exists():
         libreta_actual = libretas.first()
     if libreta_actual:
+        ahorro_real = AporteMensual.objects.filter(libreta=libreta_actual, estado='verificado').aggregate(t=Sum('monto_ahorro'))['t'] or 0
+        libreta_actual.ahorro_real = ahorro_real
         aportes_db = libreta_actual.aportes.all().order_by('mes')
         aportes_dict = {a.mes: a for a in aportes_db}
         for mes_num, _ in AporteMensual.MES_CHOICES:
@@ -758,7 +760,11 @@ def portal_chat_api(request):
         
         # Recopilar contexto
         libretas = Libreta.objects.filter(socio=socio)
-        info_libretas = ", ".join([f"Libreta #{l.numero} (Ahorro: ${l.saldo_ahorro})" for l in libretas])
+        info_libretas_list = []
+        for l in libretas:
+            ahorro_real = AporteMensual.objects.filter(libreta=l, estado='verificado').aggregate(t=Sum('monto_ahorro'))['t'] or 0
+            info_libretas_list.append(f"Libreta #{l.numero} (Ahorro: ${ahorro_real})")
+        info_libretas = ", ".join(info_libretas_list)
         
         creditos = Credito.objects.filter(socio=socio, estado__in=['desembolsado', 'mora_leve', 'mora_media', 'mora_grave'])
         info_creditos = ", ".join([f"Crédito {c.numero} (Saldo: ${c.saldo_pendiente}, Estado: {c.get_estado_display()})" for c in creditos])
