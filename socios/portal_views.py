@@ -277,7 +277,17 @@ def portal_libretas(request):
     if not libreta_actual and libretas.exists():
         libreta_actual = libretas.first()
     if libreta_actual:
-        aportes = libreta_actual.aportes.all().order_by('mes')
+        aportes_db = libreta_actual.aportes.all().order_by('mes')
+        aportes_dict = {a.mes: a for a in aportes_db}
+        for mes_num, _ in AporteMensual.MES_CHOICES:
+            if mes_num in aportes_dict:
+                aportes.append(aportes_dict[mes_num])
+            else:
+                aportes.append(AporteMensual(
+                    libreta=libreta_actual, mes=mes_num, anio=libreta_actual.periodo.anio,
+                    monto_ahorro=20, monto_loteria=1, monto_cumpleanos=1, monto_total=22,
+                    estado='pendiente'
+                ))
     return render(request, 'portal/libretas.html', {
         'socio': socio,
         'libretas': libretas,
