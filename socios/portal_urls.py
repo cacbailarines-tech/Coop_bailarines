@@ -4,6 +4,7 @@ from creditos.pdf_views import credito_pdf_portal as portal_credito_pdf
 
 urlpatterns = [
     path('', portal_views.portal_login, name='portal_login'),
+    path('recuperar-pin/', portal_views.portal_recuperar_pin, name='portal_recuperar_pin'),
     path('inicio/', portal_views.portal_inicio, name='portal_inicio'),
     path('mis-datos/', portal_views.portal_mis_datos, name='portal_mis_datos'),
     path('libretas/', portal_views.portal_libretas, name='portal_libretas'),

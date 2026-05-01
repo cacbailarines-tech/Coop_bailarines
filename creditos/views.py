@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.utils import timezone
+from django.db import IntegrityError, transaction
 from .models import AprobacionCredito, Credito, PagoCredito, MultaCredito, BANCO_CHOICES
 from socios.models import Socio, Libreta, Periodo
 from decimal import Decimal
@@ -139,19 +140,7 @@ def _sincronizar_mora_credito(credito):
 
 
 def gen_num_credito():
-    from django.utils import timezone as tz
-    year = tz.now().year
-    prefix = f'CRD-{year}-'
-    existing = Credito.objects.filter(numero__startswith=prefix).values_list('numero', flat=True)
-    max_num = 0
-    for num in existing:
-        try:
-            n = int(num.replace(prefix, ''))
-            if n > max_num:
-                max_num = n
-        except:
-            pass
-    return f"{prefix}{max_num+1:02d}" 
+    return Credito.generar_numero()
 
 
 @login_required
@@ -195,7 +184,17 @@ def credito_crear(request):
             observaciones=request.POST.get('observaciones',''),
         )
         credito.calcular_montos()
-        credito.save()
+        # Si hubo inserts manuales, puede existir choque por numero unique o secuencias.
+        # Reintenta en caso de numero duplicado.
+        for _ in range(5):
+            try:
+                with transaction.atomic():
+                    credito.save()
+                break
+            except IntegrityError:
+                credito.numero = gen_num_credito()
+        else:
+            raise
         messages.success(request, f'Solicitud {credito.numero} registrada. Monto a transferir: ${credito.monto_transferir}')
         return redirect('credito_detalle', pk=credito.pk)
     socios = Socio.objects.filter(estado='activo').order_by('apellidos')

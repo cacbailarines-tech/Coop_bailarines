@@ -8,6 +8,16 @@ python manage.py runserver
 ```
 Abrir: http://localhost:8000
 
+## Conectar una segunda base (Railway)
+El sistema soporta una segunda conexión opcional (por ejemplo, otra base PostgreSQL en Railway).
+
+- Variable requerida: `EXTERNAL_DATABASE_URL`
+- Formato típico: `postgresql://USER:PASSWORD@HOST:PORT/DBNAME`
+
+Notas:
+- Si `EXTERNAL_DATABASE_URL` **no** está definida, el sistema funciona normal (solo `DATABASE_URL`).
+- Las migraciones **no** se ejecutan en la base externa por seguridad.
+
 ## Usuarios
 | Usuario  | Contraseña | Rol          |
 |----------|-----------|--------------|

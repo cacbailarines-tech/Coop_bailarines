@@ -97,9 +97,15 @@ default_db_url = os.getenv(
     'DATABASE_URL',
     'postgresql://postgres:root@127.0.0.1:5432/bailarines'
 )
+external_db_url = os.getenv('EXTERNAL_DATABASE_URL', '').strip()
 DATABASES = {
     'default': dj_database_url.parse(default_db_url, conn_max_age=600, ssl_require=False)
 }
+if external_db_url:
+    # Optional second DB connection (e.g. another Railway Postgres service).
+    DATABASES['external'] = dj_database_url.parse(external_db_url, conn_max_age=600, ssl_require=False)
+
+DATABASE_ROUTERS = ['core.db_router.DatabaseRouter']
 
 AUTH_PASSWORD_VALIDATORS = []
 
@@ -147,3 +153,38 @@ EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '20'))
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = env_bool('SESSION_COOKIE_SECURE', not DEBUG)
 CSRF_COOKIE_SECURE = env_bool('CSRF_COOKIE_SECURE', not DEBUG)
+
+# Logging básico a consola (Railway captura stdout/stderr).
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{levelname}] {asctime} {name} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': os.getenv('LOG_LEVEL', 'INFO').upper(),
+    },
+    'loggers': {
+        # Tracebacks de errores 500.
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'core': {
+            'handlers': ['console'],
+            'level': os.getenv('LOG_LEVEL', 'INFO').upper(),
+            'propagate': False,
+        },
+    },
+}

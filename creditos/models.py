@@ -175,6 +175,27 @@ class Credito(models.Model):
     def __str__(self):
         return f"{self.numero} - {self.socio.nombre_completo} ${self.monto_solicitado}"
 
+    @classmethod
+    def generar_numero(cls):
+        """
+        Genera un número tipo CRD-YYYY-XX.
+        Nota: si existen filas con números fuera del patrón, se ignoran.
+        """
+        from django.utils import timezone
+
+        year = timezone.now().year
+        prefix = f'CRD-{year}-'
+        existing = cls.objects.filter(numero__startswith=prefix).values_list('numero', flat=True)
+        max_num = 0
+        for num in existing:
+            try:
+                n = int(str(num).replace(prefix, ''))
+                if n > max_num:
+                    max_num = n
+            except Exception:
+                continue
+        return f"{prefix}{max_num + 1:02d}"
+
     class Meta:
         ordering = ['-fecha_solicitud']
 

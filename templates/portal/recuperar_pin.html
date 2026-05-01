@@ -1,6 +1,6 @@
 {% extends 'portal/base.html' %}
 {% load static %}
-{% block title %}Portal del Socio - Cooperativa Bailarines{% endblock %}
+{% block title %}Recuperar PIN - Portal del Socio{% endblock %}
 {% block content %}
 <div style="min-height:85vh;display:flex;align-items:center;justify-content:center;">
   <div style="width:100%;max-width:400px;">
@@ -12,14 +12,14 @@
       </div>
       <div style="margin-top:12px;">
         <div style="font-size:16px;font-weight:800;color:var(--text);">Portal del Socio</div>
-        <div style="font-size:12px;color:var(--muted);">Consulta tu informaci&oacute;n en l&iacute;nea</div>
+        <div style="font-size:12px;color:var(--muted);">Recuperar o Cambiar PIN</div>
       </div>
     </div>
 
     <div class="pcard">
       <div class="pcard-body">
         <h2 style="font-size:16px;font-weight:800;margin-bottom:20px;text-align:center;color:var(--text);">
-          <i class="fas fa-user-circle" style="color:var(--primary);margin-right:7px;"></i>Iniciar Sesi&oacute;n
+          <i class="fas fa-key" style="color:var(--primary);margin-right:7px;"></i>Recuperar / Cambiar PIN
         </h2>
         {% for m in messages %}
         <div class="alert alert-{{ m.tags }}">
@@ -32,55 +32,56 @@
             <label style="display:block;font-size:12px;font-weight:600;color:var(--text);margin-bottom:5px;">N&uacute;mero de C&eacute;dula</label>
             <div style="position:relative;">
               <i class="fas fa-id-card" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;"></i>
-              <input type="text" name="cedula"
+              <input type="text" name="cedula" value="{{ data.cedula|default:'' }}"
                 style="width:100%;padding:10px 14px 10px 36px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;outline:none;transition:border-color 0.2s;"
                 placeholder="Ej: 1712345678" required autofocus maxlength="13"
                 onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
             </div>
           </div>
-          <div style="margin-bottom:20px;">
-            <label style="display:block;font-size:12px;font-weight:600;color:var(--text);margin-bottom:5px;">PIN de Acceso</label>
+          <div style="margin-bottom:14px;">
+            <label style="display:block;font-size:12px;font-weight:600;color:var(--text);margin-bottom:5px;">Fecha de Nacimiento</label>
             <div style="position:relative;">
-              <i class="fas fa-lock" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;"></i>
-              <input type="password" name="pin"
-                style="width:100%;padding:10px 14px 10px 36px;border:1.5px solid var(--border);border-radius:9px;font-size:18px;letter-spacing:4px;font-family:inherit;outline:none;transition:border-color 0.2s;"
-                placeholder="&bull;&bull;&bull;&bull;" required maxlength="10"
+              <i class="fas fa-calendar-alt" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;"></i>
+              <input type="date" name="fecha_nacimiento" value="{{ data.fecha_nacimiento|default:'' }}"
+                style="width:100%;padding:10px 14px 10px 36px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;outline:none;transition:border-color 0.2s;"
+                required
                 onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
             </div>
           </div>
-          <div style="display:flex;align-items:flex-start;gap:9px;margin:-2px 0 16px 0;padding:10px 12px;background:#F8FAFF;border:1px solid var(--border);border-radius:10px;">
-            <input type="checkbox" id="keep_signed_in" name="keep_signed_in" style="margin-top:3px;">
-            <label for="keep_signed_in" style="font-size:12px;color:var(--muted);line-height:1.45;cursor:pointer;">
-              Mantener sesi&oacute;n iniciada en este equipo.
-            </label>
+          <div style="margin-bottom:14px;">
+            <label style="display:block;font-size:12px;font-weight:600;color:var(--text);margin-bottom:5px;">Nuevo PIN</label>
+            <div style="position:relative;">
+              <i class="fas fa-lock" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;"></i>
+              <input type="password" name="nuevo_pin"
+                style="width:100%;padding:10px 14px 10px 36px;border:1.5px solid var(--border);border-radius:9px;font-size:18px;letter-spacing:4px;font-family:inherit;outline:none;transition:border-color 0.2s;"
+                placeholder="&bull;&bull;&bull;&bull;" required maxlength="10" minlength="4"
+                onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
+            </div>
           </div>
+          <div style="margin-bottom:20px;">
+            <label style="display:block;font-size:12px;font-weight:600;color:var(--text);margin-bottom:5px;">Confirmar Nuevo PIN</label>
+            <div style="position:relative;">
+              <i class="fas fa-lock" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;"></i>
+              <input type="password" name="confirmar_pin"
+                style="width:100%;padding:10px 14px 10px 36px;border:1.5px solid var(--border);border-radius:9px;font-size:18px;letter-spacing:4px;font-family:inherit;outline:none;transition:border-color 0.2s;"
+                placeholder="&bull;&bull;&bull;&bull;" required maxlength="10" minlength="4"
+                onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
+            </div>
+          </div>
+          
           <button type="submit"
             style="width:100%;padding:12px;background:var(--primary);color:white;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background 0.2s;"
             onmouseover="this.style.background='#1557C0'" onmouseout="this.style.background='var(--primary)'">
-            <i class="fas fa-right-to-bracket"></i> Ingresar al Portal
+            <i class="fas fa-save"></i> Guardar Nuevo PIN
           </button>
         </form>
       </div>
     </div>
 
-    <div class="pcard" style="background:rgba(11,61,145,0.04);border-color:rgba(11,61,145,0.15);margin-top:12px;">
-      <div class="pcard-body" style="padding:14px 18px;text-align:center;">
-        <div style="margin-bottom:10px;">
-          <a href="{% url 'portal_recuperar_pin' %}" style="font-size:12px;color:var(--primary);text-decoration:none;font-weight:600;"><i class="fas fa-key" style="margin-right:4px;"></i>&iquest;Olvid&oacute; o desea cambiar su PIN?</a>
-        </div>
-        <p style="font-size:12px;color:var(--muted);margin:0;">
-          <i class="fas fa-info-circle" style="color:var(--primary);margin-right:5px;"></i>
-          &iquest;No tiene acceso? Solicite su PIN en la oficina de la cooperativa.
-        </p>
-        <div style="margin-top:10px;">
-          <a href="/login/" style="font-size:12px;color:var(--primary);text-decoration:none;"><i class="fas fa-shield-halved" style="margin-right:4px;"></i>&iquest;Eres administrador? Panel Administrativo &rarr;</a>
-        </div>
-      </div>
+    <div style="text-align:center;margin-top:16px;">
+        <a href="{% url 'portal_login' %}" style="font-size:13px;color:var(--primary);text-decoration:none;font-weight:600;"><i class="fas fa-arrow-left" style="margin-right:4px;"></i> Volver al Inicio de Sesi&oacute;n</a>
     </div>
 
-    <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:14px;">
-      <i class="fas fa-lock" style="margin-right:4px;"></i>Solo consulta &mdash; sus datos est&aacute;n protegidos
-    </p>
   </div>
 </div>
 {% endblock %}

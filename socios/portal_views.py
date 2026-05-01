@@ -7,6 +7,7 @@ from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Sum
 from django.views.decorators.http import require_POST
+from django.db import IntegrityError, transaction
 from .models import Socio, AccesoSocio, Libreta, AporteMensual, Periodo
 from creditos.models import Credito, PagoCredito, BANCO_CHOICES
 from multas.models import Multa
@@ -77,6 +78,56 @@ def portal_login(request):
 def portal_logout(request):
     request.session.flush()
     return redirect('portal_login')
+
+
+def portal_recuperar_pin(request):
+    if request.session.get('portal_socio_id'):
+        return redirect('portal_inicio')
+    
+    if request.method == 'POST':
+        cedula = request.POST.get('cedula', '').strip()
+        fecha_nacimiento = request.POST.get('fecha_nacimiento', '').strip()
+        nuevo_pin = request.POST.get('nuevo_pin', '').strip()
+        confirmar_pin = request.POST.get('confirmar_pin', '').strip()
+        
+        if not cedula or not fecha_nacimiento or not nuevo_pin or not confirmar_pin:
+            messages.error(request, 'Debe llenar todos los campos.')
+            return render(request, 'portal/recuperar_pin.html', {'data': request.POST})
+            
+        if nuevo_pin != confirmar_pin:
+            messages.error(request, 'Los PINs no coinciden.')
+            return render(request, 'portal/recuperar_pin.html', {'data': request.POST})
+            
+        if len(nuevo_pin) < 4:
+            messages.error(request, 'El PIN debe tener al menos 4 caracteres.')
+            return render(request, 'portal/recuperar_pin.html', {'data': request.POST})
+            
+        try:
+            # Buscar el socio por cédula y fecha de nacimiento
+            socio = Socio.objects.get(cedula=cedula, fecha_nacimiento=fecha_nacimiento, estado='activo')
+        except Socio.DoesNotExist:
+            messages.error(request, 'Los datos ingresados no coinciden con ningún socio activo.')
+            return render(request, 'portal/recuperar_pin.html', {'data': request.POST})
+            
+        # Actualizar o crear el acceso
+        acceso, created = AccesoSocio.objects.get_or_create(
+            socio=socio,
+            defaults={'pin': hash_pin(nuevo_pin), 'activo': True}
+        )
+        if not created:
+            if not acceso.activo:
+                messages.error(request, 'Su acceso está desactivado. Contacte a la cooperativa.')
+                return render(request, 'portal/recuperar_pin.html', {'data': request.POST})
+            acceso.pin = hash_pin(nuevo_pin)
+            acceso.save()
+            
+        # Opcional: registrar auditoria si tienes implementado para cambios de clave, pero para socios portal no es estrictamente necesario o usamos registrar_auditoria si queremos.
+        registrar_auditoria(None, 'socios', 'recuperar_pin_portal', f'El socio {socio.nombre_completo} recuperó/cambió su PIN desde el portal.', 'Socio', socio.pk)
+            
+        messages.success(request, 'Su PIN ha sido actualizado con éxito. Ahora puede iniciar sesión.')
+        return redirect('portal_login')
+        
+    return render(request, 'portal/recuperar_pin.html')
 
 
 @require_POST
@@ -354,19 +405,8 @@ def portal_solicitar_credito(request):
             if not all([banco, numero_cuenta, titular_cuenta, cedula_titular]):
                 messages.error(request, 'Complete todos los datos del beneficiario en la opcion "Otro".')
                 return render(request, 'portal/solicitar_credito.html', {'libretas': libretas_disponibles, 'bancos': BANCO_CHOICES, 'data': request.POST, 'socio': socio})
-        def gen_num():
-            year = timezone.now().year
-            prefix = f'CRD-{year}-'
-            existing = Credito.objects.filter(numero__startswith=prefix).values_list('numero', flat=True)
-            max_num = 0
-            for num in existing:
-                try:
-                    n = int(num.replace(prefix, ''))
-                    if n > max_num: max_num = n
-                except: pass
-            return f"{prefix}{max_num+1:02d}" 
         credito = Credito(
-            numero=gen_num(),
+            numero=Credito.generar_numero(),
             periodo=periodo, socio=socio, libreta=libreta,
             tipo=tipo, monto_solicitado=monto, plazo_meses=plazo,
             banco=banco,
@@ -376,7 +416,15 @@ def portal_solicitar_credito(request):
             observaciones=request.POST.get('observaciones', ''),
         )
         credito.calcular_montos()
-        credito.save()
+        for _ in range(5):
+            try:
+                with transaction.atomic():
+                    credito.save()
+                break
+            except IntegrityError:
+                credito.numero = Credito.generar_numero()
+        else:
+            raise
         notify_admin_credito_solicitado(credito)
         messages.success(request,
             f'Solicitud {credito.numero} enviada. '
