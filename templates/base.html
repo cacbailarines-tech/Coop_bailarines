@@ -118,7 +118,10 @@ tbody tr:hover{background:rgba(11,61,145,0.02);}
       <i class="fas fa-inbox"></i> Solicitudes Pendientes
       {% if solicitudes_count %}<span class="nav-badge">{{ solicitudes_count }}</span>{% endif %}
     </a>
-    <a href="{% url 'creditos_list' %}" class="nav-link {% if 'creditos' in request.path and 'solicitudes' not in request.path %}active{% endif %}">
+    <a href="{% url 'creditos_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'creditos_dashboard' %}active{% endif %}">
+      <i class="fas fa-chart-line"></i> Dashboard Solicitudes
+    </a>
+    <a href="{% url 'creditos_list' %}" class="nav-link {% if 'creditos' in request.path and 'solicitudes' not in request.path and request.resolver_match.url_name != 'creditos_dashboard' %}active{% endif %}">
       <i class="fas fa-hand-holding-dollar"></i> Créditos
     </a>
     <div class="nav-section">Reuniones y Multas</div>

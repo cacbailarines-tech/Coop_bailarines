@@ -3,6 +3,7 @@ from . import views, pdf_views
 
 urlpatterns = [
     path('', views.creditos_list, name='creditos_list'),
+    path('dashboard/', views.dashboard_solicitudes, name='creditos_dashboard'),
     path('crear/', views.credito_crear, name='credito_crear'),
     path('<int:pk>/', views.credito_detalle, name='credito_detalle'),
     path('<int:pk>/aprobar/', views.credito_aprobar, name='credito_aprobar'),

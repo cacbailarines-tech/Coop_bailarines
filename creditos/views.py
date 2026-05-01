@@ -525,3 +525,77 @@ def editar_multa_credito(request, pk, multa_pk):
         'numero_cuota_sugerida': multa.numero_cuota,
         'mora_info': None,
     })
+
+
+@login_required
+def dashboard_solicitudes(request):
+    desde = request.GET.get('desde', '')
+    hasta = request.GET.get('hasta', '')
+    
+    creditos = Credito.objects.all()
+    if desde:
+        creditos = creditos.filter(fecha_solicitud__gte=desde)
+    if hasta:
+        from datetime import datetime, time
+        try:
+            hasta_date = datetime.strptime(hasta, '%Y-%m-%d').date()
+            hasta_datetime = timezone.make_aware(datetime.combine(hasta_date, time.max))
+            creditos = creditos.filter(fecha_solicitud__lte=hasta_datetime)
+        except Exception:
+            pass
+
+    total_solicitudes = creditos.count()
+    aprobados_qs = creditos.filter(estado__in=['aprobado', 'desembolsado', 'pagado', 'mora_leve', 'mora_media', 'mora_grave'])
+    solicitudes_aprobadas = aprobados_qs.count()
+    solicitudes_pendientes = creditos.filter(estado='pendiente').count()
+    solicitudes_archivadas = creditos.filter(estado__in=['cancelado', 'rechazado']).count()
+
+    pct_aprobadas = (solicitudes_aprobadas / total_solicitudes * 100) if total_solicitudes > 0 else 0
+    pct_pendientes = (solicitudes_pendientes / total_solicitudes * 100) if total_solicitudes > 0 else 0
+    pct_archivadas = (solicitudes_archivadas / total_solicitudes * 100) if total_solicitudes > 0 else 0
+
+    from django.db.models import Sum
+    monto_ejecutado = aprobados_qs.aggregate(t=Sum('monto_solicitado'))['t'] or Decimal('0.00')
+    cantidad_depositada = aprobados_qs.aggregate(t=Sum('monto_transferir'))['t'] or Decimal('0.00')
+    cantidad_descontada = aprobados_qs.filter(tipo='no_mensualizado').aggregate(t=Sum('interes_total'))['t'] or Decimal('0.00')
+    valor_transferencia_monto = aprobados_qs.aggregate(t=Sum('comision_bancaria'))['t'] or Decimal('0.00')
+
+    interes_generado_total = aprobados_qs.aggregate(t=Sum('interes_total'))['t'] or Decimal('0.00')
+    interes_cobrar_mensualizado = aprobados_qs.filter(tipo='mensualizado').aggregate(t=Sum('interes_total'))['t'] or Decimal('0.00')
+    interes_anticipado_nomensualizado = aprobados_qs.filter(tipo='no_mensualizado').aggregate(t=Sum('interes_total'))['t'] or Decimal('0.00')
+
+    beneficio_transferencia = aprobados_qs.aggregate(t=Sum('beneficio_transferencia'))['t'] or Decimal('0.00')
+    comision_bancaria_costo = valor_transferencia_monto - beneficio_transferencia
+
+    from django.db.models import Count
+    solicitudes_banco = aprobados_qs.values('banco').annotate(total=Count('id')).order_by('-total')
+    
+    banco_dict = dict(BANCO_CHOICES)
+    chart_labels = []
+    chart_data = []
+    for item in solicitudes_banco:
+        chart_labels.append(banco_dict.get(item['banco'], item['banco']))
+        chart_data.append(item['total'])
+
+    return render(request, 'creditos/dashboard_solicitudes.html', {
+        'desde': desde,
+        'hasta': hasta,
+        'total_solicitudes': total_solicitudes,
+        'solicitudes_aprobadas': solicitudes_aprobadas,
+        'solicitudes_pendientes': solicitudes_pendientes,
+        'solicitudes_archivadas': solicitudes_archivadas,
+        'pct_aprobadas': pct_aprobadas,
+        'pct_pendientes': pct_pendientes,
+        'pct_archivadas': pct_archivadas,
+        'monto_ejecutado': monto_ejecutado,
+        'cantidad_depositada': cantidad_depositada,
+        'cantidad_descontada': cantidad_descontada,
+        'valor_transferencia_monto': valor_transferencia_monto,
+        'interes_generado_total': interes_generado_total,
+        'interes_cobrar_mensualizado': interes_cobrar_mensualizado,
+        'interes_anticipado_nomensualizado': interes_anticipado_nomensualizado,
+        'beneficio_transferencia': beneficio_transferencia,
+        'comision_bancaria_costo': comision_bancaria_costo,
+        'chart_labels': chart_labels,
+        'chart_data': chart_data,
+    })
