@@ -98,9 +98,15 @@ tbody tr:hover{background:rgba(11,61,145,0.02);}
     <img src="{{ web_logo_src|default:'' }}" alt="Cooperativa Bailarines" style="height:46px;width:auto;max-width:100%;object-fit:contain;display:block;margin:0 auto;filter:brightness(1.1) drop-shadow(0 2px 6px rgba(0,0,0,0.3));">
   </div>
   <nav class="sidebar-nav">
-    <div class="nav-section">Principal</div>
+    <div class="nav-section">Dashboards</div>
     <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-      <i class="fas fa-chart-pie"></i> Panel Principal
+      <i class="fas fa-home"></i> General
+    </a>
+    <a href="{% url 'dashboard_aportes' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard_aportes' %}active{% endif %}">
+      <i class="fas fa-chart-pie"></i> Aportes
+    </a>
+    <a href="{% url 'creditos_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'creditos_dashboard' %}active{% endif %}">
+      <i class="fas fa-chart-line"></i> Solicitudes de Crédito
     </a>
     <div class="nav-section">Socios y Libretas</div>
     <a href="{% url 'socios_list' %}" class="nav-link {% if 'socios' in request.path and 'libretas' not in request.path %}active{% endif %}">
@@ -108,9 +114,6 @@ tbody tr:hover{background:rgba(11,61,145,0.02);}
     </a>
     <a href="{% url 'libretas_list' %}" class="nav-link {% if 'libretas' in request.path %}active{% endif %}">
       <i class="fas fa-book"></i> Libretas
-    </a>
-    <a href="{% url 'dashboard_aportes' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard_aportes' %}active{% endif %}">
-      <i class="fas fa-chart-pie"></i> Dashboard Aportes
     </a>
     <a href="{% url 'aportes_list' %}" class="nav-link {% if 'aportes' in request.path %}active{% endif %}">
       <i class="fas fa-check-circle"></i> Verificar Aportes
@@ -120,9 +123,6 @@ tbody tr:hover{background:rgba(11,61,145,0.02);}
     <a href="{% url 'solicitudes_pendientes' %}" class="nav-link {% if 'solicitudes' in request.path %}active{% endif %}">
       <i class="fas fa-inbox"></i> Solicitudes Pendientes
       {% if solicitudes_count %}<span class="nav-badge">{{ solicitudes_count }}</span>{% endif %}
-    </a>
-    <a href="{% url 'creditos_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'creditos_dashboard' %}active{% endif %}">
-      <i class="fas fa-chart-line"></i> Dashboard Solicitudes
     </a>
     <a href="{% url 'creditos_list' %}" class="nav-link {% if 'creditos' in request.path and 'solicitudes' not in request.path and request.resolver_match.url_name != 'creditos_dashboard' %}active{% endif %}">
       <i class="fas fa-hand-holding-dollar"></i> Créditos
