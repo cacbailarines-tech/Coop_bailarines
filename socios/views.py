@@ -2,8 +2,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Q, Sum
-from .models import Socio, Libreta, AporteMensual, AccesoSocio
+from django.db.models import Q, Sum, Count, Max
+from .models import Socio, Libreta, AporteMensual, AccesoSocio, Periodo
+from core.utils import require_roles
+import json
 from django.contrib.auth.hashers import make_password
 
 @login_required
@@ -103,3 +105,59 @@ def socio_crear_acceso(request, pk):
             return redirect('socio_detalle', pk=socio.pk)
     has_access = hasattr(socio, 'acceso')
     return render(request, 'socios/crear_acceso.html', {'socio': socio, 'has_access': has_access})
+
+@login_required
+@require_roles('admin', 'tesorero', 'gerente')
+def dashboard_aportes(request):
+    periodo_id = request.GET.get('periodo')
+    periodos = Periodo.objects.all().order_by('-anio')
+    
+    if not periodo_id:
+        p_activo = periodos.filter(activo=True).first()
+        periodo_id = p_activo.id if p_activo else None
+
+    aportes = AporteMensual.objects.select_related('libreta__socio')
+    
+    if periodo_id:
+        aportes = aportes.filter(libreta__periodo_id=periodo_id)
+
+    aportes_verificados = aportes.filter(estado='verificado')
+    
+    total_recaudado = aportes_verificados.aggregate(t=Sum('monto_total'))['t'] or 0
+    total_ahorro = aportes_verificados.aggregate(t=Sum('monto_ahorro'))['t'] or 0
+    total_loteria = aportes_verificados.aggregate(t=Sum('monto_loteria'))['t'] or 0
+    total_cumpleanos = aportes_verificados.aggregate(t=Sum('monto_cumpleanos'))['t'] or 0
+    total_extra = total_loteria + total_cumpleanos
+    
+    aportes_atrasados_count = aportes.filter(estado='atrasado').count()
+    aportes_pendientes_count = aportes.filter(estado='pendiente').count()
+    
+    meses_data = []
+    meses_labels = [m[1] for m in AporteMensual.MES_CHOICES]
+    for mes_num, _ in AporteMensual.MES_CHOICES:
+        total_mes = aportes_verificados.filter(mes=mes_num).aggregate(t=Sum('monto_total'))['t'] or 0
+        meses_data.append(float(total_mes))
+
+    distribucion_data = [float(total_ahorro), float(total_loteria), float(total_cumpleanos)]
+
+    top_atrasados = []
+    if periodo_id:
+        libretas_atrasadas = Libreta.objects.filter(periodo_id=periodo_id).annotate(
+            atrasos=Count('aportes', filter=Q(aportes__estado='atrasado'))
+        ).filter(atrasos__gt=0).order_by('-atrasos')[:5]
+        top_atrasados = libretas_atrasadas
+        
+    context = {
+        'periodos': periodos,
+        'periodo_id': int(periodo_id) if periodo_id else '',
+        'total_recaudado': total_recaudado,
+        'total_ahorro': total_ahorro,
+        'total_extra': total_extra,
+        'aportes_atrasados_count': aportes_atrasados_count,
+        'aportes_pendientes_count': aportes_pendientes_count,
+        'meses_labels_json': json.dumps(meses_labels),
+        'meses_data_json': json.dumps(meses_data),
+        'distribucion_data_json': json.dumps(distribucion_data),
+        'top_atrasados': top_atrasados,
+    }
+    return render(request, 'socios/dashboard_aportes.html', context)

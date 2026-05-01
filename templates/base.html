@@ -109,6 +109,9 @@ tbody tr:hover{background:rgba(11,61,145,0.02);}
     <a href="{% url 'libretas_list' %}" class="nav-link {% if 'libretas' in request.path %}active{% endif %}">
       <i class="fas fa-book"></i> Libretas
     </a>
+    <a href="{% url 'dashboard_aportes' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard_aportes' %}active{% endif %}">
+      <i class="fas fa-chart-pie"></i> Dashboard Aportes
+    </a>
     <a href="{% url 'aportes_list' %}" class="nav-link {% if 'aportes' in request.path %}active{% endif %}">
       <i class="fas fa-check-circle"></i> Verificar Aportes
       {% if pendientes_count %}<span class="nav-badge">{{ pendientes_count }}</span>{% endif %}
