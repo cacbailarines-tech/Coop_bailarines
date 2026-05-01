@@ -26,7 +26,9 @@ from core.email_notifications import (
 )
 
 
-def hash_pin(pin):
+from django.contrib.auth.hashers import make_password, check_password
+
+def legacy_hash_pin(pin):
     return hashlib.sha256(pin.encode()).hexdigest()
 
 
@@ -59,7 +61,19 @@ def portal_login(request):
             if not acceso.activo:
                 messages.error(request, 'Su acceso está desactivado. Contacte a la cooperativa.')
                 return render(request, 'portal/login.html')
-            if acceso.pin != hash_pin(pin):
+            # Verificacion de clave con migracion transparente a PBKDF2
+            pin_es_valido = False
+            if acceso.pin.startswith('pbkdf2_sha256$'):
+                pin_es_valido = check_password(pin, acceso.pin)
+            else:
+                # Verificacion Legacy SHA-256
+                if acceso.pin == legacy_hash_pin(pin):
+                    pin_es_valido = True
+                    # Migrar transparentemente
+                    acceso.pin = make_password(pin)
+                    acceso.save(update_fields=['pin'])
+
+            if not pin_es_valido:
                 messages.error(request, 'PIN incorrecto.')
                 return render(request, 'portal/login.html')
         except AccesoSocio.DoesNotExist:
@@ -112,13 +126,13 @@ def portal_recuperar_pin(request):
         # Actualizar o crear el acceso
         acceso, created = AccesoSocio.objects.get_or_create(
             socio=socio,
-            defaults={'pin': hash_pin(nuevo_pin), 'activo': True}
+            defaults={'pin': make_password(nuevo_pin), 'activo': True}
         )
         if not created:
             if not acceso.activo:
                 messages.error(request, 'Su acceso está desactivado. Contacte a la cooperativa.')
                 return render(request, 'portal/recuperar_pin.html', {'data': request.POST})
-            acceso.pin = hash_pin(nuevo_pin)
+            acceso.pin = make_password(nuevo_pin)
             acceso.save()
             
         # Opcional: registrar auditoria si tienes implementado para cambios de clave, pero para socios portal no es estrictamente necesario o usamos registrar_auditoria si queremos.

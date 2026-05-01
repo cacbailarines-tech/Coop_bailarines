@@ -4,10 +4,7 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q, Sum
 from .models import Socio, Libreta, AporteMensual, AccesoSocio
-import hashlib
-
-def hash_pin(pin):
-    return hashlib.sha256(pin.encode()).hexdigest()
+from django.contrib.auth.hashers import make_password
 
 @login_required
 def socios_list(request):
@@ -99,7 +96,7 @@ def socio_crear_acceso(request, pk):
             messages.error(request, 'Los PINs no coinciden.')
         else:
             acceso, created = AccesoSocio.objects.get_or_create(socio=socio)
-            acceso.pin = hash_pin(pin)
+            acceso.pin = make_password(pin)
             acceso.activo = True
             acceso.save()
             messages.success(request, f'Acceso al portal {"creado" if created else "actualizado"} para {socio.nombre_completo}.')
