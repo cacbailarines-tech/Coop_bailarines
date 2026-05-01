@@ -86,11 +86,11 @@ def portal_recuperar_pin(request):
     
     if request.method == 'POST':
         cedula = request.POST.get('cedula', '').strip()
-        fecha_nacimiento = request.POST.get('fecha_nacimiento', '').strip()
+        email = request.POST.get('email', '').strip()
         nuevo_pin = request.POST.get('nuevo_pin', '').strip()
         confirmar_pin = request.POST.get('confirmar_pin', '').strip()
         
-        if not cedula or not fecha_nacimiento or not nuevo_pin or not confirmar_pin:
+        if not cedula or not email or not nuevo_pin or not confirmar_pin:
             messages.error(request, 'Debe llenar todos los campos.')
             return render(request, 'portal/recuperar_pin.html', {'data': request.POST})
             
@@ -103,10 +103,10 @@ def portal_recuperar_pin(request):
             return render(request, 'portal/recuperar_pin.html', {'data': request.POST})
             
         try:
-            # Buscar el socio por cédula y fecha de nacimiento
-            socio = Socio.objects.get(cedula=cedula, fecha_nacimiento=fecha_nacimiento, estado='activo')
+            # Buscar el socio por cédula y correo electrónico
+            socio = Socio.objects.get(cedula=cedula, email__iexact=email, estado='activo')
         except Socio.DoesNotExist:
-            messages.error(request, 'Los datos ingresados no coinciden con ningún socio activo.')
+            messages.error(request, 'Los datos ingresados no coinciden con ningún socio activo o el correo es incorrecto.')
             return render(request, 'portal/recuperar_pin.html', {'data': request.POST})
             
         # Actualizar o crear el acceso
