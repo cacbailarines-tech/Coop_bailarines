@@ -127,16 +127,19 @@ La Directiva
 Cooperativa Bailarines
 (Este es un mensaje automático, por favor no responda a este correo)"""
             try:
-                send_mail(
+                from django.core.mail import EmailMessage
+                email = EmailMessage(
                     subject=asunto,
-                    message=mensaje,
+                    body=mensaje,
                     from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[],
+                    to=[settings.DEFAULT_FROM_EMAIL],
                     bcc=destinatarios,
-                    fail_silently=True
                 )
+                email.send(fail_silently=False)
             except Exception as e:
-                print(f"Error al enviar notificaciones de reunión: {e}")
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error fatal enviando correos de reunión: {e}")
 
         hilo = threading.Thread(target=enviar_correos)
         hilo.start()
