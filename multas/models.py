@@ -95,3 +95,48 @@ class Multa(models.Model):
         return f"Multa ${self.monto} - {self.socio.nombre_completo}"
     class Meta:
         ordering = ['-fecha_generacion']
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.core.mail import send_mail
+from django.conf import settings
+import threading
+
+@receiver(post_save, sender=Reunion)
+def notificar_reunion_programada(sender, instance, created, **kwargs):
+    if instance.estado == 'programada' and created:
+        def enviar_correos():
+            socios_activos = Socio.objects.filter(estado='activo').exclude(email='')
+            destinatarios = [s.email for s in socios_activos]
+            if not destinatarios:
+                return
+            
+            asunto = f"Cooperativa Bailarines: Reunión Programada - {instance.fecha.strftime('%d/%m/%Y')}"
+            mensaje = f"""Estimado(a) socio(a),
+
+Le informamos que la administración ha programado una nueva reunión obligatoria.
+
+Fecha: {instance.fecha.strftime('%d/%m/%Y')}
+Detalles: {instance.descripcion if instance.descripcion else 'Asistencia obligatoria según reglamento.'}
+
+Recuerde que el atraso o falta injustificada genera multas automáticas según el reglamento vigente ($1 - $3).
+Si tiene algún inconveniente, recuerde justificar su inasistencia con al menos 24 horas de anticipación.
+
+Atentamente,
+La Directiva
+Cooperativa Bailarines
+(Este es un mensaje automático, por favor no responda a este correo)"""
+            try:
+                send_mail(
+                    subject=asunto,
+                    message=mensaje,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[],
+                    bcc=destinatarios,
+                    fail_silently=True
+                )
+            except Exception as e:
+                print(f"Error al enviar notificaciones de reunión: {e}")
+
+        hilo = threading.Thread(target=enviar_correos)
+        hilo.start()

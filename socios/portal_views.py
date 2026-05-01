@@ -10,7 +10,7 @@ from django.views.decorators.http import require_POST
 from django.db import IntegrityError, transaction
 from .models import Socio, AccesoSocio, Libreta, AporteMensual, Periodo
 from creditos.models import Credito, PagoCredito, BANCO_CHOICES
-from multas.models import Multa
+from multas.models import Multa, Reunion
 import hashlib
 from decimal import Decimal
 import random, string
@@ -198,6 +198,9 @@ def portal_inicio(request):
     socio, redir = get_socio_or_redirect(request)
     if redir:
         return redir
+        
+    proxima_reunion = Reunion.objects.filter(estado='programada', fecha__gte=timezone.now().date()).order_by('fecha').first()
+    
     periodo_activo = Periodo.objects.filter(activo=True).first()
     libretas = Libreta.objects.filter(socio=socio).select_related('periodo').order_by('-periodo__anio')
     total_ahorro = AporteMensual.objects.filter(libreta__socio=socio, estado='verificado').aggregate(t=Sum('monto_ahorro'))['t'] or 0
@@ -238,6 +241,7 @@ def portal_inicio(request):
         'aportes_pendientes_mes': aportes_pendientes_mes,
         'periodo_activo': periodo_activo,
         'dias_para_cumpleanos': dias_para_cumpleanos,
+        'proxima_reunion': proxima_reunion,
     })
 
 
