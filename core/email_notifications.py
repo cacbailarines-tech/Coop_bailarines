@@ -78,10 +78,10 @@ def _email_shell(title, intro, sections=None, cta_label='Ir al portal', cta_url=
     section_html = ''.join(
         (
             '<tr><td style="padding:0 18px 10px 18px;">'
-            '<div style="background:#FFFFFF;border:1px solid #E6EAF3;border-radius:16px;'
-            'padding:18px 18px;">'
+            '<div style="background:#FFFFFF;border:1px solid #EAF0F8;border-radius:18px;'
+            'padding:18px 20px;box-shadow:0 20px 40px rgba(16,39,76,0.06);">'
             f'<div style="font-size:11px;font-weight:700;letter-spacing:.1em;'
-            f'text-transform:uppercase;color:#4B6284;margin-bottom:8px;">{escape(section["label"])}</div>'
+            f'text-transform:uppercase;color:#556B90;margin-bottom:10px;">{escape(section["label"])}</div>'
             f'<div style="font-size:18px;font-weight:800;color:{section.get("color", "#0B3D91")};">'
             f'{escape(section["value"])}</div>'
             '</div></td></tr>'
@@ -96,28 +96,28 @@ def _email_shell(title, intro, sections=None, cta_label='Ir al portal', cta_url=
     return f"""
 <!DOCTYPE html>
 <html lang="es">
-<body style="margin:0;padding:24px;background:#E9EFF8;font-family:Arial,Helvetica,sans-serif;color:#1B2738;">
+<body style="margin:0;padding:24px;background:#E8F0FB;font-family:Arial,Helvetica,sans-serif;color:#1B2738;">
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;line-height:1px;mso-hide:all;">{escape(preheader)}</div>
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:760px;margin:0 auto;">
     <tr>
       <td style="padding:0 0 24px 0;">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#FFFFFF;border-radius:24px;overflow:hidden;border:1px solid #E7ECF5;box-shadow:0 20px 50px rgba(16,39,76,0.08);">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#FFFFFF;border-radius:26px;overflow:hidden;border:1px solid #DDE6F3;box-shadow:0 16px 40px rgba(16,39,76,0.08);">
           <tr>
             <td style="background:#0B3D91;padding:18px 24px;">
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
                 <tr>
                   <td style="vertical-align:middle;">{logo_html}</td>
                   <td style="text-align:right;vertical-align:middle;">
-                    <span style="display:inline-block;color:#FFFFFF;font-size:12px;font-weight:700;padding:8px 16px;border-radius:999px;border:1px solid rgba(255,255,255,0.18);">Aviso</span>
+                    <span style="display:inline-block;color:#FFFFFF;font-size:12px;font-weight:700;padding:9px 18px;border-radius:999px;border:1px solid rgba(255,255,255,0.18);">Aviso</span>
                   </td>
                 </tr>
               </table>
             </td>
           </tr>
           <tr>
-            <td style="background:#F7F3E7;padding:22px 24px 20px 24px;border-bottom:1px solid #E7ECF5;">
-              <div style="font-size:12px;font-weight:700;color:#9AA4B8;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;">Cooperativa Bailarines</div>
-              <div style="font-size:30px;line-height:1.05;font-weight:900;color:#122048;">{escape(title)}</div>
+            <td style="background:#F6F0DD;padding:24px 24px 22px 24px;border-bottom:1px solid #E6E9F3;">
+              <div style="font-size:12px;font-weight:700;color:#8B93A8;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px;">Cooperativa Bailarines</div>
+              <div style="font-size:32px;line-height:1.05;font-weight:900;color:#122048;">{escape(title)}</div>
             </td>
           </tr>
           <tr>
@@ -126,7 +126,7 @@ def _email_shell(title, intro, sections=None, cta_label='Ir al portal', cta_url=
             </td>
           </tr>
           <tr>
-            <td style="padding:0 24px 18px 24px;">
+            <td style="padding:0 24px 16px 24px;">
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:14px;">
                 {section_html}
               </table>
@@ -135,18 +135,18 @@ def _email_shell(title, intro, sections=None, cta_label='Ir al portal', cta_url=
           {note_html}
           <tr>
             <td style="padding:0 24px 24px 24px;">
-              <a href="{escape(cta_url)}" style="display:inline-block;background:#0B3D91;color:#FFFFFF;text-decoration:none;font-size:14px;font-weight:700;padding:13px 24px;border-radius:14px;">{escape(cta_label)}</a>
+              <a href="{escape(cta_url)}" style="display:inline-block;background:#0B3D91;color:#FFFFFF;text-decoration:none;font-size:14px;font-weight:700;padding:13px 24px;border-radius:16px;">{escape(cta_label)}</a>
             </td>
           </tr>
           <tr>
-            <td style="padding:18px 24px 12px 24px;background:#F8FAFD;border-top:1px solid #E7ECF5;">
+            <td style="padding:16px 24px 24px 24px;background:#F4F7FF;border-top:1px solid #E6E9F3;">
               <div style="font-size:13px;line-height:1.75;color:#66708D;">
                 Este correo fue generado para mantenerlo informado sobre el estado de su cuenta en la Cooperativa Bailarines.
               </div>
             </td>
           </tr>
           <tr>
-            <td style="padding:0 24px 20px 24px;font-size:12px;color:#9AA4B8;line-height:1.7;">
+            <td style="padding:0 24px 22px 24px;font-size:12px;color:#9AA4B8;line-height:1.7;">
               <div>Si no reconoce este correo, por favor contacte a la administración.</div>
             </td>
           </tr>
