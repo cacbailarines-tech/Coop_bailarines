@@ -205,7 +205,9 @@ JAZZMIN_SETTINGS = {
     "topmenu_links": [
         {"name": "Inicio",  "url": "admin:index", "permissions": ["auth.view_user"]},
         {"name": "Ver Sitio", "url": "/", "new_window": True},
-        {"name": "Respaldar BD", "url": "descargar_respaldo_bd", "permissions": ["auth.add_user"], "icon": "fas fa-database"},
+    ],
+    "usermenu_links": [
+        {"name": "Respaldar BD", "url": "descargar_respaldo_bd", "icon": "fas fa-database"},
     ],
     "show_sidebar": True,
     "navigation_expanded": True,

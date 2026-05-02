@@ -3,6 +3,9 @@
 {% block topbar_actions %}
 <a href="{% url 'verificar_todo' %}" class="btn btn-outline"><i class="fas fa-list-check"></i> Revisar Reportes</a>
 <a href="{% url 'movimiento_crear' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Nuevo Movimiento</a>
+{% if request.user.is_superuser %}
+<a href="{% url 'descargar_respaldo_bd' %}" class="btn btn-info"><i class="fas fa-database"></i> Respaldar BD</a>
+{% endif %}
 {% endblock %}
 {% block content %}
 <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;">
