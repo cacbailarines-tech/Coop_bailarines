@@ -15,7 +15,7 @@
   
   .login-left {
     flex: 1;
-    background: linear-gradient(135deg, #0B3D91 0%, #001B48 100%);
+    background: linear-gradient(135deg, #9b122c 0%, #4a0815 100%);
     position: relative;
     display: none; /* hidden on mobile */
     align-items: center;
@@ -71,7 +71,7 @@
     border: 1px solid rgba(255, 255, 255, 0.5);
     border-radius: 24px;
     padding: 40px;
-    box-shadow: 0 20px 40px rgba(11, 61, 145, 0.08);
+    box-shadow: 0 20px 40px rgba(155, 18, 44, 0.08);
   }
 
   .form-control {
@@ -87,9 +87,9 @@
   }
   
   .form-control:focus {
-    border-color: #0B3D91;
+    border-color: #9b122c;
     background: #fff;
-    box-shadow: 0 0 0 4px rgba(11,61,145,0.1);
+    box-shadow: 0 0 0 4px rgba(155,18,44,0.1);
   }
 
   .input-icon {
@@ -103,13 +103,13 @@
   }
 
   .input-group:focus-within .input-icon {
-    color: #0B3D91;
+    color: #9b122c;
   }
 
   .btn-submit {
     width: 100%;
     padding: 16px;
-    background: linear-gradient(135deg, #0B3D91 0%, #1557C0 100%);
+    background: linear-gradient(135deg, #9b122c 0%, #bd1636 100%);
     color: white;
     border: none;
     border-radius: 12px;
@@ -121,12 +121,12 @@
     justify-content: center;
     gap: 10px;
     transition: transform 0.2s, box-shadow 0.2s;
-    box-shadow: 0 8px 16px rgba(11,61,145,0.2);
+    box-shadow: 0 8px 16px rgba(155,18,44,0.2);
   }
 
   .btn-submit:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 20px rgba(11,61,145,0.3);
+    box-shadow: 0 12px 20px rgba(155,18,44,0.3);
   }
 
   .btn-submit:active {
@@ -194,10 +194,10 @@
 
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;">
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-            <input type="checkbox" id="keep_signed_in" name="keep_signed_in" style="width:16px;height:16px;accent-color:#0B3D91;">
+            <input type="checkbox" id="keep_signed_in" name="keep_signed_in" style="width:16px;height:16px;accent-color:#9b122c;">
             <span style="font-size:13px;color:#475569;font-weight:500;">Mantener sesión</span>
           </label>
-          <a href="{% url 'portal_recuperar_pin' %}" style="font-size:13px;color:#0B3D91;font-weight:700;text-decoration:none;">¿Olvidaste tu PIN?</a>
+          <a href="{% url 'portal_recuperar_pin' %}" style="font-size:13px;color:#9b122c;font-weight:700;text-decoration:none;">¿Olvidaste tu PIN?</a>
         </div>
 
         <button type="submit" class="btn-submit">
@@ -209,7 +209,7 @@
         <div style="height:1px;background:#E2E8F0;margin-bottom:24px;position:relative;">
           <span style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#fff;padding:0 12px;font-size:12px;color:#94A3B8;font-weight:600;">ADMINISTRACIÓN</span>
         </div>
-        <a href="/login/" style="font-size:13px;color:#64748B;text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:6px;transition:color 0.2s;" onmouseover="this.style.color='#0B3D91'" onmouseout="this.style.color='#64748B'">
+        <a href="/login/" style="font-size:13px;color:#64748B;text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:6px;transition:color 0.2s;" onmouseover="this.style.color='#9b122c'" onmouseout="this.style.color='#64748B'">
           <i class="fas fa-shield-halved"></i> Acceso para Administradores
         </a>
       </div>

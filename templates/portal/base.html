@@ -15,7 +15,7 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root{--primary:#0B3D91;--primary-light:#1557C0;--accent:#F2A900;--success:#00897B;--danger:#C62828;--warning:#F57F17;--bg:#F0F4FA;--card:#FFFFFF;--text:#1A2332;--muted:#6B7A99;--border:#DDE3EF;}
+:root{--primary:#9b122c;--primary-light:#bd1636;--accent:#F2A900;--success:#456f3e;--danger:#C62828;--warning:#F57F17;--bg:#F0F4FA;--card:#FFFFFF;--text:#1A2332;--muted:#6B7A99;--border:#DDE3EF;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body {
   font-family: 'Plus Jakarta Sans', sans-serif;
@@ -57,7 +57,7 @@ body::after {
 .nav-brand .sub{font-size:9px;opacity:0.55;}
 .nav-links{display:flex;align-items:center;gap:8px;justify-content:flex-end;}
 .nav-links a,.portal-menu summary{color:var(--muted);text-decoration:none;font-size:12px;font-weight:700;padding:8px 12px;border-radius:9px;transition:all 0.2s;display:flex;align-items:center;gap:6px;line-height:1;cursor:pointer;}
-.nav-links a:hover,.nav-links a.active,.portal-menu summary:hover,.portal-menu[open] summary,.portal-menu.active summary{color:var(--primary);background:rgba(11,61,145,0.08);}
+.nav-links a:hover,.nav-links a.active,.portal-menu summary:hover,.portal-menu[open] summary,.portal-menu.active summary{color:var(--primary);background:rgba(155,18,44,0.08);}
 .nav-links a.logout{color:rgba(255,150,150,0.9);}
 .nav-links a.logout:hover{background:rgba(255,100,100,0.15);}
 .portal-menu{position:relative;}
@@ -74,7 +74,7 @@ body::after {
   padding: 8px; z-index: 120;
 }
 .portal-menu-panel a{color:var(--text);padding:10px 11px;border-radius:10px;font-weight:700;justify-content:flex-start;}
-.portal-menu-panel a:hover,.portal-menu-panel a.active{background:rgba(11,61,145,0.08);color:var(--primary);}
+.portal-menu-panel a:hover,.portal-menu-panel a.active{background:rgba(155,18,44,0.08);color:var(--primary);}
 .portal-menu-panel a i{width:18px;color:var(--primary);}
 .portal-content{max-width:860px;margin:0 auto;padding:24px 16px;}
 .pcard {
@@ -90,11 +90,11 @@ body::after {
 }
 .pcard-header {
   padding: 16px 20px;
-  border-bottom: 1px solid rgba(11,61,145,0.1);
+  border-bottom: 1px solid rgba(155,18,44,0.1);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: linear-gradient(to right, rgba(11,61,145,0.04), transparent);
+  background: linear-gradient(to right, rgba(155,18,44,0.04), transparent);
 }
 .pcard-header h3{font-size:13px;font-weight:700;margin:0;display:flex;align-items:center;gap:7px;}
 .pcard-body{padding:18px;}
@@ -112,7 +112,7 @@ body::after {
 .stat .icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:10px;}
 .stat .value{font-size:22px;font-weight:800;line-height:1;margin-bottom:3px;}
 .stat .label{font-size:11px;color:var(--muted);font-weight:500;}
-.stat-blue .icon{background:rgba(11,61,145,0.1);color:var(--primary);}
+.stat-blue .icon{background:rgba(155,18,44,0.1);color:var(--primary);}
 .stat-green .icon{background:rgba(0,137,123,0.1);color:var(--success);}
 .stat-amber .icon{background:rgba(242,169,0,0.15);color:var(--warning);}
 .stat-red .icon{background:rgba(198,40,40,0.1);color:var(--danger);}
@@ -124,7 +124,7 @@ tbody tr:last-child td{border-bottom:none;}
 .badge-success{background:rgba(0,137,123,0.12);color:var(--success);}
 .badge-danger{background:rgba(198,40,40,0.12);color:var(--danger);}
 .badge-warning{background:rgba(245,127,23,0.15);color:var(--warning);}
-.badge-primary{background:rgba(11,61,145,0.1);color:var(--primary);}
+.badge-primary{background:rgba(155,18,44,0.1);color:var(--primary);}
 .badge-secondary{background:rgba(107,122,153,0.12);color:var(--muted);}
 .mono{font-family:'DM Mono',monospace;font-size:11px;}
 .amount-pos{color:var(--success);font-weight:600;}
@@ -136,7 +136,7 @@ tbody tr:last-child td{border-bottom:none;}
 .alert{padding:10px 14px;border-radius:9px;font-size:12.5px;font-weight:500;margin-bottom:14px;display:flex;align-items:center;gap:8px;border:1.5px solid;}
 .alert-success{background:rgba(0,137,123,0.15);backdrop-filter:blur(10px);color:#00695C;border-color:rgba(0,137,123,0.3);}
 .alert-danger,.alert-error{background:rgba(198,40,40,0.08);color:#B71C1C;border-color:rgba(198,40,40,0.3);}
-.alert-info{background:rgba(255,255,255,0.85);backdrop-filter:blur(10px);color:var(--primary);border-color:rgba(11,61,145,0.2);box-shadow:0 4px 12px rgba(0,0,0,0.08);}
+.alert-info{background:rgba(255,255,255,0.85);backdrop-filter:blur(10px);color:var(--primary);border-color:rgba(155,18,44,0.2);box-shadow:0 4px 12px rgba(0,0,0,0.08);}
 .account-tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px;}
 .account-tab{padding:7px 14px;border-radius:9px;border:1.5px solid var(--border);font-size:11.5px;font-weight:600;cursor:pointer;text-decoration:none;color:var(--muted);transition:all 0.2s;}
 .account-tab:hover{border-color:var(--primary);color:var(--primary);}
@@ -159,7 +159,7 @@ tbody tr:last-child td{border-bottom:none;}
 {% if request.session.portal_socio_id %}
 <nav class="portal-nav">
   <a href="{% url 'portal_inicio' %}" class="nav-brand">
-    <img src="{{ web_logo_src|default:'' }}" alt="Cooperativa Bailarines" style="height:42px;width:auto;max-width:220px;object-fit:contain;display:block;filter:drop-shadow(0 2px 6px rgba(11,61,145,0.15));">
+    <img src="{{ web_logo_src|default:'' }}" alt="Cooperativa Bailarines" style="height:42px;width:auto;max-width:220px;object-fit:contain;display:block;filter:drop-shadow(0 2px 6px rgba(155,18,44,0.15));">
     <div style="margin-left:4px;"><div class="sub" style="font-size:10px;color:var(--muted);">Portal del Socio</div></div>
   </a>
   <div class="nav-links">
