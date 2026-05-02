@@ -42,7 +42,7 @@ def pwa_manifest(request):
         "name": "Cooperativa Bailarines",
         "short_name": "Bailarines",
         "description": "Sistema web administrativo y portal del socio de la Cooperativa Bailarines.",
-        "start_url": "/",
+        "start_url": "/portal/",
         "scope": "/",
         "display": "standalone",
         "background_color": "#F0F4FA",
