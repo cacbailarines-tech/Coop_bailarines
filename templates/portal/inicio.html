@@ -100,6 +100,21 @@
   </div>
 </div>
 
+<div style="display:grid; grid-template-columns: 1fr; gap:16px; margin-bottom:16px;">
+  <div style="background:#fff; border:1px solid #eee; border-radius:12px; padding:12px;">
+    <h4 style="font-size:12px; color:var(--muted); text-align:center; margin-bottom:8px;">📈 Crecimiento de Ahorros</h4>
+    <div style="position:relative; height:150px; width:100%;">
+      <canvas id="ahorroChart"></canvas>
+    </div>
+  </div>
+  <div style="background:#fff; border:1px solid #eee; border-radius:12px; padding:12px;">
+    <h4 style="font-size:12px; color:var(--muted); text-align:center; margin-bottom:8px;">⚖️ Balance General</h4>
+    <div style="position:relative; height:150px; width:100%;">
+      <canvas id="balanceChart"></canvas>
+    </div>
+  </div>
+</div>
+
 {% if dias_para_cumpleanos is not None %}
   {% if dias_para_cumpleanos == 0 %}
   <div style="background:rgba(156,39,176,0.10);border:1.5px solid rgba(156,39,176,0.45);border-radius:12px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;">
@@ -158,4 +173,7 @@
 </div>
 
 <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--muted);"><i class="fas fa-lock" style="margin-right:4px;"></i> Portal solo de consulta y solicitudes.</div>
+{% endblock %}
+
+</script>
 {% endblock %}

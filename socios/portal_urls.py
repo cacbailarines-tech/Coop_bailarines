@@ -1,6 +1,7 @@
 from django.urls import path
 from . import portal_views
 from creditos.pdf_views import credito_pdf_portal as portal_credito_pdf
+from .pdf_views import portal_estado_cuenta_pdf
 
 urlpatterns = [
     path('', portal_views.portal_login, name='portal_login'),
@@ -10,6 +11,7 @@ urlpatterns = [
     path('libretas/', portal_views.portal_libretas, name='portal_libretas'),
     path('libretas/<int:lib_pk>/proposito/', portal_views.portal_establecer_proposito, name='portal_establecer_proposito'),
     path('libretas/<int:lib_pk>/reportar-aporte/<int:mes>/', portal_views.portal_reportar_aporte, name='portal_reportar_aporte'),
+    path('libretas/<int:pk>/estado-cuenta/pdf/', portal_estado_cuenta_pdf, name='portal_estado_cuenta_pdf'),
     path('creditos/', portal_views.portal_creditos, name='portal_creditos'),
     path('creditos/solicitar/', portal_views.portal_solicitar_credito, name='portal_solicitar_credito'),
     path('creditos/<int:cred_pk>/pago/', portal_views.portal_reportar_pago, name='portal_reportar_pago'),

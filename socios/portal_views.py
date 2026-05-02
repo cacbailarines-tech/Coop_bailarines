@@ -337,6 +337,10 @@ def portal_inicio(request):
     # Gamificación Metas de Ahorro
     libretas_activas = [l for l in libretas if l.periodo == periodo_activo]
     libreta_activa = libretas_activas[0] if libretas_activas else None
+    
+    ahorro_chart_labels = []
+    ahorro_chart_data = []
+    
     if libreta_activa:
         cantidad_libretas = len(libretas_activas)
         ahorro_anual_meta = 240 * cantidad_libretas # $240 por cada libreta
@@ -346,6 +350,21 @@ def portal_inicio(request):
         libreta_activa.porcentaje_ahorro = porcentaje
         libreta_activa.ahorro_anual_meta = ahorro_anual_meta
         libreta_activa.cantidad_libretas = cantidad_libretas
+
+        # Datos para Gráfico de Evolución
+        aportes_grafico = AporteMensual.objects.filter(
+            libreta__in=libretas_activas, estado='verificado'
+        ).values('mes').annotate(monto=Sum('monto_ahorro')).order_by('mes')
+        
+        acumulado = 0
+        meses_nombres = {1:'Ene',2:'Feb',3:'Mar',4:'Abr',5:'May',6:'Jun',7:'Jul',8:'Ago',9:'Sep',10:'Oct',11:'Nov',12:'Dic'}
+        for ag in aportes_grafico:
+            acumulado += ag['monto']
+            ahorro_chart_labels.append(meses_nombres.get(ag['mes'], str(ag['mes'])))
+            ahorro_chart_data.append(float(acumulado))
+
+    import json
+    balance_chart_data = [float(total_ahorro), float(total_deuda)]
 
     return render(request, 'portal/inicio.html', {
         'socio': socio,
@@ -360,6 +379,9 @@ def portal_inicio(request):
         'periodo_activo': periodo_activo,
         'dias_para_cumpleanos': dias_para_cumpleanos,
         'proxima_reunion': proxima_reunion,
+        'ahorro_chart_labels': json.dumps(ahorro_chart_labels),
+        'ahorro_chart_data': json.dumps(ahorro_chart_data),
+        'balance_chart_data': json.dumps(balance_chart_data),
     })
 
 
