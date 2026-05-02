@@ -336,3 +336,205 @@
 </div> <!-- End of wrapper -->
 </form>
 {% endblock %}
+
+{% block extra_js %}
+<script>
+const seleccionHidden = document.getElementById('selecciones-hidden');
+const seleccionLista = document.getElementById('seleccion-lista');
+const seleccionVacia = document.getElementById('seleccion-vacia');
+const totalNode = document.getElementById('total-seleccionado');
+const totalResumenNode = document.getElementById('total-resumen');
+
+const estadoSeleccion = {
+  aportes: new Map(),
+  creditos: new Map(),
+  multas: new Map(),
+};
+
+function montoSeguro(valor) {
+  const numero = parseFloat(valor || '0');
+  return Number.isFinite(numero) ? numero : 0;
+}
+
+function formatearMonto(valor) {
+  return '$' + montoSeguro(valor).toFixed(2);
+}
+
+function mostrarCreditoSeleccionado() {
+  const select = document.getElementById('credito-select');
+  const montoInput = document.getElementById('credito-monto');
+  const info = document.getElementById('credito-info');
+  const ayuda = document.getElementById('credito-ayuda');
+  const option = select?.options[select.selectedIndex];
+
+  if (!option || !option.value) {
+    if (info) info.classList.remove('is-visible');
+    if (montoInput) montoInput.value = '';
+    if (ayuda) ayuda.textContent = 'Seleccione un cr├®dito para ver sus datos y editar el monto.';
+    return;
+  }
+
+  const cuota = montoSeguro(option.dataset.cuota);
+  const saldo = montoSeguro(option.dataset.saldo);
+  const tipoClave = option.dataset.tipoClave;
+  const montoInicial = tipoClave === 'no_mensualizado' ? saldo : cuota;
+
+  document.getElementById('credito-info-titulo').textContent = option.dataset.numero + ' - ' + option.dataset.tipo;
+  document.getElementById('credito-info-libreta').textContent = '#' + option.dataset.libreta + ' ┬À Vence ' + option.dataset.vence;
+  document.getElementById('credito-info-saldo').textContent = formatearMonto(saldo);
+  document.getElementById('credito-info-cuota').textContent = formatearMonto(cuota);
+  info.classList.add('is-visible');
+
+  if (montoInput && (!montoInput.value || montoSeguro(montoInput.value) <= 0)) {
+    montoInput.value = montoInicial.toFixed(2);
+  }
+
+  if (ayuda) {
+    ayuda.textContent = tipoClave === 'no_mensualizado'
+      ? 'Este cr├®dito acepta monto manual. Se carg├│ el saldo pendiente como referencia.'
+      : 'Se carg├│ la cuota sugerida, pero puede cambiar el monto antes de agregarlo.';
+  }
+}
+
+function agregarAporte() {
+  const select = document.getElementById('aporte-select');
+  const option = select?.options[select.selectedIndex];
+  if (!option || !option.value) {
+    alert('Seleccione un aporte antes de agregarlo.');
+    return;
+  }
+  if (estadoSeleccion.aportes.has(option.value)) {
+    alert('Ese aporte ya est├í en el resumen.');
+    return;
+  }
+
+  estadoSeleccion.aportes.set(option.value, {
+    id: option.value,
+    tipo: 'Aporte',
+    label: option.dataset.label,
+    monto: montoSeguro(option.dataset.monto),
+  });
+
+  select.value = '';
+  renderResumen();
+}
+
+function agregarCredito() {
+  const select = document.getElementById('credito-select');
+  const montoInput = document.getElementById('credito-monto');
+  const option = select?.options[select.selectedIndex];
+  const monto = montoSeguro(montoInput?.value);
+
+  if (!option || !option.value) {
+    alert('Seleccione un cr├®dito antes de agregarlo.');
+    return;
+  }
+  if (monto <= 0) {
+    alert('Ingrese un monto v├ílido para el cr├®dito.');
+    return;
+  }
+  if (estadoSeleccion.creditos.has(option.value)) {
+    alert('Ese cr├®dito ya est├í en el resumen.');
+    return;
+  }
+
+  estadoSeleccion.creditos.set(option.value, {
+    id: option.value,
+    tipo: 'Cr├®dito',
+    label: option.dataset.label,
+    monto: monto,
+  });
+
+  select.value = '';
+  montoInput.value = '';
+  document.getElementById('credito-info')?.classList.remove('is-visible');
+  document.getElementById('credito-ayuda').textContent = 'Seleccione un cr├®dito para ver sus datos y editar el monto.';
+  renderResumen();
+}
+
+function agregarMulta() {
+  const select = document.getElementById('multa-select');
+  const option = select?.options[select.selectedIndex];
+  if (!option || !option.value) {
+    alert('Seleccione una multa antes de agregarla.');
+    return;
+  }
+  if (estadoSeleccion.multas.has(option.value)) {
+    alert('Esa multa ya est├í en el resumen.');
+    return;
+  }
+
+  estadoSeleccion.multas.set(option.value, {
+    id: option.value,
+    tipo: 'Multa',
+    label: option.dataset.label,
+    monto: montoSeguro(option.dataset.monto),
+  });
+
+  select.value = '';
+  renderResumen();
+}
+
+function removerItem(tipo, id) {
+  estadoSeleccion[tipo].delete(String(id));
+  renderResumen();
+}
+
+function construirHiddenInputs() {
+  const html = [];
+
+  estadoSeleccion.aportes.forEach(item => {
+    html.push('<input type="hidden" name="aporte_ids" value="' + item.id + '">');
+  });
+
+  estadoSeleccion.creditos.forEach(item => {
+    html.push('<input type="hidden" name="credito_ids" value="' + item.id + '">');
+    html.push('<input type="hidden" name="credito_monto_' + item.id + '" value="' + item.monto.toFixed(2) + '">');
+  });
+
+  estadoSeleccion.multas.forEach(item => {
+    html.push('<input type="hidden" name="multa_ids" value="' + item.id + '">');
+  });
+
+  seleccionHidden.innerHTML = html.join('');
+}
+
+function renderResumen() {
+  const bloques = [];
+  let total = 0;
+
+  [['aportes', estadoSeleccion.aportes], ['creditos', estadoSeleccion.creditos], ['multas', estadoSeleccion.multas]].forEach(([tipo, mapa]) => {
+    mapa.forEach(item => {
+      total += item.monto;
+      bloques.push(
+        '<div class="pc-summary-item">' +
+          '<div class="pc-summary-meta">' +
+            '<span class="pc-summary-type">' + item.tipo + '</span>' +
+            '<div class="pc-summary-label">' + item.label + '</div>' +
+          '</div>' +
+          '<div style="display:flex;align-items:center;gap:8px;">' +
+            '<div class="pc-summary-amount">' + formatearMonto(item.monto) + '</div>' +
+            '<button type="button" class="pc-summary-remove" onclick="removerItem(\'' + tipo + '\', \'' + item.id + '\')"><i class="fas fa-trash"></i></button>' +
+          '</div>' +
+        '</div>'
+      );
+    });
+  });
+
+  totalNode.textContent = formatearMonto(total);
+  totalResumenNode.textContent = formatearMonto(total);
+  seleccionLista.innerHTML = bloques.join('');
+  seleccionVacia.style.display = bloques.length ? 'none' : 'block';
+  seleccionLista.style.display = bloques.length ? 'block' : 'none';
+
+  construirHiddenInputs();
+}
+
+document.getElementById('agregar-aporte-btn')?.addEventListener('click', agregarAporte);
+document.getElementById('agregar-credito-btn')?.addEventListener('click', agregarCredito);
+document.getElementById('agregar-multa-btn')?.addEventListener('click', agregarMulta);
+document.getElementById('credito-select')?.addEventListener('change', mostrarCreditoSeleccionado);
+
+renderResumen();
+</script>
+{% endblock %}
