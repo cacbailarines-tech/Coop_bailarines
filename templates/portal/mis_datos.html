@@ -1,6 +1,14 @@
 {% extends 'portal/base.html' %}
 {% block title %}Mis Datos - Portal Bailarines{% endblock %}
 {% block content %}
+<style>
+  .form-control[readonly] {
+    background-color: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #64748b;
+    cursor: not-allowed;
+  }
+</style>
 <div style="margin-bottom:16px;">
   <a href="{% url 'portal_inicio' %}" style="color:var(--muted);text-decoration:none;font-size:12px;"><i class="fas fa-arrow-left"></i> Inicio</a>
   <h1 style="font-size:18px;font-weight:800;margin-top:6px;">Mis Datos</h1>
