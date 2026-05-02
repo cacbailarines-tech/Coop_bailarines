@@ -385,7 +385,11 @@ def _credito_pdf_attachment(credito):
 
 
 def _send_socio_push(socio, title, body, url='/portal/inicio/', tag='portal-alerta'):
-    return 0
+    try:
+        from core.push_notifications import notify_socio_push
+        return notify_socio_push(socio, title, body, url, tag)
+    except ImportError:
+        return 0
 
 
 def send_test_email(recipient):

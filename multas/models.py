@@ -105,14 +105,15 @@ import threading
 @receiver(post_save, sender=Reunion)
 def notificar_reunion_programada(sender, instance, created, **kwargs):
     if instance.estado == 'programada':
-        # Si no hay destinatarios, al menos enviamos al admin como prueba
-        socios_activos = Socio.objects.filter(estado='activo').exclude(email='')
-        destinatarios = [s.email for s in socios_activos]
-        if not destinatarios:
-            destinatarios = [settings.DEFAULT_FROM_EMAIL]
-            
-        asunto = f"Cooperativa Bailarines: Reunión Programada - {instance.fecha.strftime('%d/%m/%Y')}"
-        mensaje = f"""Estimado(a) socio(a),
+        def enviar_correos():
+            # Si no hay destinatarios, al menos enviamos al admin como prueba
+            socios_activos = Socio.objects.filter(estado='activo').exclude(email='')
+            destinatarios = [s.email for s in socios_activos]
+            if not destinatarios:
+                destinatarios = [settings.DEFAULT_FROM_EMAIL]
+                
+            asunto = f"Cooperativa Bailarines: Reunión Programada - {instance.fecha.strftime('%d/%m/%Y')}"
+            mensaje = f"""Estimado(a) socio(a),
 
 Le informamos que la administración ha programado una nueva reunión obligatoria.
 
@@ -126,17 +127,20 @@ Atentamente,
 La Directiva
 Cooperativa Bailarines
 (Este es un mensaje automático, por favor no responda a este correo)"""
-        try:
-            from django.core.mail import EmailMessage
-            email = EmailMessage(
-                subject=asunto,
-                body=mensaje,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                to=[settings.DEFAULT_FROM_EMAIL],
-                bcc=destinatarios,
-            )
-            email.send(fail_silently=False)
-        except Exception as e:
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.error(f"Error fatal enviando correos de reunión: {e}")
+            try:
+                from django.core.mail import EmailMessage
+                email = EmailMessage(
+                    subject=asunto,
+                    body=mensaje,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to=[settings.DEFAULT_FROM_EMAIL],
+                    bcc=destinatarios,
+                )
+                email.send(fail_silently=True)
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error fatal enviando correos de reunión: {e}")
+
+        hilo = threading.Thread(target=enviar_correos)
+        hilo.start()

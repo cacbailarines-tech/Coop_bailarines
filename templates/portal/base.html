@@ -106,6 +106,7 @@ tbody tr:last-child td{border-bottom:none;}
         <a href="{% url 'portal_multas' %}" class="{% if request.resolver_match.url_name == 'portal_multas' %}active{% endif %}"><i class="fas fa-exclamation-triangle"></i> Multas</a>
       </div>
     </details>
+    <a href="#" id="pushToggleBtn" onclick="togglePush(event)" title="Notificaciones"><i class="fas fa-bell-slash" id="pushToggleIcon"></i></a>
     <a href="{% url 'portal_logout' %}" class="logout"><i class="fas fa-right-from-bracket"></i> <span class="hide-mobile">Salir</span></a>
   </div>
 </nav>
@@ -120,9 +121,112 @@ tbody tr:last-child td{border-bottom:none;}
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
 <script>
+let isSubscribed = false;
+let swRegistration = null;
+
+async function checkPushSubscription() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  const reg = await navigator.serviceWorker.getRegistration();
+  if (reg) {
+    swRegistration = reg;
+    const sub = await reg.pushManager.getSubscription();
+    isSubscribed = sub !== null;
+    updatePushUI();
+  }
+}
+
+function updatePushUI() {
+  const icon = document.getElementById('pushToggleIcon');
+  if (!icon) return;
+  if (isSubscribed) {
+    icon.className = 'fas fa-bell';
+    icon.style.color = '#F2A900'; // Accent color for active bell
+  } else {
+    icon.className = 'fas fa-bell-slash';
+    icon.style.color = 'rgba(255,255,255,0.6)';
+  }
+}
+
+function urlB64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+async function togglePush(e) {
+  e.preventDefault();
+  if (!swRegistration) {
+    alert("Las notificaciones no están soportadas en su navegador.");
+    return;
+  }
+  
+  if (isSubscribed) {
+    // Unsubscribe
+    const sub = await swRegistration.pushManager.getSubscription();
+    if (sub) {
+      await sub.unsubscribe();
+      await fetch("{% url 'portal_push_unsubscribe' %}", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+        body: JSON.stringify({ endpoint: sub.endpoint })
+      });
+    }
+    isSubscribed = false;
+    updatePushUI();
+  } else {
+    // Subscribe
+    try {
+      const configRes = await fetch("{% url 'push_config' %}");
+      const config = await configRes.json();
+      if (!config.enabled || !config.publicKey) {
+        alert("La administración aún no ha configurado las notificaciones Push en el servidor.");
+        return;
+      }
+      const applicationServerKey = urlB64ToUint8Array(config.publicKey);
+      const subscription = await swRegistration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: applicationServerKey
+      });
+      await fetch("{% url 'portal_push_subscribe' %}", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+        body: JSON.stringify(subscription)
+      });
+      isSubscribed = true;
+      updatePushUI();
+      alert("¡Notificaciones activadas con éxito! Recibirá alertas sobre sus trámites.");
+    } catch (err) {
+      console.error(err);
+      alert("No se pudo activar las notificaciones. Asegúrese de dar permiso en el navegador o intente nuevamente.");
+    }
+  }
+}
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register("{% url 'service_worker' %}");
+    navigator.serviceWorker.register("{% url 'service_worker' %}").then(() => {
+        checkPushSubscription();
+    });
   });
 }
 </script>
