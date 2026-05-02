@@ -8,21 +8,21 @@
 </div>
 
 {% if proxima_reunion %}
-<div style="background:linear-gradient(135deg,#e3f2fd,#bbdefb);border:1.5px solid #64b5f6;border-radius:12px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;">
-  <div style="font-size:26px;"><i class="fas fa-users" style="color:#1976d2;"></i></div>
+<div style="background:rgba(155,18,44,0.08);border:1.5px solid rgba(155,18,44,0.2);border-radius:12px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;">
+  <div style="font-size:26px;"><i class="fas fa-users" style="color:var(--primary);"></i></div>
   <div>
-    <div style="font-size:13px;font-weight:800;color:#1565c0;">Reunión Programada: {{ proxima_reunion.fecha|date:"l, d F Y" }}</div>
-    <div style="font-size:11px;color:#0d47a1;">{% if proxima_reunion.descripcion %}{{ proxima_reunion.descripcion }}{% else %}Recuerde su asistencia obligatoria.{% endif %}</div>
+    <div style="font-size:13px;font-weight:800;color:var(--primary);">Reunión Programada: {{ proxima_reunion.fecha|date:"l, d F Y" }}</div>
+    <div style="font-size:11px;color:var(--text);">{% if proxima_reunion.descripcion %}{{ proxima_reunion.descripcion }}{% else %}Recuerde su asistencia obligatoria.{% endif %}</div>
   </div>
 </div>
 {% endif %}
 
 {% if aportes_pendientes_mes %}
-<div style="background:rgba(242,169,0,0.12);border:1.5px solid rgba(242,169,0,0.5);border-radius:12px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;">
-  <div style="font-size:22px;"><i class="fas fa-triangle-exclamation" style="color:#8B6914;"></i></div>
+<div style="background:rgba(155,18,44,0.05);border:1.5px solid rgba(155,18,44,0.15);border-radius:12px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;">
+  <div style="font-size:22px;"><i class="fas fa-triangle-exclamation" style="color:var(--primary);"></i></div>
   <div>
-    <div style="font-size:13px;font-weight:700;color:#8B6914;">Tiene {{ aportes_pendientes_mes }} aporte(s) pendiente(s) este mes</div>
-    <div style="font-size:11px;color:#A07820;">Recuerde pagar antes del dia 20. <a href="{% url 'portal_libretas' %}" style="color:#8B6914;font-weight:700;">Reportar ahora</a></div>
+    <div style="font-size:13px;font-weight:700;color:var(--primary);">Tiene {{ aportes_pendientes_mes }} aporte(s) pendiente(s) este mes</div>
+    <div style="font-size:11px;color:var(--text);">Recuerde pagar antes del dia 20. <a href="{% url 'portal_libretas' %}" style="color:var(--primary);font-weight:700;">Reportar ahora</a></div>
   </div>
 </div>
 {% endif %}
@@ -38,22 +38,22 @@
 {% endif %}
 
 {% if libreta_activa %}
-<div style="background:#fff; border:2px solid #e0e0e0; border-radius:12px; padding:16px; margin-bottom:18px; box-shadow:0 4px 6px rgba(0,0,0,0.03);">
+<div class="pcard"><div class="pcard-body">
   {% if libreta_activa.proposito_ahorro %}
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-      <div style="font-size:14px; font-weight:800; color:#333;"><i class="fas fa-bullseye" style="color:var(--primary); margin-right:6px;"></i> Propósito {{ periodo_activo.anio }}: <span style="color:var(--primary);">{{ libreta_activa.proposito_ahorro }}</span></div>
+      <div style="font-size:14px; font-weight:800; color:var(--text);"><i class="fas fa-bullseye" style="color:var(--primary); margin-right:6px;"></i> Propósito {{ periodo_activo.anio }}: <span style="color:var(--primary);">{{ libreta_activa.proposito_ahorro }}</span></div>
       <button onclick="document.getElementById('edit-meta').style.display='block'" style="background:none; border:none; color:var(--muted); font-size:13px; cursor:pointer;"><i class="fas fa-edit"></i></button>
     </div>
     
     <div style="background:#f0f0f0; border-radius:10px; height:22px; width:100%; overflow:hidden; position:relative; margin-bottom:8px;">
-      <div style="background:{% if libreta_activa.porcentaje_ahorro >= 100 %}#4caf50{% else %}linear-gradient(90deg, #2196f3, #00bcd4){% endif %}; width:{{ libreta_activa.porcentaje_ahorro }}%; height:100%; transition:width 1s ease-in-out;"></div>
+      <div style="background:{% if libreta_activa.porcentaje_ahorro >= 100 %}var(--success){% else %}linear-gradient(90deg, var(--primary), var(--primary-light)){% endif %}; width:{{ libreta_activa.porcentaje_ahorro }}%; height:100%; transition:width 1s ease-in-out;"></div>
       <div style="position:absolute; top:0; left:0; width:100%; height:100%; display:flex; justify-content:center; align-items:center; font-size:11px; font-weight:800; color:{% if libreta_activa.porcentaje_ahorro > 55 %}#fff{% else %}#333{% endif %}; text-shadow:0 1px 2px rgba(0,0,0,0.2);">
         {{ libreta_activa.porcentaje_ahorro }}% Completado
       </div>
     </div>
     
     <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--muted); font-weight:600;">
-      <span>Ahorrado: <strong style="color:#333;">${{ libreta_activa.ahorro_actual|floatformat:2 }}</strong></span>
+      <span>Ahorrado: <strong style="color:var(--text);">${{ libreta_activa.ahorro_actual|floatformat:2 }}</strong></span>
       <span>Base Anual ({% if libreta_activa.cantidad_libretas > 1 %}{{ libreta_activa.cantidad_libretas }} libretas{% else %}1 libreta{% endif %}): <strong>${{ libreta_activa.ahorro_anual_meta }} + Ganancias</strong></span>
     </div>
 
@@ -68,12 +68,12 @@
   {% else %}
     <div style="text-align:center;">
       <div style="font-size:36px; margin-bottom:8px;">🎯</div>
-      <h3 style="font-size:15px; font-weight:800; margin-bottom:6px; color:#333;">¡Ponle un propósito a tu dinero!</h3>
+      <h3 style="font-size:15px; font-weight:800; margin-bottom:6px; color:var(--text);">¡Ponle un propósito a tu dinero!</h3>
       <p style="font-size:12px; color:var(--muted); margin-bottom:14px;">A fin de año dispondrás de tus <strong>ahorros base (${{ libreta_activa.ahorro_anual_meta }} por {% if libreta_activa.cantidad_libretas > 1 %}tus {{ libreta_activa.cantidad_libretas }} libretas{% else %}tu libreta{% endif %}) MÁS las utilidades/ganancias</strong> generadas entre todos. ¿Qué harás con ese dinero?</p>
       
       <form method="post" action="{% url 'portal_establecer_proposito' libreta_activa.pk %}">{% csrf_token %}
         <div style="display:flex; flex-direction:column; gap:10px;">
-          <input type="text" name="proposito_ahorro" required placeholder="Ej: Viaje a la playa, Ropa nueva..." style="width:100%; padding:10px 14px; border:1.5px solid #2196f3; border-radius:8px; font-size:13px; text-align:center;">
+          <input type="text" name="proposito_ahorro" required placeholder="Ej: Viaje a la playa, Ropa nueva..." style="width:100%; padding:10px 14px; border:1.5px solid var(--border); border-radius:8px; font-size:13px; text-align:center;">
           <button type="submit" class="btn btn-primary" style="width:100%; border-radius:8px; font-weight:700;"><i class="fas fa-rocket"></i> Fijar mi Propósito</button>
         </div>
       </form>
