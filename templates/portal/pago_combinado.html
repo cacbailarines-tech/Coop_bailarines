@@ -1,5 +1,5 @@
 {% extends 'portal/base.html' %}
-{% block title %}Pago Combinado - Portal Bailarines{% endblock %}
+{% block title %}Centro de Pagos - Portal Bailarines{% endblock %}
 {% block content %}
 <style>
 .pc-top{
@@ -173,14 +173,14 @@
 <div class="pc-top">
   <div>
     <a href="{% url 'portal_inicio' %}" style="color:var(--muted);text-decoration:none;font-size:12px;"><i class="fas fa-arrow-left"></i> Inicio</a>
-    <h1 style="font-size:18px;font-weight:800;margin-top:6px;">Reportar Pago Combinado</h1>
+    <h1 style="font-size:18px;font-weight:800;margin-top:6px;">Reportar Centro de Pagos</h1>
     <div style="font-size:12px;color:var(--muted);">Agregue solo los conceptos que entran en la misma transferencia.</div>
   </div>
   <div class="badge badge-primary pc-total-badge">Total seleccionado: <span id="total-seleccionado">$0.00</span></div>
 </div>
 
 <div class="alert alert-info">
-  <i class="fas fa-circle-info"></i> Seleccione cada concepto y agr&eacute;guelo al resumen. As&iacute; el pago combinado es m&aacute;s r&aacute;pido tambi&eacute;n en celular.
+  <i class="fas fa-circle-info"></i> Seleccione cada concepto y agr&eacute;guelo al resumen. As&iacute; el centro de pagos es m&aacute;s r&aacute;pido tambi&eacute;n en celular.
 </div>
 
 <form method="post" enctype="multipart/form-data" id="pago-combinado-form">
@@ -328,13 +328,7 @@
       <div id="seleccion-vacia" style="font-size:12px;color:var(--muted);">Todav&iacute;a no ha agregado conceptos.</div>
       <div id="seleccion-lista" style="display:none;"></div>
     </div>
-  </div
-<div class="pc-actions" style="flex-direction:column-reverse;">
-    <a href="{% url 'portal_inicio' %}" class="btn btn-outline" style="width:100%;justify-content:center;padding:12px;font-size:14px;">Cancelar</a>
-    <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;font-size:14px;"><i class="fas fa-paper-plane"></i> Reportar Pago Combinado</button>
-  </div>
-    </div>
-  </div>
+
     </div>
     <div class="pc-sidebar">
 <div class="pcard">
@@ -350,7 +344,7 @@
   </div
 <div class="pc-actions" style="flex-direction:column-reverse;">
     <a href="{% url 'portal_inicio' %}" class="btn btn-outline" style="width:100%;justify-content:center;padding:12px;font-size:14px;">Cancelar</a>
-    <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;font-size:14px;"><i class="fas fa-paper-plane"></i> Reportar Pago Combinado</button>
+    <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;font-size:14px;"><i class="fas fa-paper-plane"></i> Reportar Centro de Pagos</button>
   </div>
     </div>
   </div>
