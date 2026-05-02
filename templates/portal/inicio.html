@@ -54,13 +54,13 @@
     
     <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--muted); font-weight:600;">
       <span>Ahorrado: <strong style="color:#333;">${{ libreta_activa.ahorro_actual|floatformat:2 }}</strong></span>
-      <span>Total fin de año: <strong>${{ libreta_activa.ahorro_anual_meta }}</strong></span>
+      <span>Base Anual: <strong>${{ libreta_activa.ahorro_anual_meta }} + Ganancias</strong></span>
     </div>
 
     <div id="edit-meta" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid #eee;">
       <form method="post" action="{% url 'portal_establecer_proposito' libreta_activa.pk %}">{% csrf_token %}
         <div style="display:flex; gap:8px;">
-          <input type="text" name="proposito_ahorro" value="{{ libreta_activa.proposito_ahorro }}" required placeholder="¿Para qué usarás el ahorro?" style="flex:1; padding:8px 12px; border:1px solid #ccc; border-radius:6px; font-size:12px;">
+          <input type="text" name="proposito_ahorro" value="{{ libreta_activa.proposito_ahorro }}" required placeholder="¿Para qué usarás el ahorro + ganancias?" style="flex:1; padding:8px 12px; border:1px solid #ccc; border-radius:6px; font-size:12px;">
           <button type="submit" class="btn btn-primary btn-sm" style="font-size:12px; padding:8px 14px;"><i class="fas fa-save"></i></button>
         </div>
       </form>
@@ -68,8 +68,8 @@
   {% else %}
     <div style="text-align:center;">
       <div style="font-size:36px; margin-bottom:8px;">🎯</div>
-      <h3 style="font-size:15px; font-weight:800; margin-bottom:6px; color:#333;">¡Ponle un propósito a tus ahorros!</h3>
-      <p style="font-size:12px; color:var(--muted); margin-bottom:14px;">A fin de año dispondrás de <strong>${{ libreta_activa.ahorro_anual_meta }}</strong>. ¿Qué harás con ese dinero cuando te lo entreguen?</p>
+      <h3 style="font-size:15px; font-weight:800; margin-bottom:6px; color:#333;">¡Ponle un propósito a tu dinero!</h3>
+      <p style="font-size:12px; color:var(--muted); margin-bottom:14px;">A fin de año dispondrás de tus <strong>ahorros base (${{ libreta_activa.ahorro_anual_meta }}) MÁS las utilidades/ganancias</strong> generadas entre todos. ¿Qué harás con ese dinero?</p>
       
       <form method="post" action="{% url 'portal_establecer_proposito' libreta_activa.pk %}">{% csrf_token %}
         <div style="display:flex; flex-direction:column; gap:10px;">
