@@ -335,16 +335,17 @@ def portal_inicio(request):
                 proximo = socio.fecha_nacimiento.replace(year=hoy.year + 1, day=28)
         dias_para_cumpleanos = (proximo - hoy).days
     # Gamificación Metas de Ahorro
-    libreta_activa = None
-    if periodo_activo:
-        libreta_activa = next((l for l in libretas if l.periodo == periodo_activo), None)
-        if libreta_activa:
-            ahorro_anual_meta = 240 # $20 x 12 meses
-            ahorro_actual = AporteMensual.objects.filter(libreta=libreta_activa, estado='verificado').aggregate(t=Sum('monto_ahorro'))['t'] or Decimal('0.00')
-            porcentaje = min(100, int((ahorro_actual / ahorro_anual_meta) * 100))
-            libreta_activa.ahorro_actual = ahorro_actual
-            libreta_activa.porcentaje_ahorro = porcentaje
-            libreta_activa.ahorro_anual_meta = ahorro_anual_meta
+    libretas_activas = [l for l in libretas if l.periodo == periodo_activo]
+    libreta_activa = libretas_activas[0] if libretas_activas else None
+    if libreta_activa:
+        cantidad_libretas = len(libretas_activas)
+        ahorro_anual_meta = 240 * cantidad_libretas # $240 por cada libreta
+        ahorro_actual = AporteMensual.objects.filter(libreta__in=libretas_activas, estado='verificado').aggregate(t=Sum('monto_ahorro'))['t'] or Decimal('0.00')
+        porcentaje = min(100, int((ahorro_actual / ahorro_anual_meta) * 100))
+        libreta_activa.ahorro_actual = ahorro_actual
+        libreta_activa.porcentaje_ahorro = porcentaje
+        libreta_activa.ahorro_anual_meta = ahorro_anual_meta
+        libreta_activa.cantidad_libretas = cantidad_libretas
 
     return render(request, 'portal/inicio.html', {
         'socio': socio,

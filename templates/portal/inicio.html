@@ -54,7 +54,7 @@
     
     <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--muted); font-weight:600;">
       <span>Ahorrado: <strong style="color:#333;">${{ libreta_activa.ahorro_actual|floatformat:2 }}</strong></span>
-      <span>Base Anual: <strong>${{ libreta_activa.ahorro_anual_meta }} + Ganancias</strong></span>
+      <span>Base Anual ({% if libreta_activa.cantidad_libretas > 1 %}{{ libreta_activa.cantidad_libretas }} libretas{% else %}1 libreta{% endif %}): <strong>${{ libreta_activa.ahorro_anual_meta }} + Ganancias</strong></span>
     </div>
 
     <div id="edit-meta" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid #eee;">
@@ -69,7 +69,7 @@
     <div style="text-align:center;">
       <div style="font-size:36px; margin-bottom:8px;">🎯</div>
       <h3 style="font-size:15px; font-weight:800; margin-bottom:6px; color:#333;">¡Ponle un propósito a tu dinero!</h3>
-      <p style="font-size:12px; color:var(--muted); margin-bottom:14px;">A fin de año dispondrás de tus <strong>ahorros base (${{ libreta_activa.ahorro_anual_meta }}) MÁS las utilidades/ganancias</strong> generadas entre todos. ¿Qué harás con ese dinero?</p>
+      <p style="font-size:12px; color:var(--muted); margin-bottom:14px;">A fin de año dispondrás de tus <strong>ahorros base (${{ libreta_activa.ahorro_anual_meta }} por {% if libreta_activa.cantidad_libretas > 1 %}tus {{ libreta_activa.cantidad_libretas }} libretas{% else %}tu libreta{% endif %}) MÁS las utilidades/ganancias</strong> generadas entre todos. ¿Qué harás con ese dinero?</p>
       
       <form method="post" action="{% url 'portal_establecer_proposito' libreta_activa.pk %}">{% csrf_token %}
         <div style="display:flex; flex-direction:column; gap:10px;">
