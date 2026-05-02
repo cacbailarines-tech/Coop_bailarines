@@ -233,7 +233,7 @@ def _send_email(recipient, subject, text_body, html_body=None, attachments=None)
         except Exception:
             logger.exception('Error enviando correo a %s con asunto %s', recipient, subject)
 
-    threading.Thread(target=worker, daemon=True).start()
+    threading.Thread(target=worker, daemon=False).start()
     return True
 
 
