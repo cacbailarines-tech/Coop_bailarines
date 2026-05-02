@@ -49,6 +49,7 @@ if railway_public_domain:
         CSRF_TRUSTED_ORIGINS.append(railway_origin)
 
 INSTALLED_APPS = [
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -188,3 +189,80 @@ LOGGING = {
         },
     },
 }
+
+# JAZZMIN CONFIGURATION
+JAZZMIN_SETTINGS = {
+    "site_title": "Coop Bailarines Admin",
+    "site_header": "Cooperativa Bailarines",
+    "site_brand": "Coop. Bailarines",
+    "site_logo": "img/logo.png",
+    "login_logo": "img/logo.png",
+    "site_icon": "img/logo.png",
+    "welcome_sign": "Bienvenido al Panel de Administración",
+    "copyright": "Cooperativa Bailarines",
+    "search_model": ["socios.Socio", "creditos.Credito"],
+    "user_avatar": None,
+    "topmenu_links": [
+        {"name": "Inicio",  "url": "admin:index", "permissions": ["auth.view_user"]},
+        {"name": "Ver Sitio", "url": "/", "new_window": True},
+    ],
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    "hide_apps": [],
+    "hide_models": [],
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "auth.user": "fas fa-user",
+        "auth.Group": "fas fa-users",
+        "socios.Socio": "fas fa-user-friends",
+        "socios.Libreta": "fas fa-book",
+        "socios.AporteMensual": "fas fa-piggy-bank",
+        "creditos.Credito": "fas fa-hand-holding-usd",
+        "creditos.PagoCredito": "fas fa-money-bill-wave",
+        "multas.Multa": "fas fa-exclamation-circle",
+        "multas.Reunion": "fas fa-calendar-check",
+        "cuentas.CuentaBancaria": "fas fa-university",
+        "cuentas.Transaccion": "fas fa-exchange-alt",
+        "core.PushSubscription": "fas fa-bell",
+        "reportes.Reporte": "fas fa-chart-line",
+    },
+    "default_icon_parents": "fas fa-chevron-circle-right",
+    "default_icon_children": "fas fa-circle",
+    "related_modal_active": False,
+    "custom_css": None,
+    "custom_js": None,
+    "show_ui_builder": True,
+}
+
+JAZZMIN_UI_TWEAKS = {
+    "navbar_small_text": False,
+    "footer_small_text": False,
+    "body_small_text": False,
+    "brand_small_text": False,
+    "brand_colour": "navbar-primary",
+    "accent": "accent-primary",
+    "navbar": "navbar-primary navbar-dark",
+    "no_navbar_border": False,
+    "navbar_fixed": False,
+    "layout_boxed": False,
+    "footer_fixed": False,
+    "sidebar_fixed": True,
+    "sidebar": "sidebar-light-primary",
+    "sidebar_nav_small_text": False,
+    "sidebar_disable_expand": False,
+    "sidebar_nav_child_indent": True,
+    "sidebar_nav_compact_style": False,
+    "sidebar_nav_legacy_style": False,
+    "sidebar_nav_flat_style": False,
+    "theme": "default",
+    "dark_mode_theme": None,
+    "button_classes": {
+        "primary": "btn-primary",
+        "secondary": "btn-secondary",
+        "info": "btn-info",
+        "warning": "btn-warning",
+        "danger": "btn-danger",
+        "success": "btn-success"
+    }
+}
+
