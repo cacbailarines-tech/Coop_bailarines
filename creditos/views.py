@@ -18,7 +18,7 @@ from core.email_notifications import (
     notify_pago_credito_rechazado,
     notify_pago_credito_verificado,
 )
-from core.utils import has_role, registrar_auditoria
+from core.utils import has_role, registrar_auditoria, require_roles
 
 
 ROLES_APROBACION_CREDITO = ['admin', 'gerente', 'tesorero', 'cajero']
@@ -81,6 +81,42 @@ def _puede_forzar_aprobacion(user):
     return user.is_superuser or has_role(user, 'admin', 'gerente')
 
 
+def _validar_credito_datos(request, monto_str, plazo_str, tipo, banco, cuenta, titular, cedula_titular):
+    try:
+        monto = Decimal(monto_str)
+    except Exception:
+        messages.error(request, 'Monto solicitado inválido.')
+        return None, None
+
+    if monto <= 0:
+        messages.error(request, 'El monto debe ser mayor a cero.')
+        return None, None
+
+    if tipo not in dict(Credito.TIPO_CHOICES):
+        messages.error(request, 'Tipo de crédito inválido.')
+        return None, None
+
+    if banco not in dict(BANCO_CHOICES):
+        messages.error(request, 'Banco inválido.')
+        return None, None
+
+    try:
+        plazo = int(plazo_str)
+    except Exception:
+        messages.error(request, 'Plazo inválido.')
+        return None, None
+
+    if plazo <= 0:
+        messages.error(request, 'El plazo debe ser mayor a cero.')
+        return None, None
+
+    if not cuenta.strip() or not titular.strip() or not cedula_titular.strip():
+        messages.error(request, 'Complete todos los datos bancarios.')
+        return None, None
+
+    return monto, plazo
+
+
 def _estado_mora_por_dias(dias_atraso):
     if dias_atraso <= 0:
         return 'desembolsado'
@@ -122,8 +158,6 @@ def _sincronizar_mora_credito(credito):
         credito.estado = nuevo_estado
         credito.save(update_fields=['estado'])
 
-    return {'dias_atraso': dias_atraso, 'cuotas_vencidas': cuotas_vencidas}
-
     multas_existentes = set(credito.multas.values_list('numero_cuota', flat=True))
     multas_previas = credito.multas.count()
     for indice, (numero_cuota, fecha_cuota) in enumerate(cuotas_vencidas, start=1):
@@ -138,12 +172,15 @@ def _sincronizar_mora_credito(credito):
             observaciones=f'Generada automáticamente por atraso desde {fecha_cuota:%d/%m/%Y}.',
         )
 
+    return {'dias_atraso': dias_atraso, 'cuotas_vencidas': cuotas_vencidas}
+
 
 def gen_num_credito():
     return Credito.generar_numero()
 
 
 @login_required
+@require_roles('admin', 'tesorero', 'gerente', 'cajero')
 def creditos_list(request):
     q = request.GET.get('q','')
     estado = request.GET.get('estado','')
@@ -161,6 +198,7 @@ def creditos_list(request):
 
 
 @login_required
+@require_roles('admin', 'tesorero', 'gerente', 'cajero')
 def credito_crear(request):
     if request.method == 'POST':
         socio = get_object_or_404(Socio, pk=request.POST.get('socio'))
@@ -169,18 +207,33 @@ def credito_crear(request):
         if libreta.tiene_credito_activo:
             messages.error(request, f'La libreta #{libreta.numero} ya tiene un crédito activo.')
             return redirect('credito_crear')
-        monto = Decimal(request.POST.get('monto_solicitado'))
-        plazo = int(request.POST.get('plazo_meses'))
+
         tipo = request.POST.get('tipo')
         banco = request.POST.get('banco')
+        numero_cuenta = request.POST.get('numero_cuenta_bancaria', '')
+        titular_cuenta = request.POST.get('titular_cuenta', '')
+        cedula_titular = request.POST.get('cedula_titular', '')
+        monto, plazo = _validar_credito_datos(
+            request,
+            request.POST.get('monto_solicitado', ''),
+            request.POST.get('plazo_meses', ''),
+            tipo,
+            banco,
+            numero_cuenta,
+            titular_cuenta,
+            cedula_titular,
+        )
+        if monto is None or plazo is None:
+            return redirect('credito_crear')
+
         credito = Credito(
             numero=gen_num_credito(),
             periodo=periodo, socio=socio, libreta=libreta,
             tipo=tipo, monto_solicitado=monto, plazo_meses=plazo,
             banco=banco,
-            numero_cuenta_bancaria=request.POST.get('numero_cuenta_bancaria',''),
-            titular_cuenta=request.POST.get('titular_cuenta',''),
-            cedula_titular=request.POST.get('cedula_titular',''),
+            numero_cuenta_bancaria=numero_cuenta,
+            titular_cuenta=titular_cuenta,
+            cedula_titular=cedula_titular,
             observaciones=request.POST.get('observaciones',''),
         )
         credito.calcular_montos()
@@ -203,6 +256,7 @@ def credito_crear(request):
 
 
 @login_required
+@require_roles('admin', 'tesorero', 'gerente', 'cajero')
 def credito_detalle(request, pk):
     credito = get_object_or_404(Credito, pk=pk)
     mora_info = _sincronizar_mora_credito(credito)
@@ -246,6 +300,7 @@ def credito_detalle(request, pk):
 
 
 @login_required
+@require_roles('admin', 'tesorero', 'gerente', 'cajero')
 def credito_aprobar(request, pk):
     credito = get_object_or_404(Credito, pk=pk)
     aprobaciones_info = _estado_aprobaciones_credito(credito)
@@ -367,16 +422,30 @@ def credito_aprobar(request, pk):
 
 
 @login_required
+@require_roles('admin', 'tesorero', 'gerente', 'cajero')
 def registrar_pago(request, pk):
     credito = get_object_or_404(Credito, pk=pk)
     if credito.estado not in ['desembolsado','mora_leve','mora_media','mora_grave']:
         messages.error(request, 'Solo se pueden registrar pagos de creditos activos.')
         return redirect('credito_detalle', pk=credito.pk)
     if request.method == 'POST':
-        monto = Decimal(request.POST.get('monto_pagado'))
+        try:
+            monto = Decimal(request.POST.get('monto_pagado', '0'))
+        except Exception:
+            messages.error(request, 'Monto inválido.')
+            return render(request, 'creditos/pago_form.html', {'credito': credito})
+
         comprobante = request.POST.get('comprobante_referencia','')
-        es_abono = credito.tipo == 'no_mensualizado'
+        if monto <= 0:
+            messages.error(request, 'El monto debe ser mayor a cero.')
+            return render(request, 'creditos/pago_form.html', {'credito': credito})
+
         saldo_ant = credito.saldo_pendiente
+        if monto > saldo_ant:
+            messages.error(request, f'El monto no puede ser mayor al saldo pendiente (${saldo_ant}).')
+            return render(request, 'creditos/pago_form.html', {'credito': credito})
+
+        es_abono = credito.tipo == 'no_mensualizado'
         nuevo_saldo = max(saldo_ant - monto, Decimal('0'))
         num_pago = credito.pagos.count() + 1
         PagoCredito.objects.create(
@@ -401,6 +470,7 @@ def registrar_pago(request, pk):
 
 
 @login_required
+@require_roles('admin', 'tesorero', 'gerente')
 def verificar_pago(request, pk, pago_pk):
     credito = get_object_or_404(Credito, pk=pk)
     pago = get_object_or_404(PagoCredito, pk=pago_pk, credito=credito)
@@ -462,6 +532,7 @@ def verificar_pago(request, pk, pago_pk):
 
 
 @login_required
+@require_roles('admin', 'tesorero', 'gerente', 'cajero')
 def agregar_multa_credito(request, pk):
     credito = get_object_or_404(Credito, pk=pk)
     mora_info = _sincronizar_mora_credito(credito)
@@ -497,6 +568,7 @@ def agregar_multa_credito(request, pk):
 
 
 @login_required
+@require_roles('admin', 'tesorero', 'gerente', 'cajero')
 def editar_multa_credito(request, pk, multa_pk):
     credito = get_object_or_404(Credito, pk=pk)
     multa = get_object_or_404(MultaCredito, pk=multa_pk, credito=credito)

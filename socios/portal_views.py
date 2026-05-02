@@ -595,11 +595,22 @@ def portal_solicitar_credito(request):
         except Libreta.DoesNotExist:
             messages.error(request, 'Libreta no válida.')
             return render(request, 'portal/solicitar_credito.html', {'libretas': libretas_disponibles, 'bancos': BANCO_CHOICES, 'data': request.POST})
-        monto = Decimal(request.POST.get('monto_solicitado', '0'))
+        try:
+            monto = Decimal(request.POST.get('monto_solicitado', '0'))
+        except Exception:
+            messages.error(request, 'Monto inválido.')
+            return render(request, 'portal/solicitar_credito.html', {'libretas': libretas_disponibles, 'bancos': BANCO_CHOICES, 'data': request.POST})
         if monto <= 0 or monto > 500:
             messages.error(request, 'El monto debe ser entre $1 y $500.')
             return render(request, 'portal/solicitar_credito.html', {'libretas': libretas_disponibles, 'bancos': BANCO_CHOICES, 'data': request.POST})
-        plazo = int(request.POST.get('plazo_meses', 1))
+        try:
+            plazo = int(request.POST.get('plazo_meses', 0))
+        except Exception:
+            messages.error(request, 'Plazo inválido.')
+            return render(request, 'portal/solicitar_credito.html', {'libretas': libretas_disponibles, 'bancos': BANCO_CHOICES, 'data': request.POST})
+        if plazo <= 0:
+            messages.error(request, 'El plazo debe ser mayor a cero.')
+            return render(request, 'portal/solicitar_credito.html', {'libretas': libretas_disponibles, 'bancos': BANCO_CHOICES, 'data': request.POST})
         periodo = libreta.periodo
         tipo = request.POST.get('tipo')
         origen_datos = request.POST.get('origen_datos', 'mis_datos')
@@ -611,6 +622,9 @@ def portal_solicitar_credito(request):
             if not all([banco, numero_cuenta, titular_cuenta, cedula_titular]):
                 messages.error(request, 'Complete primero sus datos bancarios en "Mis datos" o use la opcion "Otro".')
                 return render(request, 'portal/solicitar_credito.html', {'libretas': libretas_disponibles, 'bancos': BANCO_CHOICES, 'data': request.POST, 'socio': socio})
+            if banco not in dict(BANCO_CHOICES):
+                messages.error(request, 'Banco inválido.')
+                return render(request, 'portal/solicitar_credito.html', {'libretas': libretas_disponibles, 'bancos': BANCO_CHOICES, 'data': request.POST, 'socio': socio})
         else:
             banco = request.POST.get('banco')
             numero_cuenta = request.POST.get('numero_cuenta_bancaria', '').strip()
@@ -619,6 +633,12 @@ def portal_solicitar_credito(request):
             if not all([banco, numero_cuenta, titular_cuenta, cedula_titular]):
                 messages.error(request, 'Complete todos los datos del beneficiario en la opcion "Otro".')
                 return render(request, 'portal/solicitar_credito.html', {'libretas': libretas_disponibles, 'bancos': BANCO_CHOICES, 'data': request.POST, 'socio': socio})
+            if banco not in dict(BANCO_CHOICES):
+                messages.error(request, 'Banco inválido.')
+                return render(request, 'portal/solicitar_credito.html', {'libretas': libretas_disponibles, 'bancos': BANCO_CHOICES, 'data': request.POST, 'socio': socio})
+        if tipo not in dict(Credito.TIPO_CHOICES):
+            messages.error(request, 'Tipo de crédito inválido.')
+            return render(request, 'portal/solicitar_credito.html', {'libretas': libretas_disponibles, 'bancos': BANCO_CHOICES, 'data': request.POST, 'socio': socio})
         credito = Credito(
             numero=Credito.generar_numero(),
             periodo=periodo, socio=socio, libreta=libreta,
@@ -664,10 +684,17 @@ def portal_reportar_pago(request, cred_pk):
     # Verificar que no haya un pago pendiente de verificación
     pago_pendiente = credito.pagos.filter(estado='reportado').exists()
     if request.method == 'POST':
-        monto = Decimal(request.POST.get('monto_pagado', '0'))
+        try:
+            monto = Decimal(request.POST.get('monto_pagado', '0'))
+        except Exception:
+            messages.error(request, 'Monto inválido.')
+            return render(request, 'portal/reportar_pago.html', {'credito': credito, 'pago_pendiente': pago_pendiente})
         comprobante = request.POST.get('comprobante_referencia', '').strip()
         if monto <= 0:
             messages.error(request, 'El monto debe ser mayor a cero.')
+            return render(request, 'portal/reportar_pago.html', {'credito': credito, 'pago_pendiente': pago_pendiente})
+        if monto > credito.saldo_pendiente:
+            messages.error(request, f'El monto no puede ser mayor al saldo pendiente (${credito.saldo_pendiente}).')
             return render(request, 'portal/reportar_pago.html', {'credito': credito, 'pago_pendiente': pago_pendiente})
         if not comprobante:
             messages.error(request, 'Debe ingresar el número de comprobante de la transferencia.')

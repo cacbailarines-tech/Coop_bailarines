@@ -241,6 +241,7 @@ class PagoCredito(models.Model):
 
     class Meta:
         ordering = ['numero_pago']
+        unique_together = ('credito', 'numero_pago')
 
 
 class MultaCredito(models.Model):
