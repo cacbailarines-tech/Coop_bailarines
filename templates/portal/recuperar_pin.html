@@ -28,6 +28,12 @@
         {% endfor %}
         <form method="post">
           {% csrf_token %}
+          
+          {% if not estado_otp %}
+          <!-- PASO 1: Ingresar Cédula y Correo -->
+          <p style="font-size:13px;color:var(--muted);text-align:center;margin-bottom:20px;">
+            Ingrese su cédula y correo registrado. Le enviaremos un código de seguridad para verificar su identidad.
+          </p>
           <div style="margin-bottom:14px;">
             <label style="display:block;font-size:12px;font-weight:600;color:var(--text);margin-bottom:5px;">N&uacute;mero de C&eacute;dula</label>
             <div style="position:relative;">
@@ -38,8 +44,8 @@
                 onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
             </div>
           </div>
-          <div style="margin-bottom:14px;">
-            <label style="display:block;font-size:12px;font-weight:600;color:var(--text);margin-bottom:5px;">Correo Electr&oacute;nico</label>
+          <div style="margin-bottom:20px;">
+            <label style="display:block;font-size:12px;font-weight:600;color:var(--text);margin-bottom:5px;">Correo Electr&oacute;nico Registrado</label>
             <div style="position:relative;">
               <i class="fas fa-envelope" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;"></i>
               <input type="email" name="email" value="{{ data.email|default:'' }}"
@@ -48,6 +54,34 @@
                 onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
             </div>
           </div>
+          <button type="submit"
+            style="width:100%;padding:12px;background:var(--primary);color:white;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background 0.2s;"
+            onmouseover="this.style.background='#1557C0'" onmouseout="this.style.background='var(--primary)'">
+            <i class="fas fa-paper-plane"></i> Enviar Código al Correo
+          </button>
+          
+          {% else %}
+          <!-- PASO 2: Verificar OTP y cambiar PIN -->
+          <div style="text-align:center;margin-bottom:20px;padding:15px;background-color:rgba(11,61,145,0.05);border-radius:10px;border:1px dashed var(--primary);">
+            <i class="fas fa-envelope-open-text" style="font-size:24px;color:var(--primary);margin-bottom:10px;"></i>
+            <p style="font-size:13px;color:var(--text);margin:0;font-weight:600;">Hemos enviado un código a:</p>
+            <p style="font-size:14px;color:var(--primary);margin:5px 0 0 0;font-weight:700;">{{ email_oculto }}</p>
+            <p style="font-size:11px;color:var(--muted);margin-top:5px;">Revise su bandeja de entrada (y la de spam).</p>
+          </div>
+          
+          <div style="margin-bottom:14px;">
+            <label style="display:block;font-size:12px;font-weight:600;color:var(--text);margin-bottom:5px;">Código de Verificación (6 dígitos)</label>
+            <div style="position:relative;">
+              <i class="fas fa-key" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;"></i>
+              <input type="text" name="otp"
+                style="width:100%;padding:10px 14px 10px 36px;border:1.5px solid var(--primary);border-radius:9px;font-size:18px;letter-spacing:4px;font-family:inherit;outline:none;transition:border-color 0.2s;text-align:center;font-weight:bold;"
+                placeholder="000000" required maxlength="6" minlength="6" autofocus autocomplete="off"
+                onfocus="this.style.borderColor='#1557C0'" onblur="this.style.borderColor='var(--primary)'">
+            </div>
+          </div>
+          
+          <hr style="border:0;border-top:1px solid var(--border);margin:20px 0;">
+          
           <div style="margin-bottom:14px;">
             <label style="display:block;font-size:12px;font-weight:600;color:var(--text);margin-bottom:5px;">Nuevo PIN</label>
             <div style="position:relative;">
@@ -69,11 +103,19 @@
             </div>
           </div>
           
-          <button type="submit"
-            style="width:100%;padding:12px;background:var(--primary);color:white;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background 0.2s;"
-            onmouseover="this.style.background='#1557C0'" onmouseout="this.style.background='var(--primary)'">
-            <i class="fas fa-save"></i> Guardar Nuevo PIN
-          </button>
+          <div style="display:flex;gap:10px;">
+            <button type="submit" name="cancelar" value="1" formnovalidate
+              style="width:40%;padding:12px;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;"
+              onmouseover="this.style.background='var(--body)'" onmouseout="this.style.background='var(--card)'">
+              Cancelar
+            </button>
+            <button type="submit"
+              style="width:60%;padding:12px;background:var(--primary);color:white;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background 0.2s;"
+              onmouseover="this.style.background='#1557C0'" onmouseout="this.style.background='var(--primary)'">
+              <i class="fas fa-save"></i> Guardar PIN
+            </button>
+          </div>
+          {% endif %}
         </form>
       </div>
     </div>

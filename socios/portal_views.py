@@ -98,50 +98,137 @@ def portal_recuperar_pin(request):
     if request.session.get('portal_socio_id'):
         return redirect('portal_inicio')
     
+    estado_otp = request.session.get('otp_recuperacion_estado', False)
+    
     if request.method == 'POST':
-        cedula = request.POST.get('cedula', '').strip()
-        email = request.POST.get('email', '').strip()
-        nuevo_pin = request.POST.get('nuevo_pin', '').strip()
-        confirmar_pin = request.POST.get('confirmar_pin', '').strip()
-        
-        if not cedula or not email or not nuevo_pin or not confirmar_pin:
-            messages.error(request, 'Debe llenar todos los campos.')
-            return render(request, 'portal/recuperar_pin.html', {'data': request.POST})
+        # Cancelar proceso
+        if 'cancelar' in request.POST:
+            if 'otp_recuperacion_estado' in request.session:
+                del request.session['otp_recuperacion_estado']
+            if 'otp_codigo' in request.session:
+                del request.session['otp_codigo']
+            if 'otp_cedula' in request.session:
+                del request.session['otp_cedula']
+            if 'otp_expira' in request.session:
+                del request.session['otp_expira']
+            return redirect('portal_login')
+
+        if not estado_otp:
+            # PASO 1: Solicitar OTP
+            cedula = request.POST.get('cedula', '').strip()
+            email = request.POST.get('email', '').strip()
             
-        if nuevo_pin != confirmar_pin:
-            messages.error(request, 'Los PINs no coinciden.')
-            return render(request, 'portal/recuperar_pin.html', {'data': request.POST})
+            if not cedula or not email:
+                messages.error(request, 'Debe ingresar cédula y correo electrónico.')
+                return render(request, 'portal/recuperar_pin.html', {'estado_otp': False, 'data': request.POST})
+                
+            try:
+                socio = Socio.objects.get(cedula=cedula, email__iexact=email, estado='activo')
+            except Socio.DoesNotExist:
+                messages.error(request, 'Los datos ingresados no coinciden con ningún socio activo o el correo es incorrecto.')
+                return render(request, 'portal/recuperar_pin.html', {'estado_otp': False, 'data': request.POST})
+                
+            # Generar OTP
+            codigo_otp = ''.join(random.choices(string.digits, k=6))
+            request.session['otp_codigo'] = codigo_otp
+            request.session['otp_cedula'] = socio.cedula
+            request.session['otp_expira'] = (timezone.now() + timezone.timedelta(minutes=10)).timestamp()
+            request.session['otp_recuperacion_estado'] = True
             
-        if len(nuevo_pin) < 4:
-            messages.error(request, 'El PIN debe tener al menos 4 caracteres.')
-            return render(request, 'portal/recuperar_pin.html', {'data': request.POST})
+            # Enviar correo
+            asunto = "Código de Recuperación de PIN - Cooperativa Bailarines"
+            mensaje = f"""Estimado(a) {socio.nombre_completo},
+
+Ha solicitado recuperar su PIN de acceso al portal.
+Su código de verificación es: {codigo_otp}
+
+Este código expirará en 10 minutos. Si no ha solicitado este cambio, por favor ignore este mensaje.
+
+Atentamente,
+Cooperativa Bailarines"""
+            try:
+                from django.core.mail import EmailMessage
+                email_msg = EmailMessage(
+                    subject=asunto,
+                    body=mensaje,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to=[socio.email],
+                )
+                email_msg.send(fail_silently=False)
+                messages.success(request, f'Se ha enviado un código de 6 dígitos a su correo electrónico.')
+            except Exception as e:
+                messages.error(request, 'Ocurrió un error al intentar enviar el correo. Intente más tarde.')
+                # Limpiar sesión si falla
+                del request.session['otp_recuperacion_estado']
+                return render(request, 'portal/recuperar_pin.html', {'estado_otp': False, 'data': request.POST})
             
-        try:
-            # Buscar el socio por cédula y correo electrónico
-            socio = Socio.objects.get(cedula=cedula, email__iexact=email, estado='activo')
-        except Socio.DoesNotExist:
-            messages.error(request, 'Los datos ingresados no coinciden con ningún socio activo o el correo es incorrecto.')
-            return render(request, 'portal/recuperar_pin.html', {'data': request.POST})
+            return render(request, 'portal/recuperar_pin.html', {'estado_otp': True, 'email_oculto': f"{socio.email[:3]}***@{socio.email.split('@')[1]}"})
             
-        # Actualizar o crear el acceso
-        acceso, created = AccesoSocio.objects.get_or_create(
-            socio=socio,
-            defaults={'pin': make_password(nuevo_pin), 'activo': True}
-        )
-        if not created:
-            if not acceso.activo:
-                messages.error(request, 'Su acceso está desactivado. Contacte a la cooperativa.')
-                return render(request, 'portal/recuperar_pin.html', {'data': request.POST})
-            acceso.pin = make_password(nuevo_pin)
-            acceso.save()
+        else:
+            # PASO 2: Verificar OTP y cambiar PIN
+            otp_ingresado = request.POST.get('otp', '').strip()
+            nuevo_pin = request.POST.get('nuevo_pin', '').strip()
+            confirmar_pin = request.POST.get('confirmar_pin', '').strip()
             
-        # Opcional: registrar auditoria si tienes implementado para cambios de clave, pero para socios portal no es estrictamente necesario o usamos registrar_auditoria si queremos.
-        registrar_auditoria(None, 'socios', 'recuperar_pin_portal', f'El socio {socio.nombre_completo} recuperó/cambió su PIN desde el portal.', 'Socio', socio.pk)
+            # Obtener datos de sesión
+            otp_guardado = request.session.get('otp_codigo')
+            cedula_guardada = request.session.get('otp_cedula')
+            expira_timestamp = request.session.get('otp_expira')
             
-        messages.success(request, 'Su PIN ha sido actualizado con éxito. Ahora puede iniciar sesión.')
-        return redirect('portal_login')
-        
-    return render(request, 'portal/recuperar_pin.html')
+            # Verificar vigencia
+            if not otp_guardado or not expira_timestamp or timezone.now().timestamp() > expira_timestamp:
+                messages.error(request, 'El código de verificación ha expirado. Por favor solicite uno nuevo.')
+                del request.session['otp_recuperacion_estado']
+                return render(request, 'portal/recuperar_pin.html', {'estado_otp': False})
+                
+            if otp_ingresado != otp_guardado:
+                messages.error(request, 'El código de verificación es incorrecto.')
+                return render(request, 'portal/recuperar_pin.html', {'estado_otp': True})
+                
+            if not nuevo_pin or not confirmar_pin:
+                messages.error(request, 'Debe ingresar el nuevo PIN.')
+                return render(request, 'portal/recuperar_pin.html', {'estado_otp': True})
+                
+            if nuevo_pin != confirmar_pin:
+                messages.error(request, 'Los PINs no coinciden.')
+                return render(request, 'portal/recuperar_pin.html', {'estado_otp': True})
+                
+            if len(nuevo_pin) < 4:
+                messages.error(request, 'El PIN debe tener al menos 4 caracteres.')
+                return render(request, 'portal/recuperar_pin.html', {'estado_otp': True})
+                
+            try:
+                socio = Socio.objects.get(cedula=cedula_guardada, estado='activo')
+            except Socio.DoesNotExist:
+                messages.error(request, 'Error al recuperar el socio.')
+                del request.session['otp_recuperacion_estado']
+                return redirect('portal_login')
+                
+            # Actualizar o crear el acceso
+            acceso, created = AccesoSocio.objects.get_or_create(
+                socio=socio,
+                defaults={'pin': make_password(nuevo_pin), 'activo': True}
+            )
+            if not created:
+                if not acceso.activo:
+                    messages.error(request, 'Su acceso está desactivado. Contacte a la cooperativa.')
+                    del request.session['otp_recuperacion_estado']
+                    return redirect('portal_login')
+                acceso.pin = make_password(nuevo_pin)
+                acceso.save()
+                
+            registrar_auditoria(None, 'socios', 'recuperar_pin_portal', f'El socio {socio.nombre_completo} recuperó su PIN tras verificación OTP.', 'Socio', socio.pk)
+                
+            # Limpiar sesión
+            del request.session['otp_recuperacion_estado']
+            del request.session['otp_codigo']
+            del request.session['otp_cedula']
+            del request.session['otp_expira']
+            
+            messages.success(request, 'Su PIN ha sido actualizado con éxito. Ahora puede iniciar sesión.')
+            return redirect('portal_login')
+            
+    return render(request, 'portal/recuperar_pin.html', {'estado_otp': estado_otp})
 
 
 @require_POST
