@@ -147,16 +147,17 @@ Este código expirará en 10 minutos. Si no ha solicitado este cambio, por favor
 Atentamente,
 Cooperativa Bailarines"""
             try:
-                from django.core.mail import EmailMessage
-                email_msg = EmailMessage(
+                from core.email_notifications import _send_email
+                _send_email(
+                    recipient=socio.email,
                     subject=asunto,
-                    body=mensaje,
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    to=[socio.email],
+                    text_body=mensaje
                 )
-                email_msg.send(fail_silently=False)
                 messages.success(request, f'Se ha enviado un código de 6 dígitos a su correo electrónico.')
             except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error recuperando PIN: {e}")
                 messages.error(request, 'Ocurrió un error al intentar enviar el correo. Intente más tarde.')
                 # Limpiar sesión si falla
                 del request.session['otp_recuperacion_estado']
