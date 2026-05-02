@@ -37,6 +37,51 @@
 </div>
 {% endif %}
 
+{% if libreta_activa %}
+<div style="background:#fff; border:2px solid #e0e0e0; border-radius:12px; padding:16px; margin-bottom:18px; box-shadow:0 4px 6px rgba(0,0,0,0.03);">
+  {% if libreta_activa.proposito_ahorro %}
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <div style="font-size:14px; font-weight:800; color:#333;"><i class="fas fa-bullseye" style="color:var(--primary); margin-right:6px;"></i> Propósito {{ periodo_activo.anio }}: <span style="color:var(--primary);">{{ libreta_activa.proposito_ahorro }}</span></div>
+      <button onclick="document.getElementById('edit-meta').style.display='block'" style="background:none; border:none; color:var(--muted); font-size:13px; cursor:pointer;"><i class="fas fa-edit"></i></button>
+    </div>
+    
+    <div style="background:#f0f0f0; border-radius:10px; height:22px; width:100%; overflow:hidden; position:relative; margin-bottom:8px;">
+      <div style="background:{% if libreta_activa.porcentaje_ahorro >= 100 %}#4caf50{% else %}linear-gradient(90deg, #2196f3, #00bcd4){% endif %}; width:{{ libreta_activa.porcentaje_ahorro }}%; height:100%; transition:width 1s ease-in-out;"></div>
+      <div style="position:absolute; top:0; left:0; width:100%; height:100%; display:flex; justify-content:center; align-items:center; font-size:11px; font-weight:800; color:{% if libreta_activa.porcentaje_ahorro > 55 %}#fff{% else %}#333{% endif %}; text-shadow:0 1px 2px rgba(0,0,0,0.2);">
+        {{ libreta_activa.porcentaje_ahorro }}% Completado
+      </div>
+    </div>
+    
+    <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--muted); font-weight:600;">
+      <span>Ahorrado: <strong style="color:#333;">${{ libreta_activa.ahorro_actual|floatformat:2 }}</strong></span>
+      <span>Total fin de año: <strong>${{ libreta_activa.ahorro_anual_meta }}</strong></span>
+    </div>
+
+    <div id="edit-meta" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid #eee;">
+      <form method="post" action="{% url 'portal_establecer_proposito' libreta_activa.pk %}">{% csrf_token %}
+        <div style="display:flex; gap:8px;">
+          <input type="text" name="proposito_ahorro" value="{{ libreta_activa.proposito_ahorro }}" required placeholder="¿Para qué usarás el ahorro?" style="flex:1; padding:8px 12px; border:1px solid #ccc; border-radius:6px; font-size:12px;">
+          <button type="submit" class="btn btn-primary btn-sm" style="font-size:12px; padding:8px 14px;"><i class="fas fa-save"></i></button>
+        </div>
+      </form>
+    </div>
+  {% else %}
+    <div style="text-align:center;">
+      <div style="font-size:36px; margin-bottom:8px;">🎯</div>
+      <h3 style="font-size:15px; font-weight:800; margin-bottom:6px; color:#333;">¡Ponle un propósito a tus ahorros!</h3>
+      <p style="font-size:12px; color:var(--muted); margin-bottom:14px;">A fin de año dispondrás de <strong>${{ libreta_activa.ahorro_anual_meta }}</strong>. ¿Qué harás con ese dinero cuando te lo entreguen?</p>
+      
+      <form method="post" action="{% url 'portal_establecer_proposito' libreta_activa.pk %}">{% csrf_token %}
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <input type="text" name="proposito_ahorro" required placeholder="Ej: Viaje a la playa, Ropa nueva..." style="width:100%; padding:10px 14px; border:1.5px solid #2196f3; border-radius:8px; font-size:13px; text-align:center;">
+          <button type="submit" class="btn btn-primary" style="width:100%; border-radius:8px; font-weight:700;"><i class="fas fa-rocket"></i> Fijar mi Propósito</button>
+        </div>
+      </form>
+    </div>
+  {% endif %}
+</div>
+{% endif %}
+
 <div class="stat-row">
   <div class="stat stat-green">
     <div class="icon"><i class="fas fa-book"></i></div>

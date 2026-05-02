@@ -70,6 +70,7 @@ class Libreta(models.Model):
     fecha_inscripcion_pago = models.DateField(null=True, blank=True)
     # Saldo acumulado de aportes (no sale salvo créditos)
     saldo_ahorro = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    proposito_ahorro = models.CharField(max_length=150, blank=True, help_text="Propósito o meta para los ahorros a fin de año")
     observaciones = models.TextField(blank=True)
 
     def __str__(self):

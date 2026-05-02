@@ -334,9 +334,22 @@ def portal_inicio(request):
             except ValueError:
                 proximo = socio.fecha_nacimiento.replace(year=hoy.year + 1, day=28)
         dias_para_cumpleanos = (proximo - hoy).days
+    # Gamificación Metas de Ahorro
+    libreta_activa = None
+    if periodo_activo:
+        libreta_activa = next((l for l in libretas if l.periodo == periodo_activo), None)
+        if libreta_activa:
+            ahorro_anual_meta = 240 # $20 x 12 meses
+            ahorro_actual = AporteMensual.objects.filter(libreta=libreta_activa, estado='verificado').aggregate(t=Sum('monto_ahorro'))['t'] or Decimal('0.00')
+            porcentaje = min(100, int((ahorro_actual / ahorro_anual_meta) * 100))
+            libreta_activa.ahorro_actual = ahorro_actual
+            libreta_activa.porcentaje_ahorro = porcentaje
+            libreta_activa.ahorro_anual_meta = ahorro_anual_meta
+
     return render(request, 'portal/inicio.html', {
         'socio': socio,
         'libretas': libretas,
+        'libreta_activa': libreta_activa,
         'total_ahorro': total_ahorro,
         'creditos_activos': creditos_activos,
         'total_deuda': total_deuda,
@@ -418,6 +431,24 @@ def portal_libretas(request):
         'libreta_actual': libreta_actual,
         'aportes': aportes,
     })
+
+
+def portal_establecer_proposito(request, lib_pk):
+    socio, redir = get_socio_or_redirect(request)
+    if redir:
+        return redir
+    
+    if request.method == 'POST':
+        libreta = get_object_or_404(Libreta, pk=lib_pk, socio=socio)
+        proposito = request.POST.get('proposito_ahorro', '').strip()
+        if proposito:
+            libreta.proposito_ahorro = proposito
+            libreta.save(update_fields=['proposito_ahorro'])
+            messages.success(request, '¡Su propósito para el fondo de ahorro ha sido guardado exitosamente! ¡Siga así!')
+        else:
+            messages.error(request, 'El propósito no puede estar vacío.')
+    
+    return redirect('portal_inicio')
 
 
 def portal_reportar_aporte(request, lib_pk, mes):

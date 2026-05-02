@@ -8,6 +8,7 @@ urlpatterns = [
     path('inicio/', portal_views.portal_inicio, name='portal_inicio'),
     path('mis-datos/', portal_views.portal_mis_datos, name='portal_mis_datos'),
     path('libretas/', portal_views.portal_libretas, name='portal_libretas'),
+    path('libretas/<int:lib_pk>/proposito/', portal_views.portal_establecer_proposito, name='portal_establecer_proposito'),
     path('libretas/<int:lib_pk>/reportar-aporte/<int:mes>/', portal_views.portal_reportar_aporte, name='portal_reportar_aporte'),
     path('creditos/', portal_views.portal_creditos, name='portal_creditos'),
     path('creditos/solicitar/', portal_views.portal_solicitar_credito, name='portal_solicitar_credito'),

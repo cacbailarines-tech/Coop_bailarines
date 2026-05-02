@@ -104,7 +104,8 @@ import threading
 
 @receiver(post_save, sender=Reunion)
 def notificar_reunion_programada(sender, instance, created, **kwargs):
-    if instance.estado == 'programada':
+    # ANTISPAM: Solo notificar si la reunion es NUEVA (created=True)
+    if created and instance.estado == 'programada':
         def enviar_correos():
             # Si no hay destinatarios, al menos enviamos al admin como prueba
             socios_activos = Socio.objects.filter(estado='activo').exclude(email='')
