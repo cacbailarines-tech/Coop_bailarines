@@ -175,5 +175,68 @@
 <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--muted);"><i class="fas fa-lock" style="margin-right:4px;"></i> Portal solo de consulta y solicitudes.</div>
 {% endblock %}
 
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const ahorroLabels = {{ ahorro_chart_labels|safe|default:"[]" }};
+  const ahorroData = {{ ahorro_chart_data|safe|default:"[]" }};
+  const balanceData = {{ balance_chart_data|safe|default:"[]" }};
+
+  const ctxAhorro = document.getElementById('ahorroChart');
+  if (ctxAhorro && ahorroLabels.length > 0) {
+    new Chart(ctxAhorro, {
+      type: 'line',
+      data: {
+        labels: ahorroLabels,
+        datasets: [{
+          label: 'Ahorro Acumulado',
+          data: ahorroData,
+          borderColor: '#00897B',
+          backgroundColor: 'rgba(0, 137, 123, 0.15)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.3,
+          pointBackgroundColor: '#00897B',
+          pointRadius: 3
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+          y: { ticks: { font: { size: 10 }, callback: function(val) { return '$' + val; } } }
+        }
+      }
+    });
+  } else if (ctxAhorro) {
+    ctxAhorro.parentElement.innerHTML = '<div style="font-size:11px;color:#999;text-align:center;padding-top:50px;">Aún no hay ahorros verificados</div>';
+  }
+
+  const ctxBalance = document.getElementById('balanceChart');
+  if (ctxBalance && (balanceData[0] > 0 || balanceData[1] > 0)) {
+    new Chart(ctxBalance, {
+      type: 'doughnut',
+      data: {
+        labels: ['Ahorros', 'Deuda'],
+        datasets: [{
+          data: balanceData,
+          backgroundColor: ['#00897B', '#F2A900'],
+          borderWidth: 0,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '65%',
+        plugins: {
+          legend: { position: 'right', labels: { font: { size: 10 }, boxWidth: 10 } }
+        }
+      }
+    });
+  } else if (ctxBalance) {
+    ctxBalance.parentElement.innerHTML = '<div style="font-size:11px;color:#999;text-align:center;padding-top:50px;">Aún no hay datos de balance</div>';
+  }
 </script>
 {% endblock %}
