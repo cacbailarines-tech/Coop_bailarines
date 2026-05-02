@@ -100,8 +100,9 @@ def pwa_manifest(request):
 
 
 def service_worker(request):
+    import time
     response = render(request, 'pwa/service-worker.js', {
-        'static_version': 'v1',
+        'static_version': f'v-{int(time.time())}',
     }, content_type='application/javascript')
     response['Service-Worker-Allowed'] = '/'
     return response
