@@ -1,6 +1,38 @@
 {% extends 'portal/base.html' %}
 {% block title %}Mis Multas - Portal Bailarines{% endblock %}
 {% block content %}
+<style>
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  padding: 16px;
+}
+.m-card {
+  background: #fff;
+  border: 1px solid rgba(198,40,40,0.15);
+  border-top: 4px solid var(--danger);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(198,40,40,0.05);
+  display: flex;
+  flex-direction: column;
+}
+.m-card.pagada {
+  border-color: rgba(0,137,123,0.15);
+  border-top-color: var(--success);
+  box-shadow: 0 4px 12px rgba(0,137,123,0.05);
+}
+.m-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+.m-card-title { font-size: 14px; font-weight: 800; color: var(--text); }
+.m-card-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.m-card-amount { font-size: 18px; font-weight: 900; color: var(--danger); }
+.m-card-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed var(--border); }
+.m-card-row:last-child { border-bottom: none; }
+.m-card-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+.m-card-actions { margin-top: auto; padding-top: 12px; }
+</style>
+
 <div style="margin-bottom:16px;">
   <a href="{% url 'portal_inicio' %}" style="color:var(--muted);text-decoration:none;font-size:12px;"><i class="fas fa-arrow-left"></i> Inicio</a>
   <h1 style="font-size:18px;font-weight:800;margin-top:6px;">Mis Multas</h1>
@@ -38,49 +70,65 @@
     <h3><i class="fas fa-exclamation-triangle" style="color:var(--danger);"></i> Historial Completo de Multas</h3>
     <span style="font-size:11px;color:var(--muted);">{{ multas.count }} registro(s)</span>
   </div>
-  <div style="overflow-x:auto;"><table>
-    <thead><tr><th>Descripción</th><th>Aplica a</th><th>Monto</th><th>Estado</th><th>Fecha</th><th>Acción</th></tr></thead>
-    <tbody>
+  
+  <div class="card-grid">
     {% for m in multas %}
-    <tr>
-      <td style="font-size:12px;"><strong>{{ m.descripcion }}</strong><div style="font-size:10px;color:var(--muted);">{{ m.get_origen_display }}</div></td>
-      <td>{% if m.libreta %}<span class="badge badge-secondary">Libreta #{{ m.libreta.numero }}</span>{% else %}<span style="font-size:11px;color:var(--muted);">Por socio</span>{% endif %}</td>
-      <td class="amount-neg"><strong>${{ m.monto|floatformat:2 }}</strong></td>
-      <td>
-        {% if m.estado == 'pagada' %}<span class="badge badge-success"><i class="fas fa-check"></i> Pagada</span>
-        {% elif m.estado == 'pendiente' %}
-          {% if 'Pago reportado' in m.observaciones %}
-            <span class="badge badge-warning"><i class="fas fa-clock"></i> Reportado</span>
-          {% elif 'Reporte rechazado:' in m.observaciones %}
-            <span class="badge badge-danger"><i class="fas fa-times"></i> Rechazado</span>
-          {% else %}
-            <span class="badge badge-danger">Pendiente</span>
-          {% endif %}
-        {% else %}<span class="badge badge-secondary">Condonada</span>{% endif %}
-        {% if m.observaciones and 'Reporte rechazado:' in m.observaciones %}
-        <div style="margin-top:5px;padding:5px 8px;background:rgba(198,40,40,0.08);border-left:3px solid var(--danger);border-radius:4px;font-size:11px;color:var(--danger);">
-          <i class="fas fa-times-circle"></i> <strong>Rechazado:</strong> {{ m.observaciones|slice:"19:" }}
+    <div class="m-card {% if m.estado == 'pagada' %}pagada{% endif %}">
+      <div class="m-card-header">
+        <div>
+          <div class="m-card-title">{{ m.descripcion }}</div>
+          <div class="m-card-sub">{{ m.get_origen_display }} &middot; {{ m.fecha_generacion|date:"d/m/Y" }}</div>
         </div>
-        {% endif %}
-      </td>
-      <td style="font-size:11px;color:var(--muted);">{{ m.fecha_generacion|date:"d/m/Y" }}</td>
-      <td>
+        <div class="m-card-amount">${{ m.monto|floatformat:2 }}</div>
+      </div>
+      
+      <div class="m-card-row">
+        <span class="m-card-label">Aplica a</span>
+        <span>{% if m.libreta %}<span class="badge badge-secondary">Libreta #{{ m.libreta.numero }}</span>{% else %}<span style="font-size:11px;color:var(--muted);">Por socio</span>{% endif %}</span>
+      </div>
+      
+      <div class="m-card-row">
+        <span class="m-card-label">Estado</span>
+        <div>
+          {% if m.estado == 'pagada' %}<span class="badge badge-success"><i class="fas fa-check"></i> Pagada</span>
+          {% elif m.estado == 'pendiente' %}
+            {% if 'Pago reportado' in m.observaciones %}
+              <span class="badge badge-warning"><i class="fas fa-clock"></i> Reportado</span>
+            {% elif 'Reporte rechazado:' in m.observaciones %}
+              <span class="badge badge-danger"><i class="fas fa-times"></i> Rechazado</span>
+            {% else %}
+              <span class="badge badge-danger">Pendiente</span>
+            {% endif %}
+          {% else %}<span class="badge badge-secondary">Condonada</span>{% endif %}
+        </div>
+      </div>
+      
+      {% if m.observaciones and 'Reporte rechazado:' in m.observaciones %}
+      <div style="margin-top:8px;padding:8px 10px;background:rgba(198,40,40,0.08);border-left:3px solid var(--danger);border-radius:6px;font-size:11px;color:var(--danger);line-height:1.4;">
+        <i class="fas fa-times-circle"></i> <strong>Rechazado:</strong> {{ m.observaciones|slice:"19:" }}
+      </div>
+      {% endif %}
+
+      <div class="m-card-actions">
         {% if m.estado == 'pendiente' and 'Pago reportado' not in m.observaciones %}
-        <a href="{% url 'portal_reportar_multa' m.pk %}" class="btn btn-danger btn-sm">
+        <a href="{% url 'portal_reportar_multa' m.pk %}" class="btn btn-danger" style="width:100%;justify-content:center;">
           <i class="fas fa-upload"></i> Reportar Pago
         </a>
         {% elif m.estado == 'pendiente' %}
-        <span style="font-size:11px;color:var(--muted);"><i class="fas fa-clock"></i> En revisión</span>
+        <div style="text-align:center;font-size:12px;color:var(--muted);padding:8px;"><i class="fas fa-clock"></i> En revisión por administración</div>
         {% elif m.estado == 'pagada' %}
-        <span style="font-size:11px;color:var(--success);"><i class="fas fa-check-double"></i> Listo</span>
+        <div style="text-align:center;font-size:12px;color:var(--success);padding:8px;font-weight:600;"><i class="fas fa-check-double"></i> Listo</div>
         {% endif %}
-      </td>
-    </tr>
+      </div>
+    </div>
     {% empty %}
-    <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted);">Sin multas registradas 🎉</td></tr>
+    <div style="grid-column: 1 / -1; text-align:center; padding:32px; color:var(--muted);">
+      <i class="fas fa-glass-cheers" style="font-size:32px;margin-bottom:12px;opacity:0.5;"></i><br>
+      Sin multas registradas 🎉
+    </div>
     {% endfor %}
-    </tbody>
-  </table></div>
+  </div>
+
   {% if multas %}
   <div style="padding:10px 16px;background:rgba(11,61,145,0.03);border-top:1px solid var(--border);font-size:11px;color:var(--muted);">
     <i class="fas fa-info-circle" style="color:var(--primary);"></i> Multas <strong>por socio</strong>: monto fijo independiente de libretas. Multas <strong>por libreta</strong>: se aplican a cada libreta que tiene activa.

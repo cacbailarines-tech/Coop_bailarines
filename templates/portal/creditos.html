@@ -1,6 +1,32 @@
 {% extends 'portal/base.html' %}
 {% block title %}Mis Cr&eacute;ditos - Portal Bailarines{% endblock %}
 {% block content %}
+<style>
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  padding: 16px;
+}
+.c-card {
+  background: #fff;
+  border: 1px solid rgba(11,61,145,0.15);
+  border-top: 4px solid var(--primary);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(11,61,145,0.05);
+  display: flex;
+  flex-direction: column;
+}
+.c-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+.c-card-title { font-size: 14px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 8px; }
+.c-card-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.c-card-amount { font-size: 18px; font-weight: 900; color: var(--success); }
+.c-card-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed var(--border); }
+.c-card-row:last-child { border-bottom: none; }
+.c-card-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+</style>
+
 <div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:8px;">
   <div>
     <a href="{% url 'portal_inicio' %}" style="color:var(--muted);text-decoration:none;font-size:12px;"><i class="fas fa-arrow-left"></i> Inicio</a>
@@ -76,27 +102,51 @@
 
 <div class="pcard">
   <div class="pcard-header"><h3><i class="fas fa-list-check" style="color:var(--success);"></i> Historial de Pagos</h3></div>
-  <div style="overflow-x:auto;"><table>
-    <thead><tr><th>#</th><th>Monto</th><th>Comprobante</th><th>Saldo Posterior</th><th>Estado</th><th>Fecha</th></tr></thead>
-    <tbody>
+  
+  <div class="card-grid">
     {% for p in pagos %}
-    <tr>
-      <td><strong>{{ p.numero_pago }}</strong>{% if p.es_abono %} <span class="badge badge-secondary" style="font-size:9px;">abono</span>{% endif %}</td>
-      <td class="amount-pos">${{ p.monto_pagado|floatformat:2 }}</td>
-      <td class="mono" style="font-size:11px;">{{ p.comprobante_referencia|default:"-" }}</td>
-      <td>${{ p.saldo_posterior|floatformat:2 }}</td>
-      <td>
-        {% if p.estado == 'verificado' %}<span class="badge badge-success"><i class="fas fa-check"></i> Verificado</span>
-        {% elif p.estado == 'reportado' %}<span class="badge badge-warning"><i class="fas fa-clock"></i> En revisi&oacute;n</span>
-        {% else %}<span class="badge badge-danger"><i class="fas fa-times"></i> Rechazado</span>
-        {% if p.observaciones %}<div style="font-size:10px;color:var(--danger);margin-top:3px;"><i class="fas fa-info-circle"></i> {{ p.observaciones }}</div>{% endif %}
-        {% endif %}
-      </td>
-      <td style="font-size:11px;color:var(--muted);">{{ p.fecha_reporte|date:"d/m/Y H:i" }}</td>
-    </tr>
-    {% empty %}<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted);">Sin pagos registrados</td></tr>{% endfor %}
-    </tbody>
-  </table></div>
+    <div class="c-card">
+      <div class="c-card-header">
+        <div>
+          <div class="c-card-title">Pago #{{ p.numero_pago }} {% if p.es_abono %}<span class="badge badge-secondary" style="font-size:9px;">ABONO</span>{% endif %}</div>
+          <div class="c-card-sub">{{ p.fecha_reporte|date:"d/m/Y H:i" }}</div>
+        </div>
+        <div class="c-card-amount">${{ p.monto_pagado|floatformat:2 }}</div>
+      </div>
+      
+      <div class="c-card-row">
+        <span class="c-card-label">Ref / Comprobante</span>
+        <span class="mono" style="font-size:12px;">{{ p.comprobante_referencia|default:"-" }}</span>
+      </div>
+      
+      <div class="c-card-row">
+        <span class="c-card-label">Saldo Posterior</span>
+        <span style="font-weight:700;">${{ p.saldo_posterior|floatformat:2 }}</span>
+      </div>
+      
+      <div class="c-card-row">
+        <span class="c-card-label">Estado</span>
+        <div>
+          {% if p.estado == 'verificado' %}<span class="badge badge-success"><i class="fas fa-check"></i> Verificado</span>
+          {% elif p.estado == 'reportado' %}<span class="badge badge-warning"><i class="fas fa-clock"></i> En revisión</span>
+          {% else %}<span class="badge badge-danger"><i class="fas fa-times"></i> Rechazado</span>{% endif %}
+        </div>
+      </div>
+      
+      {% if p.estado == 'rechazado' and p.observaciones %}
+      <div style="margin-top:10px;padding:8px 10px;background:rgba(198,40,40,0.08);border-left:3px solid var(--danger);border-radius:6px;font-size:11px;color:var(--danger);line-height:1.4;">
+        <i class="fas fa-info-circle"></i> {{ p.observaciones }}
+      </div>
+      {% endif %}
+    </div>
+    {% empty %}
+    <div style="grid-column: 1 / -1; text-align:center; padding:32px; color:var(--muted);">
+      <i class="fas fa-receipt" style="font-size:32px;margin-bottom:12px;opacity:0.5;"></i><br>
+      Sin pagos registrados
+    </div>
+    {% endfor %}
+  </div>
+
 </div>
 
 {% else %}

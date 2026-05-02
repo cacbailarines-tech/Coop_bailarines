@@ -2,85 +2,218 @@
 {% load static %}
 {% block title %}Portal del Socio - Cooperativa Bailarines{% endblock %}
 {% block content %}
-<div style="min-height:85vh;display:flex;align-items:center;justify-content:center;">
-  <div style="width:100%;max-width:400px;">
+<style>
+  /* Override base container styles for full bleed */
+  body { margin: 0; padding: 0; overflow-x: hidden; background: #F8FAFF; }
+  .portal-content { max-width: 100% !important; padding: 0 !important; margin: 0 !important; min-height: 100vh; }
+  
+  .login-wrapper {
+    display: flex;
+    min-height: 100vh;
+    width: 100vw;
+  }
+  
+  .login-left {
+    flex: 1;
+    background: linear-gradient(135deg, #0B3D91 0%, #001B48 100%);
+    position: relative;
+    display: none; /* hidden on mobile */
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  
+  /* Abstract shapes for the premium feel */
+  .login-left::before {
+    content: '';
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(242,169,0,0.15) 0%, rgba(242,169,0,0) 70%);
+    top: -100px;
+    left: -100px;
+    border-radius: 50%;
+  }
+  .login-left::after {
+    content: '';
+    position: absolute;
+    width: 800px;
+    height: 800px;
+    background: radial-gradient(circle, rgba(0,137,123,0.1) 0%, rgba(0,137,123,0) 70%);
+    bottom: -200px;
+    right: -200px;
+    border-radius: 50%;
+  }
 
-    <div style="text-align:center;margin-bottom:28px;">
-      <div style="background:linear-gradient(135deg,#0B3D91,#1557C0);border-radius:20px;padding:20px 28px;display:inline-block;box-shadow:0 8px 32px rgba(11,61,145,0.35);">
-        <img src="{{ web_logo_src|default:'' }}" alt="Cooperativa Bailarines"
-             style="height:70px;width:auto;max-width:250px;object-fit:contain;display:block;margin:0 auto;filter:brightness(1.15) drop-shadow(0 2px 8px rgba(0,0,0,0.3));">
+  .login-left-content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    color: white;
+    padding: 40px;
+    max-width: 500px;
+  }
+
+  .login-right {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    position: relative;
+  }
+
+  .login-card {
+    width: 100%;
+    max-width: 420px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 24px;
+    padding: 40px;
+    box-shadow: 0 20px 40px rgba(11, 61, 145, 0.08);
+  }
+
+  .form-control {
+    width: 100%;
+    padding: 14px 16px 14px 44px;
+    border: 1.5px solid #E2E8F0;
+    border-radius: 12px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: all 0.2s;
+    background: #F8FAFC;
+  }
+  
+  .form-control:focus {
+    border-color: #0B3D91;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(11,61,145,0.1);
+  }
+
+  .input-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94A3B8;
+    font-size: 16px;
+    transition: color 0.2s;
+  }
+
+  .input-group:focus-within .input-icon {
+    color: #0B3D91;
+  }
+
+  .btn-submit {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, #0B3D91 0%, #1557C0 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 8px 16px rgba(11,61,145,0.2);
+  }
+
+  .btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 20px rgba(11,61,145,0.3);
+  }
+
+  .btn-submit:active {
+    transform: translateY(0);
+  }
+
+  .mobile-logo {
+    display: block;
+    margin: 0 auto 32px auto;
+    height: 60px;
+    object-fit: contain;
+  }
+
+  @media(min-width: 900px) {
+    .login-left { display: flex; }
+    .mobile-logo { display: none; }
+  }
+</style>
+
+<div class="login-wrapper">
+  <!-- Left Side: Branding -->
+  <div class="login-left">
+    <div class="login-left-content">
+      <img src="{{ web_logo_src|default:'' }}" alt="Cooperativa Bailarines" style="height:100px;width:auto;object-fit:contain;margin-bottom:30px;filter:brightness(0) invert(1);">
+      <h1 style="font-size:36px;font-weight:800;margin-bottom:16px;letter-spacing:-0.5px;">Portal del Socio</h1>
+      <p style="font-size:16px;opacity:0.8;line-height:1.6;">Gestiona tus aportes, solicita créditos y mantén al día tus obligaciones desde una plataforma rápida y segura.</p>
+    </div>
+  </div>
+
+  <!-- Right Side: Login Form -->
+  <div class="login-right">
+    <div class="login-card">
+      <img src="{{ web_logo_src|default:'' }}" alt="Cooperativa Bailarines" class="mobile-logo">
+      
+      <div style="text-align:center;margin-bottom:32px;">
+        <h2 style="font-size:24px;font-weight:800;color:#0F172A;margin-bottom:8px;">Iniciar Sesión</h2>
+        <p style="font-size:14px;color:#64748B;">Bienvenido de vuelta a tu portal cooperativo</p>
       </div>
-      <div style="margin-top:12px;">
-        <div style="font-size:16px;font-weight:800;color:var(--text);">Portal del Socio</div>
-        <div style="font-size:12px;color:var(--muted);">Consulta tu informaci&oacute;n en l&iacute;nea</div>
+
+      {% for m in messages %}
+      <div style="padding:12px 16px;border-radius:10px;font-size:13px;font-weight:600;margin-bottom:20px;display:flex;align-items:center;gap:10px;
+                  {% if m.tags == 'error' or m.tags == 'danger' %}background:rgba(220,38,38,0.1);color:#DC2626;border:1px solid rgba(220,38,38,0.2);
+                  {% else %}background:rgba(5,150,105,0.1);color:#059669;border:1px solid rgba(5,150,105,0.2);{% endif %}">
+        <i class="fas {% if m.tags == 'error' or m.tags == 'danger' %}fa-circle-xmark{% else %}fa-check-circle{% endif %}"></i> {{ m }}
+      </div>
+      {% endfor %}
+
+      <form method="post">
+        {% csrf_token %}
+        <div style="margin-bottom:20px;">
+          <label style="display:block;font-size:13px;font-weight:700;color:#334155;margin-bottom:8px;">Número de Cédula</label>
+          <div class="input-group" style="position:relative;">
+            <i class="fas fa-id-card input-icon"></i>
+            <input type="text" name="cedula" class="form-control" placeholder="Ej: 1712345678" required autofocus maxlength="13">
+          </div>
+        </div>
+
+        <div style="margin-bottom:24px;">
+          <label style="display:block;font-size:13px;font-weight:700;color:#334155;margin-bottom:8px;">PIN de Acceso</label>
+          <div class="input-group" style="position:relative;">
+            <i class="fas fa-lock input-icon"></i>
+            <input type="password" name="pin" class="form-control" placeholder="&bull;&bull;&bull;&bull;" required maxlength="10" style="letter-spacing:4px;font-size:18px;padding-top:10px;padding-bottom:10px;">
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" id="keep_signed_in" name="keep_signed_in" style="width:16px;height:16px;accent-color:#0B3D91;">
+            <span style="font-size:13px;color:#475569;font-weight:500;">Mantener sesión</span>
+          </label>
+          <a href="{% url 'portal_recuperar_pin' %}" style="font-size:13px;color:#0B3D91;font-weight:700;text-decoration:none;">¿Olvidaste tu PIN?</a>
+        </div>
+
+        <button type="submit" class="btn-submit">
+          Ingresar al Portal <i class="fas fa-arrow-right"></i>
+        </button>
+      </form>
+
+      <div style="margin-top:32px;text-align:center;">
+        <div style="height:1px;background:#E2E8F0;margin-bottom:24px;position:relative;">
+          <span style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#fff;padding:0 12px;font-size:12px;color:#94A3B8;font-weight:600;">ADMINISTRACIÓN</span>
+        </div>
+        <a href="/login/" style="font-size:13px;color:#64748B;text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:6px;transition:color 0.2s;" onmouseover="this.style.color='#0B3D91'" onmouseout="this.style.color='#64748B'">
+          <i class="fas fa-shield-halved"></i> Acceso para Administradores
+        </a>
       </div>
     </div>
-
-    <div class="pcard">
-      <div class="pcard-body">
-        <h2 style="font-size:16px;font-weight:800;margin-bottom:20px;text-align:center;color:var(--text);">
-          <i class="fas fa-user-circle" style="color:var(--primary);margin-right:7px;"></i>Iniciar Sesi&oacute;n
-        </h2>
-        {% for m in messages %}
-        <div class="alert alert-{{ m.tags }}">
-          <i class="fas {% if m.tags == 'success' %}fa-circle-check{% elif m.tags == 'error' or m.tags == 'danger' %}fa-circle-xmark{% else %}fa-circle-info{% endif %}"></i>{{ m }}
-        </div>
-        {% endfor %}
-        <form method="post">
-          {% csrf_token %}
-          <div style="margin-bottom:14px;">
-            <label style="display:block;font-size:12px;font-weight:600;color:var(--text);margin-bottom:5px;">N&uacute;mero de C&eacute;dula</label>
-            <div style="position:relative;">
-              <i class="fas fa-id-card" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;"></i>
-              <input type="text" name="cedula"
-                style="width:100%;padding:10px 14px 10px 36px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;outline:none;transition:border-color 0.2s;"
-                placeholder="Ej: 1712345678" required autofocus maxlength="13"
-                onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
-            </div>
-          </div>
-          <div style="margin-bottom:20px;">
-            <label style="display:block;font-size:12px;font-weight:600;color:var(--text);margin-bottom:5px;">PIN de Acceso</label>
-            <div style="position:relative;">
-              <i class="fas fa-lock" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;"></i>
-              <input type="password" name="pin"
-                style="width:100%;padding:10px 14px 10px 36px;border:1.5px solid var(--border);border-radius:9px;font-size:18px;letter-spacing:4px;font-family:inherit;outline:none;transition:border-color 0.2s;"
-                placeholder="&bull;&bull;&bull;&bull;" required maxlength="10"
-                onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
-            </div>
-          </div>
-          <div style="display:flex;align-items:flex-start;gap:9px;margin:-2px 0 16px 0;padding:10px 12px;background:#F8FAFF;border:1px solid var(--border);border-radius:10px;">
-            <input type="checkbox" id="keep_signed_in" name="keep_signed_in" style="margin-top:3px;">
-            <label for="keep_signed_in" style="font-size:12px;color:var(--muted);line-height:1.45;cursor:pointer;">
-              Mantener sesi&oacute;n iniciada en este equipo.
-            </label>
-          </div>
-          <button type="submit"
-            style="width:100%;padding:12px;background:var(--primary);color:white;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background 0.2s;"
-            onmouseover="this.style.background='#1557C0'" onmouseout="this.style.background='var(--primary)'">
-            <i class="fas fa-right-to-bracket"></i> Ingresar al Portal
-          </button>
-        </form>
-      </div>
-    </div>
-
-    <div class="pcard" style="background:rgba(11,61,145,0.04);border-color:rgba(11,61,145,0.15);margin-top:12px;">
-      <div class="pcard-body" style="padding:14px 18px;text-align:center;">
-        <div style="margin-bottom:10px;">
-          <a href="{% url 'portal_recuperar_pin' %}" style="font-size:12px;color:var(--primary);text-decoration:none;font-weight:600;"><i class="fas fa-key" style="margin-right:4px;"></i>&iquest;Olvid&oacute; o desea cambiar su PIN?</a>
-        </div>
-        <p style="font-size:12px;color:var(--muted);margin:0;">
-          <i class="fas fa-info-circle" style="color:var(--primary);margin-right:5px;"></i>
-          &iquest;No tiene acceso? Solicite su PIN en la oficina de la cooperativa.
-        </p>
-        <div style="margin-top:10px;">
-          <a href="/login/" style="font-size:12px;color:var(--primary);text-decoration:none;"><i class="fas fa-shield-halved" style="margin-right:4px;"></i>&iquest;Eres administrador? Panel Administrativo &rarr;</a>
-        </div>
-      </div>
-    </div>
-
-    <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:14px;">
-      <i class="fas fa-lock" style="margin-right:4px;"></i>Solo consulta &mdash; sus datos est&aacute;n protegidos
-    </p>
   </div>
 </div>
 {% endblock %}
