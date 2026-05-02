@@ -19,8 +19,8 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 body {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  background: linear-gradient(135deg, #0B3D91 0%, #001B48 100%);
-  color: white;
+  background: linear-gradient(135deg, #F8FAFF 0%, #E2E8F0 100%);
+  color: var(--text);
   min-height: 100vh;
   position: relative;
 }
@@ -35,7 +35,7 @@ body::after {
   bottom: -200px; right: -200px; border-radius: 50%; z-index: -1; pointer-events: none;
 }
 .portal-nav {
-  background: rgba(11, 61, 145, 0.4);
+  background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   padding: 0 20px;
@@ -51,13 +51,13 @@ body::after {
   border: 1px solid rgba(255,255,255,0.15);
   z-index: 100;
 }
-.nav-brand{display:flex;align-items:center;gap:9px;color:white;text-decoration:none;}
+.nav-brand{display:flex;align-items:center;gap:9px;color:var(--primary);text-decoration:none;}
 .nav-brand .icon{width:34px;height:34px;background:var(--accent);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;}
 .nav-brand .name{font-size:13px;font-weight:800;}
 .nav-brand .sub{font-size:9px;opacity:0.55;}
 .nav-links{display:flex;align-items:center;gap:8px;justify-content:flex-end;}
-.nav-links a,.portal-menu summary{color:rgba(255,255,255,0.78);text-decoration:none;font-size:12px;font-weight:700;padding:8px 12px;border-radius:9px;transition:all 0.2s;display:flex;align-items:center;gap:6px;line-height:1;cursor:pointer;}
-.nav-links a:hover,.nav-links a.active,.portal-menu summary:hover,.portal-menu[open] summary,.portal-menu.active summary{color:white;background:rgba(255,255,255,0.13);}
+.nav-links a,.portal-menu summary{color:var(--muted);text-decoration:none;font-size:12px;font-weight:700;padding:8px 12px;border-radius:9px;transition:all 0.2s;display:flex;align-items:center;gap:6px;line-height:1;cursor:pointer;}
+.nav-links a:hover,.nav-links a.active,.portal-menu summary:hover,.portal-menu[open] summary,.portal-menu.active summary{color:var(--primary);background:rgba(11,61,145,0.08);}
 .nav-links a.logout{color:rgba(255,150,150,0.9);}
 .nav-links a.logout:hover{background:rgba(255,100,100,0.15);}
 .portal-menu{position:relative;}
@@ -159,8 +159,8 @@ tbody tr:last-child td{border-bottom:none;}
 {% if request.session.portal_socio_id %}
 <nav class="portal-nav">
   <a href="{% url 'portal_inicio' %}" class="nav-brand">
-    <img src="{{ web_logo_src|default:'' }}" alt="Cooperativa Bailarines" style="height:42px;width:auto;max-width:220px;object-fit:contain;display:block;filter:brightness(1.1) drop-shadow(0 1px 4px rgba(0,0,0,0.3));">
-    <div style="margin-left:4px;"><div class="sub" style="font-size:10px;color:rgba(255,255,255,0.6);">Portal del Socio</div></div>
+    <img src="{{ web_logo_src|default:'' }}" alt="Cooperativa Bailarines" style="height:42px;width:auto;max-width:220px;object-fit:contain;display:block;filter:drop-shadow(0 2px 6px rgba(11,61,145,0.15));">
+    <div style="margin-left:4px;"><div class="sub" style="font-size:10px;color:var(--muted);">Portal del Socio</div></div>
   </a>
   <div class="nav-links">
     <a href="{% url 'portal_inicio' %}" class="{% if request.resolver_match.url_name == 'portal_inicio' %}active{% endif %}"><i class="fas fa-home"></i> <span class="hide-mobile">Inicio</span></a>
