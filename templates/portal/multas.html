@@ -22,6 +22,14 @@
   <div style="font-size:13px;font-weight:700;color:var(--danger);margin-bottom:4px;"><i class="fas fa-triangle-exclamation"></i> Tiene ${{ total_pendiente|floatformat:2 }} en multas pendientes</div>
   <div style="font-size:12px;color:var(--text);">Use el botón <strong>"Reportar Pago"</strong> en cada multa después de pagar a la administración.</div>
 </div>
+
+<div style="background:rgba(11,61,145,0.08);border:1.5px solid rgba(11,61,145,0.3);border-radius:12px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+  <div>
+    <div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:4px;"><i class="fas fa-layer-group"></i> ¿Deseas pagar varias multas juntas?</div>
+    <div style="font-size:12px;color:var(--text);">Si hiciste una sola transferencia para pagar <strong>múltiples multas</strong>, repórtalas todas en un solo paso.</div>
+  </div>
+  <a href="{% url 'portal_pago_combinado' %}" class="btn btn-primary btn-sm"><i class="fas fa-bolt"></i> Pagar Varias a la Vez</a>
+</div>
 {% else %}
 <div class="alert alert-success"><i class="fas fa-circle-check"></i> ¡Está al día con sus multas! 🎉</div>
 {% endif %}
