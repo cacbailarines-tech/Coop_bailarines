@@ -357,8 +357,37 @@ def portal_inicio(request):
         total_cumple = AporteMensual.objects.filter(libreta__in=libretas_activas, estado='verificado').aggregate(t=Sum('monto_cumpleanos'))['t'] or Decimal('0.00')
         total_multas_pagadas = Multa.objects.filter(socio=socio, estado='pagada', fecha_generacion__year=hoy.year).aggregate(t=Sum('monto'))['t'] or Decimal('0.00')
         
-        ahorro_chart_labels = ['Ahorro Real', 'Lotería', 'Cumpleaños', 'Multas Pagadas']
-        ahorro_chart_data = [float(ahorro_actual), float(total_loteria), float(total_cumple), float(total_multas_pagadas)]
+        total_interes_pagado = Decimal('0.00')
+        total_capital_pagado = Decimal('0.00')
+        
+        pagos_credito = PagoCredito.objects.filter(credito__socio=socio, credito__periodo=periodo_activo, estado='verificado')
+        for pago in pagos_credito:
+            if pago.credito.tipo == 'mensualizado':
+                resumen = pago.credito.obtener_resumen_cuota_plana()
+                if resumen and resumen['cuota'] > 0:
+                    proporcion_interes = resumen['interes_por_cuota'] / resumen['cuota']
+                    interes = pago.monto_pagado * proporcion_interes
+                    capital = pago.monto_pagado - interes
+                    total_interes_pagado += interes
+                    total_capital_pagado += capital
+                else:
+                    total_capital_pagado += pago.monto_pagado
+            else:
+                total = pago.credito.monto_solicitado + pago.credito.interes_total
+                if total > 0:
+                    proporcion_interes = pago.credito.interes_total / total
+                    interes = pago.monto_pagado * proporcion_interes
+                    capital = pago.monto_pagado - interes
+                    total_interes_pagado += interes
+                    total_capital_pagado += capital
+                else:
+                    total_capital_pagado += pago.monto_pagado
+        
+        ahorro_chart_labels = ['Ahorro Real', 'Lotería', 'Cumpleaños', 'Multas Pagadas', 'Capital Préstamo', 'Interés Préstamo']
+        ahorro_chart_data = [
+            float(ahorro_actual), float(total_loteria), float(total_cumple), 
+            float(total_multas_pagadas), float(total_capital_pagado), float(total_interes_pagado)
+        ]
 
     import json
     balance_chart_data = [float(total_ahorro), float(total_deuda)]
