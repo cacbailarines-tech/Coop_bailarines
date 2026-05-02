@@ -351,17 +351,14 @@ def portal_inicio(request):
         libreta_activa.ahorro_anual_meta = ahorro_anual_meta
         libreta_activa.cantidad_libretas = cantidad_libretas
 
-        # Datos para Gráfico de Evolución
-        aportes_grafico = AporteMensual.objects.filter(
-            libreta__in=libretas_activas, estado='verificado'
-        ).values('mes').annotate(monto=Sum('monto_ahorro')).order_by('mes')
+        # Datos para Gráfico de Distribución (en lugar del lineal)
+        # Queremos mostrar en qué se ha ido el dinero del socio este periodo
+        total_loteria = AporteMensual.objects.filter(libreta__in=libretas_activas, estado='verificado').aggregate(t=Sum('monto_loteria'))['t'] or Decimal('0.00')
+        total_cumple = AporteMensual.objects.filter(libreta__in=libretas_activas, estado='verificado').aggregate(t=Sum('monto_cumpleanos'))['t'] or Decimal('0.00')
+        total_multas_pagadas = Multa.objects.filter(socio=socio, estado='pagada', fecha_generacion__year=hoy.year).aggregate(t=Sum('monto'))['t'] or Decimal('0.00')
         
-        acumulado = 0
-        meses_nombres = {1:'Ene',2:'Feb',3:'Mar',4:'Abr',5:'May',6:'Jun',7:'Jul',8:'Ago',9:'Sep',10:'Oct',11:'Nov',12:'Dic'}
-        for ag in aportes_grafico:
-            acumulado += ag['monto']
-            ahorro_chart_labels.append(meses_nombres.get(ag['mes'], str(ag['mes'])))
-            ahorro_chart_data.append(float(acumulado))
+        ahorro_chart_labels = ['Ahorro Real', 'Lotería', 'Cumpleaños', 'Multas Pagadas']
+        ahorro_chart_data = [float(ahorro_actual), float(total_loteria), float(total_cumple), float(total_multas_pagadas)]
 
     import json
     balance_chart_data = [float(total_ahorro), float(total_deuda)]

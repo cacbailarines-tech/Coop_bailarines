@@ -102,7 +102,7 @@
 
 <div style="display:grid; grid-template-columns: 1fr; gap:16px; margin-bottom:16px;">
   <div style="background:#fff; border:1px solid #eee; border-radius:12px; padding:12px;">
-    <h4 style="font-size:12px; color:var(--muted); text-align:center; margin-bottom:8px;">📈 Crecimiento de Ahorros</h4>
+    <h4 style="font-size:12px; color:var(--muted); text-align:center; margin-bottom:8px;">📊 Distribución de tus Pagos</h4>
     <div style="position:relative; height:150px; width:100%;">
       <canvas id="ahorroChart"></canvas>
     </div>
@@ -185,28 +185,20 @@
   const ctxAhorro = document.getElementById('ahorroChart');
   if (ctxAhorro && ahorroLabels.length > 0) {
     new Chart(ctxAhorro, {
-      type: 'line',
+      type: 'pie',
       data: {
         labels: ahorroLabels,
         datasets: [{
-          label: 'Ahorro Acumulado',
           data: ahorroData,
-          borderColor: '#00897B',
-          backgroundColor: 'rgba(0, 137, 123, 0.15)',
-          borderWidth: 2,
-          fill: true,
-          tension: 0.3,
-          pointBackgroundColor: '#00897B',
-          pointRadius: 3
+          backgroundColor: ['#00897B', '#8E24AA', '#1E88E5', '#E53935'],
+          borderWidth: 0,
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { grid: { display: false }, ticks: { font: { size: 10 } } },
-          y: { ticks: { font: { size: 10 }, callback: function(val) { return '$' + val; } } }
+        plugins: {
+          legend: { position: 'right', labels: { font: { size: 9 }, boxWidth: 10 } }
         }
       }
     });
