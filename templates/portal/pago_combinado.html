@@ -189,10 +189,6 @@
   <div class="pc-layout">
     <div class="pc-main">
 
-  <div class="pc-layout">
-    <div class="pc-main">
-
-
   <div class="pcard">
     <div class="pcard-header"><h3><i class="fas fa-book" style="color:var(--success);"></i> Agregar Aporte</h3></div>
     <div class="pcard-body">
@@ -293,8 +289,6 @@
     </div>
   </div>
 
-  >
-
   <div class="pcard">
     <div class="pcard-header"><h3><i class="fas fa-receipt" style="color:var(--warning);"></i> Comprobante de la Transferencia</h3></div>
     <div class="pcard-body">
@@ -370,7 +364,7 @@ function mostrarCreditoSeleccionado() {
   if (!option || !option.value) {
     if (info) info.classList.remove('is-visible');
     if (montoInput) montoInput.value = '';
-    if (ayuda) ayuda.textContent = 'Seleccione un cr├®dito para ver sus datos y editar el monto.';
+    if (ayuda) ayuda.textContent = 'Seleccione un crédito para ver sus datos y editar el monto.';
     return;
   }
 
@@ -380,7 +374,7 @@ function mostrarCreditoSeleccionado() {
   const montoInicial = tipoClave === 'no_mensualizado' ? saldo : cuota;
 
   document.getElementById('credito-info-titulo').textContent = option.dataset.numero + ' - ' + option.dataset.tipo;
-  document.getElementById('credito-info-libreta').textContent = '#' + option.dataset.libreta + ' ┬À Vence ' + option.dataset.vence;
+  document.getElementById('credito-info-libreta').textContent = '#' + option.dataset.libreta + ' · Vence ' + option.dataset.vence;
   document.getElementById('credito-info-saldo').textContent = formatearMonto(saldo);
   document.getElementById('credito-info-cuota').textContent = formatearMonto(cuota);
   info.classList.add('is-visible');
@@ -391,8 +385,8 @@ function mostrarCreditoSeleccionado() {
 
   if (ayuda) {
     ayuda.textContent = tipoClave === 'no_mensualizado'
-      ? 'Este cr├®dito acepta monto manual. Se carg├│ el saldo pendiente como referencia.'
-      : 'Se carg├│ la cuota sugerida, pero puede cambiar el monto antes de agregarlo.';
+      ? 'Este crédito acepta monto manual. Se cargó el saldo pendiente como referencia.'
+      : 'Se cargó la cuota sugerida, pero puede cambiar el monto antes de agregarlo.';
   }
 }
 
@@ -404,7 +398,7 @@ function agregarAporte() {
     return;
   }
   if (estadoSeleccion.aportes.has(option.value)) {
-    alert('Ese aporte ya est├í en el resumen.');
+    alert('Ese aporte ya está en el resumen.');
     return;
   }
 
@@ -426,21 +420,21 @@ function agregarCredito() {
   const monto = montoSeguro(montoInput?.value);
 
   if (!option || !option.value) {
-    alert('Seleccione un cr├®dito antes de agregarlo.');
+    alert('Seleccione un crédito antes de agregarlo.');
     return;
   }
   if (monto <= 0) {
-    alert('Ingrese un monto v├ílido para el cr├®dito.');
+    alert('Ingrese un monto válido para el crédito.');
     return;
   }
   if (estadoSeleccion.creditos.has(option.value)) {
-    alert('Ese cr├®dito ya est├í en el resumen.');
+    alert('Ese crédito ya está en el resumen.');
     return;
   }
 
   estadoSeleccion.creditos.set(option.value, {
     id: option.value,
-    tipo: 'Cr├®dito',
+    tipo: 'Crédito',
     label: option.dataset.label,
     monto: monto,
   });
@@ -448,7 +442,7 @@ function agregarCredito() {
   select.value = '';
   montoInput.value = '';
   document.getElementById('credito-info')?.classList.remove('is-visible');
-  document.getElementById('credito-ayuda').textContent = 'Seleccione un cr├®dito para ver sus datos y editar el monto.';
+  document.getElementById('credito-ayuda').textContent = 'Seleccione un crédito para ver sus datos y editar el monto.';
   renderResumen();
 }
 
@@ -460,7 +454,7 @@ function agregarMulta() {
     return;
   }
   if (estadoSeleccion.multas.has(option.value)) {
-    alert('Esa multa ya est├í en el resumen.');
+    alert('Esa multa ya está en el resumen.');
     return;
   }
 
