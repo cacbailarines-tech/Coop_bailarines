@@ -314,11 +314,10 @@
       </div>
     </div>
   </div>
+</div> <!-- End of left column -->
 
-  
-    </div>
-    <div class="pc-sidebar">
-<div class="pcard">
+<div class="pc-sidebar">
+  <div class="pcard">
     <div class="pcard-header"><h3><i class="fas fa-list-check" style="color:var(--warning);"></i> Resumen del Pago</h3></div>
     <div class="pcard-body">
       <div class="pc-total-box">
@@ -328,25 +327,12 @@
       <div id="seleccion-vacia" style="font-size:12px;color:var(--muted);">Todav&iacute;a no ha agregado conceptos.</div>
       <div id="seleccion-lista" style="display:none;"></div>
     </div>
-
-    </div>
-    <div class="pc-sidebar">
-<div class="pcard">
-    <div class="pcard-header"><h3><i class="fas fa-list-check" style="color:var(--warning);"></i> Resumen del Pago</h3></div>
-    <div class="pcard-body">
-      <div class="pc-total-box">
-        <div style="font-size:12px;color:var(--muted);font-weight:700;">Total a reportar</div>
-        <strong id="total-resumen">$0.00</strong>
-      </div>
-      <div id="seleccion-vacia" style="font-size:12px;color:var(--muted);">Todav&iacute;a no ha agregado conceptos.</div>
-      <div id="seleccion-lista" style="display:none;"></div>
-    </div>
-  </div
-<div class="pc-actions" style="flex-direction:column-reverse;">
+  </div>
+  <div class="pc-actions" style="flex-direction:column-reverse;">
     <a href="{% url 'portal_inicio' %}" class="btn btn-outline" style="width:100%;justify-content:center;padding:12px;font-size:14px;">Cancelar</a>
     <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;font-size:14px;"><i class="fas fa-paper-plane"></i> Reportar Centro de Pagos</button>
   </div>
-    </div>
-  </div>
+</div> <!-- End of sidebar -->
+</div> <!-- End of wrapper -->
 </form>
 {% endblock %}
