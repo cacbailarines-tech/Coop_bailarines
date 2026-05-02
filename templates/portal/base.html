@@ -196,7 +196,7 @@ async function togglePush(e) {
   } else {
     // Subscribe
     try {
-      const configRes = await fetch("{% url 'push_config' %}");
+      const configRes = await fetch("{% url 'push_config' %}?t=" + new Date().getTime());
       const config = await configRes.json();
       if (!config.enabled || !config.publicKey) {
         alert("La administración aún no ha configurado las notificaciones Push en el servidor.");
