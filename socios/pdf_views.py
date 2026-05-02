@@ -102,7 +102,9 @@ def generar_pdf_estado_cuenta(libreta):
 
     # Resumen Financiero
     ahorro_total = AporteMensual.objects.filter(libreta=libreta, estado='verificado').aggregate(t=Sum('monto_ahorro'))['t'] or 0
-    creditos_activos = socio.creditos.filter(estado__in=['desembolsado', 'mora_leve', 'mora_media', 'mora_grave'])
+    # Importante: el estado de cuenta es por libreta, así que la deuda debe ser
+    # SOLO de los créditos asociados a esta libreta (no todas las libretas del socio).
+    creditos_activos = libreta.creditos.filter(estado__in=['desembolsado', 'mora_leve', 'mora_media', 'mora_grave'])
     deuda_creditos = creditos_activos.aggregate(t=Sum('saldo_pendiente'))['t'] or 0
     multas_pendientes = socio.multas.filter(estado='pendiente').aggregate(t=Sum('monto'))['t'] or 0
 
