@@ -66,6 +66,37 @@ def _saludo_socio(socio):
     return socio.nombre_preferido or socio.nombres.split()[0]
 
 
+def _parse_user_agent(user_agent):
+    browser = 'Navegador desconocido'
+    os_name = 'Sistema desconocido'
+    ua = user_agent or ''
+    if 'Edg/' in ua or 'Edge/' in ua:
+        browser = 'Microsoft Edge'
+    elif 'OPR/' in ua or 'Opera' in ua:
+        browser = 'Opera'
+    elif 'Chrome/' in ua and 'Chromium' not in ua and 'Edg/' not in ua:
+        browser = 'Google Chrome'
+    elif 'Firefox/' in ua:
+        browser = 'Firefox'
+    elif 'Safari/' in ua and 'Chrome/' not in ua and 'Chromium' not in ua:
+        browser = 'Safari'
+    elif 'Trident/' in ua or 'MSIE' in ua:
+        browser = 'Internet Explorer'
+
+    if 'Windows' in ua:
+        os_name = 'Windows'
+    elif 'Macintosh' in ua or 'Mac OS X' in ua:
+        os_name = 'macOS'
+    elif 'Android' in ua:
+        os_name = 'Android'
+    elif 'iPhone' in ua or 'iPad' in ua or 'iPod' in ua:
+        os_name = 'iOS'
+    elif 'Linux' in ua:
+        os_name = 'Linux'
+
+    return browser, os_name
+
+
 def _email_shell(title, intro, sections=None, cta_label='Ir al portal', cta_url=None, note=None, preheader=None):
     sections = sections or []
     cta_url = cta_url or _portal_url()
@@ -430,14 +461,16 @@ def notify_socio_login(socio, ip_address=None, user_agent=None):
     saludo = _saludo_socio(socio)
     when = timezone.localtime(timezone.now()).strftime('%d/%m/%Y %H:%M')
     ip_address = ip_address or 'No disponible'
-    user_agent = (user_agent or 'No disponible')[:180]
+    full_user_agent = user_agent or 'No disponible'
+    browser, os_name = _parse_user_agent(full_user_agent)
 
     text_body = (
         f'Hola {saludo},\n\n'
         'Se ha registrado un nuevo inicio de sesión en su portal de socio.\n\n'
         f'Fecha y hora: {when}\n'
         f'IP: {ip_address}\n'
-        f'Equipo: {user_agent}\n\n'
+        f'Navegador: {browser}\n'
+        f'Sistema: {os_name}\n\n'
         'Si no reconoces este acceso, por favor contacta a la cooperativa inmediatamente.\n\n'
         f'Portal del socio: {_portal_url()}\n\n'
         'Cooperativa Bailarines'
@@ -448,10 +481,12 @@ def notify_socio_login(socio, ip_address=None, user_agent=None):
         sections=[
             {'label': 'Fecha y hora', 'value': when, 'color': '#17479E'},
             {'label': 'IP', 'value': ip_address, 'color': '#10336F'},
-            {'label': 'Equipo', 'value': user_agent, 'color': '#0E8A6A'},
+            {'label': 'Navegador', 'value': browser, 'color': '#0E8A6A'},
+            {'label': 'Sistema', 'value': os_name, 'color': '#0E8A6A'},
         ],
         note='Si no reconoces este ingreso, cambia tu PIN y comunicate con la cooperativa.',
-        preheader='Nuevo acceso a tu portal. Verifica si fue tú.'
+        preheader='Nuevo acceso a tu portal. Verifica si fue tú.',
+        cta_url=_portal_url('/portal/'),
     )
     return _send_email(
         socio.email,
