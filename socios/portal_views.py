@@ -1,4 +1,5 @@
 import json
+import logging
 
 from django.conf import settings
 from django.http import JsonResponse
@@ -23,6 +24,7 @@ from core.email_notifications import (
     notify_admin_multa_reportada,
     notify_admin_pago_combinado_reportado,
     notify_admin_pago_credito_reportado,
+    notify_socio_login,
 )
 
 
@@ -85,6 +87,15 @@ def portal_login(request):
         request.session['portal_socio_nombre'] = socio.nombre_completo
         keep_signed_in = request.POST.get('keep_signed_in')
         request.session.set_expiry(settings.SESSION_COOKIE_AGE if keep_signed_in else 0)
+        try:
+            ip_address = request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', 'No disponible'))
+            if ip_address and ',' in ip_address:
+                ip_address = ip_address.split(',')[0].strip()
+            user_agent = request.META.get('HTTP_USER_AGENT', 'No disponible')
+            notify_socio_login(socio, ip_address=ip_address, user_agent=user_agent)
+        except Exception:
+            logger = logging.getLogger(__name__)
+            logger.exception('Error enviando notificación de login para socio %s', socio.pk)
         return redirect('portal_inicio')
     return render(request, 'portal/login.html')
 

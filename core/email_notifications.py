@@ -9,6 +9,7 @@ from pathlib import Path
 from urllib.parse import urlencode
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+from django.utils import timezone
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
@@ -419,6 +420,45 @@ def send_test_email(recipient):
         note='Si puede leer este correo con su estilo completo, el sistema ya está listo para enviar notificaciones reales.'
     )
     return _send_email(recipient, 'Prueba de correo - Cooperativa Bailarines', text_body, html_body)
+
+
+def notify_socio_login(socio, ip_address=None, user_agent=None):
+    if not getattr(socio, 'email', None):
+        logger.warning('Correo de login omitido: socio %s sin email', getattr(socio, 'pk', 'n/a'))
+        return False
+
+    saludo = _saludo_socio(socio)
+    when = timezone.localtime(timezone.now()).strftime('%d/%m/%Y %H:%M')
+    ip_address = ip_address or 'No disponible'
+    user_agent = (user_agent or 'No disponible')[:180]
+
+    text_body = (
+        f'Hola {saludo},\n\n'
+        'Se ha registrado un nuevo inicio de sesión en su portal de socio.\n\n'
+        f'Fecha y hora: {when}\n'
+        f'IP: {ip_address}\n'
+        f'Equipo: {user_agent}\n\n'
+        'Si no reconoces este acceso, por favor contacta a la cooperativa inmediatamente.\n\n'
+        f'Portal del socio: {_portal_url()}\n\n'
+        'Cooperativa Bailarines'
+    )
+    html_body = _email_shell(
+        'Nuevo inicio de sesión',
+        f'Hola {saludo}, se detectó un ingreso exitoso a tu portal.',
+        sections=[
+            {'label': 'Fecha y hora', 'value': when, 'color': '#17479E'},
+            {'label': 'IP', 'value': ip_address, 'color': '#10336F'},
+            {'label': 'Equipo', 'value': user_agent, 'color': '#0E8A6A'},
+        ],
+        note='Si no reconoces este ingreso, cambia tu PIN y comunicate con la cooperativa.',
+        preheader='Nuevo acceso a tu portal. Verifica si fue tú.'
+    )
+    return _send_email(
+        socio.email,
+        'Ingreso a tu portal - Cooperativa Bailarines',
+        text_body,
+        html_body,
+    )
 
 
 def notify_credito_aprobado(credito):
