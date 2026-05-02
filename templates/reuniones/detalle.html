@@ -15,6 +15,11 @@
       <div style="font-size:20px;font-weight:800;">{{ reunion.fecha|date:"d/m/Y" }}</div>
       <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Periodo {{ reunion.periodo.anio }}</div>
       <span class="badge {% if reunion.estado == 'realizada' %}badge-success{% elif reunion.estado == 'programada' %}badge-primary{% else %}badge-secondary{% endif %}" style="font-size:12px;padding:6px 14px;">{{ reunion.get_estado_display }}</span>
+      {% if reunion.link_reunion %}
+      <a href="{{ reunion.link_reunion }}" target="_blank" rel="noopener" class="btn btn-outline btn-sm" style="margin-top:12px;width:100%;justify-content:center;">
+        <i class="fas fa-link"></i> Abrir link (Teams)
+      </a>
+      {% endif %}
       <div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:center;">
         <div style="background:var(--bg);border-radius:8px;padding:10px;"><div style="font-size:20px;font-weight:800;">{{ asistencias.count }}</div><div style="font-size:10px;color:var(--muted);">Registrados</div></div>
         <div style="background:var(--bg);border-radius:8px;padding:10px;"><div style="font-size:20px;font-weight:800;">{{ socios_sin_registro.count }}</div><div style="font-size:10px;color:var(--muted);">Sin registro</div></div>

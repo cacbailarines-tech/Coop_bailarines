@@ -25,6 +25,7 @@ class Reunion(models.Model):
     mes = models.IntegerField()
     anio = models.IntegerField()
     descripcion = models.CharField(max_length=200, blank=True)
+    link_reunion = models.URLField(blank=True)
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='programada')
     notas = models.TextField(blank=True)
     registrada_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
@@ -120,6 +121,7 @@ Le informamos que la administración ha programado una nueva reunión obligatori
 
 Fecha: {instance.fecha.strftime('%d/%m/%Y')}
 Detalles: {instance.descripcion if instance.descripcion else 'Asistencia obligatoria según reglamento.'}
+Link (Teams): {instance.link_reunion if instance.link_reunion else 'No especificado'}
 
 Recuerde que el atraso o falta injustificada genera multas automáticas según el reglamento vigente ($1 - $3).
 Si tiene algún inconveniente, recuerde justificar su inasistencia con al menos 24 horas de anticipación.

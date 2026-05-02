@@ -23,6 +23,7 @@ def reunion_crear(request):
             periodo=periodo, fecha=fecha_obj,
             mes=fecha_obj.month, anio=fecha_obj.year,
             descripcion=request.POST.get('descripcion',''),
+            link_reunion=request.POST.get('link_reunion', '').strip(),
             registrada_por=request.user,
         )
         messages.success(request, f'Reunión del {fecha} programada.')

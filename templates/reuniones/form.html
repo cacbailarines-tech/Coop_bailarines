@@ -10,6 +10,11 @@
     </div>
     <div class="form-group"><label class="form-label">Fecha de la Reunión *</label><input type="date" name="fecha" class="form-control" required></div>
     <div class="form-group"><label class="form-label">Descripción</label><input type="text" name="descripcion" class="form-control" placeholder="Ej: Reunión mensual Enero 2026"></div>
+    <div class="form-group">
+      <label class="form-label">Link de la reunión (Teams)</label>
+      <input type="url" name="link_reunion" class="form-control" placeholder="https://teams.microsoft.com/..." inputmode="url" autocomplete="url">
+      <div class="form-text">Opcional. Pega aquí el enlace de Teams para que los socios lo vean.</div>
+    </div>
     <div style="display:flex;gap:10px;"><button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Programar</button><a href="{% url 'reuniones_list' %}" class="btn btn-outline">Cancelar</a></div>
   </form></div></div>
 </div>{% endblock %}

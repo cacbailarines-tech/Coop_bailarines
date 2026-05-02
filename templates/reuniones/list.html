@@ -4,13 +4,20 @@
 {% block content %}
 <div class="card"><div class="card-header"><h5><i class="fas fa-video" style="color:var(--danger);margin-right:7px;"></i>Reuniones Mensuales</h5></div>
 <div style="overflow-x:auto;"><table>
-  <thead><tr><th>Fecha</th><th>Mes/Año</th><th>Periodo</th><th>Estado</th><th>Asistentes</th><th>Multas Gen.</th><th>Acciones</th></tr></thead>
+  <thead><tr><th>Fecha</th><th>Mes/Año</th><th>Periodo</th><th>Link</th><th>Estado</th><th>Asistentes</th><th>Multas Gen.</th><th>Acciones</th></tr></thead>
   <tbody>
   {% for r in reuniones %}
   <tr>
     <td style="font-weight:600;">{{ r.fecha|date:"d/m/Y" }}</td>
     <td>{% with meses="Enero,Febrero,Marzo,Abril,Mayo,Junio,Julio,Agosto,Septiembre,Octubre,Noviembre,Diciembre" %}{{ r.mes }}{% endwith %} {{ r.anio }}</td>
     <td>{{ r.periodo.anio }}</td>
+    <td>
+      {% if r.link_reunion %}
+        <a href="{{ r.link_reunion }}" target="_blank" rel="noopener" class="btn btn-outline btn-sm"><i class="fas fa-link"></i></a>
+      {% else %}
+        <span style="color:var(--muted);">—</span>
+      {% endif %}
+    </td>
     <td><span class="badge {% if r.estado == 'realizada' %}badge-success{% elif r.estado == 'programada' %}badge-primary{% else %}badge-secondary{% endif %}">{{ r.get_estado_display }}</span></td>
     <td>{{ r.asistencias.count }}</td>
     <td>{{ r.multas.count }}</td>
@@ -19,6 +26,6 @@
       {% if r.estado != 'realizada' %}<a href="{% url 'registrar_asistencia' r.pk %}" class="btn btn-primary btn-sm"><i class="fas fa-user-check"></i></a>{% endif %}
     </td>
   </tr>
-  {% empty %}<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted);">Sin reuniones registradas</td></tr>{% endfor %}
+  {% empty %}<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--muted);">Sin reuniones registradas</td></tr>{% endfor %}
   </tbody>
 </table></div></div>{% endblock %}

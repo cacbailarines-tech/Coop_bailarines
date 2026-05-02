@@ -8,7 +8,7 @@ class TipoMultaAdmin(ImportExportModelAdmin):
 
 @admin.register(Reunion)
 class ReunionAdmin(ImportExportModelAdmin):
-    list_display = ['fecha','periodo','estado']
+    list_display = ['fecha','periodo','estado','link_reunion']
 
 @admin.register(AsistenciaReunion)
 class AsistenciaAdmin(ImportExportModelAdmin):

@@ -12,7 +12,16 @@
   <div style="font-size:26px;"><i class="fas fa-users" style="color:var(--primary);"></i></div>
   <div>
     <div style="font-size:13px;font-weight:800;color:var(--primary);">Reunión Programada: {{ proxima_reunion.fecha|date:"l, d F Y" }}</div>
-    <div style="font-size:11px;color:var(--text);">{% if proxima_reunion.descripcion %}{{ proxima_reunion.descripcion }}{% else %}Recuerde su asistencia obligatoria.{% endif %}</div>
+    <div style="font-size:11px;color:var(--text);">
+      {% if proxima_reunion.descripcion %}{{ proxima_reunion.descripcion }}{% else %}Recuerde su asistencia obligatoria.{% endif %}
+      {% if proxima_reunion.link_reunion %}
+        <div style="margin-top:6px;">
+          <a href="{{ proxima_reunion.link_reunion }}" target="_blank" rel="noopener" style="color:var(--primary);font-weight:800;text-decoration:none;">
+            <i class="fas fa-video"></i> Unirse por Teams
+          </a>
+        </div>
+      {% endif %}
+    </div>
   </div>
 </div>
 {% endif %}
