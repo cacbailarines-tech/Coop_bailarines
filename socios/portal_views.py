@@ -135,9 +135,12 @@ def portal_recuperar_pin(request):
             request.session['otp_expira'] = (timezone.now() + timezone.timedelta(minutes=10)).timestamp()
             request.session['otp_recuperacion_estado'] = True
             
-            # Enviar correo
+            # Enviar correo HTML
             asunto = "Código de Recuperación de PIN - Cooperativa Bailarines"
-            mensaje = f"""Estimado(a) {socio.nombre_completo},
+            from core.email_notifications import _send_email, _email_shell, _saludo_socio
+            
+            saludo = _saludo_socio(socio)
+            mensaje_texto = f"""Estimado(a) {socio.nombre_completo},
 
 Ha solicitado recuperar su PIN de acceso al portal.
 Su código de verificación es: {codigo_otp}
@@ -146,12 +149,25 @@ Este código expirará en 10 minutos. Si no ha solicitado este cambio, por favor
 
 Atentamente,
 Cooperativa Bailarines"""
+
+            mensaje_html = _email_shell(
+                title='Recuperación de PIN',
+                intro=f'Hola {saludo}, hemos recibido una solicitud para cambiar tu PIN de acceso al Portal del Socio.',
+                sections=[
+                    {'label': 'Código de Verificación', 'value': codigo_otp, 'color': '#0E8A6A'}
+                ],
+                cta_label='Ir al Portal',
+                cta_url=request.build_absolute_uri('/portal/recuperar-pin/'),
+                note='Este código expirará en 10 minutos. Nunca compartas este código con nadie.',
+                preheader=f'Tu código de verificación es {codigo_otp}.'
+            )
+
             try:
-                from core.email_notifications import _send_email
                 _send_email(
                     recipient=socio.email,
                     subject=asunto,
-                    text_body=mensaje
+                    text_body=mensaje_texto,
+                    html_body=mensaje_html
                 )
                 messages.success(request, f'Se ha enviado un código de 6 dígitos a su correo electrónico.')
             except Exception as e:
