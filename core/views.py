@@ -8,10 +8,12 @@ from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.auth.views import LoginView as BaseLoginView
+from django.core.management import call_command
 from django.core.paginator import Paginator
 from django.db.models import Q, Sum
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+import io
 from django.utils import timezone
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
@@ -35,6 +37,24 @@ from .utils import has_role, registrar_auditoria, require_roles
 
 def redirect_root(request):
     return redirect('dashboard') if request.user.is_authenticated else redirect('login')
+
+
+@login_required
+@require_roles('admin')
+def descargar_respaldo_bd(request):
+    if not request.user.is_superuser:
+        messages.error(request, 'Solo los superusuarios pueden descargar respaldos.')
+        return redirect('dashboard')
+    
+    out = io.StringIO()
+    call_command('dumpdata', exclude=['contenttypes', 'auth.permission', 'sessions', 'admin.logentry'], format='json', indent=2, stdout=out)
+    
+    response = HttpResponse(out.getvalue(), content_type='application/json')
+    fecha_str = timezone.localdate().strftime('%Y-%m-%d')
+    response['Content-Disposition'] = f'attachment; filename="respaldo_cooperativa_{fecha_str}.json"'
+    
+    registrar_auditoria(request.user, 'seguridad', 'descargar_respaldo', 'Se descargo un respaldo completo de la base de datos en formato JSON.')
+    return response
 
 
 def pwa_manifest(request):
