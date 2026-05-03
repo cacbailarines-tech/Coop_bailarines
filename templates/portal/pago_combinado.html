@@ -185,6 +185,21 @@
 
 <form method="post" enctype="multipart/form-data" id="pago-combinado-form">
   {% csrf_token %}
+  <input type="hidden" name="shared_file_path" value="{{ form_values.shared_file_path }}">
+  {% if form_values.comprobante_referencia %}
+  <div class="alert alert-info" style="margin-bottom:16px;">
+    <i class="fas fa-share-from-square"></i> Comprobante recibido: <strong>{{ form_values.comprobante_referencia }}</strong>. Seleccione los conceptos a pagar y envíe el reporte.
+  </div>
+  {% endif %}
+  {% if form_values.shared_file_url %}
+  <div class="alert alert-success" style="margin-bottom:16px;">
+    <i class="fas fa-image"></i> Archivo adjunto recibido:
+    <a href="{{ form_values.shared_file_url }}" target="_blank" style="font-weight:700;">{{ form_values.shared_file_name|default:"Ver comprobante" }}</a>
+    {% if form_values.shared_file_name.endswith ".jpg" or form_values.shared_file_name.endswith ".jpeg" or form_values.shared_file_name.endswith ".png" or form_values.shared_file_name.endswith ".webp" %}
+    <div style="margin-top:12px;"><img src="{{ form_values.shared_file_url }}" alt="Comprobante" style="max-width:100%;border-radius:12px;border:1px solid rgba(0,0,0,0.08);"></div>
+    {% endif %}
+  </div>
+  {% endif %}
   <div id="selecciones-hidden"></div>
   <div class="pc-layout">
     <div class="pc-main">
@@ -295,7 +310,7 @@
       <div class="pc-grid-comprobante">
         <div>
           <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">N&uacute;mero de comprobante *</label>
-          <input type="text" name="comprobante_referencia" class="form-control" required placeholder="Referencia de la transferencia">
+          <input type="text" name="comprobante_referencia" class="form-control" required placeholder="Referencia de la transferencia" value="{{ form_values.comprobante_referencia|default:'' }}">
         </div>
         <div>
           <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">Adjuntar archivo</label>

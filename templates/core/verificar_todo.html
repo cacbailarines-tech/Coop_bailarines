@@ -66,7 +66,16 @@
       <td>#{{ p.credito.libreta.numero }}</td>
       <td class="amount-pos">${{ p.monto_pagado|floatformat:2 }}</td>
       <td class="mono">{{ p.comprobante_referencia|default:"No indicó" }}</td>
-      <td>{% if p.comprobante_archivo %}<a href="{{ p.comprobante_archivo.url }}" target="_blank" class="btn btn-outline btn-sm"><i class="fas fa-paperclip"></i></a>{% else %}—{% endif %}</td>
+      <td>
+        {% if p.comprobante_archivo %}
+          <a href="{{ p.comprobante_archivo.url }}" target="_blank" class="btn btn-outline btn-sm"><i class="fas fa-paperclip"></i></a>
+          {% if p.comprobante_archivo.url|lower|slice:"-4:" == ".jpg" or p.comprobante_archivo.url|lower|slice:"-5:" == ".jpeg" or p.comprobante_archivo.url|lower|slice:"-4:" == ".png" or p.comprobante_archivo.url|lower|slice:"-5:" == ".webp" %}
+          <div style="margin-top:8px;max-width:120px;"><img src="{{ p.comprobante_archivo.url }}" alt="Adjunto" style="width:100%;border-radius:10px;border:1px solid rgba(0,0,0,0.08);"></div>
+          {% endif %}
+        {% else %}
+          —
+        {% endif %}
+      </td>
       <td style="font-size:11px;color:var(--muted);">{{ p.fecha_reporte|date:"d/m/Y H:i" }}</td>
       <td>
         <form method="post" style="display:grid;gap:6px;min-width:220px;">{% csrf_token %}

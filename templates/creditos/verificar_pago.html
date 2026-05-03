@@ -8,7 +8,12 @@
     <p style="font-size:13px;margin-bottom:14px;">Socio: <strong>{{ credito.socio.nombre_completo }}</strong><br>
     Monto reportado: <strong class="amount-pos">${{ pago.monto_pagado|floatformat:2 }}</strong><br>
     Comprobante del socio: <span class="mono">{{ pago.comprobante_referencia|default:"No indicó" }}</span>
-    {% if pago.comprobante_archivo %}<br><a href="{{ pago.comprobante_archivo.url }}" target="_blank">Ver adjunto</a>{% endif %}</p>
+    {% if pago.comprobante_archivo %}
+      <br><a href="{{ pago.comprobante_archivo.url }}" target="_blank">Ver adjunto</a>
+      {% if ".jpg" in pago.comprobante_archivo.url|lower or ".jpeg" in pago.comprobante_archivo.url|lower or ".png" in pago.comprobante_archivo.url|lower or ".webp" in pago.comprobante_archivo.url|lower %}
+      <div style="margin-top:12px;max-width:280px;"><img src="{{ pago.comprobante_archivo.url }}" alt="Adjunto" style="width:100%;border-radius:10px;border:1px solid rgba(0,0,0,0.08);"></div>
+      {% endif %}
+    {% endif %}</p>
     <form method="post">{% csrf_token %}
       <div class="form-group"><label class="form-label">Observación (obligatoria si rechaza)</label><input type="text" name="observacion" class="form-control"></div>
       <div style="display:flex;gap:10px;"><button type="submit" name="accion" value="verificar" class="btn btn-success" style="flex:1;justify-content:center;"><i class="fas fa-check-circle"></i> Comprobado — Verificar</button>

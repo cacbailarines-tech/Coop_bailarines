@@ -1,8 +1,11 @@
 import json
 import logging
+import os
 import re
 
 from django.conf import settings
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
@@ -11,6 +14,7 @@ from django.db.models import Sum
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.db import IntegrityError, transaction
+from django.utils.crypto import get_random_string
 from .models import Socio, AccesoSocio, Libreta, AporteMensual, Periodo
 from creditos.models import Credito, PagoCredito, BANCO_CHOICES
 from multas.models import Multa, Reunion
@@ -273,6 +277,13 @@ def parse_amount_from_share_text(text):
         return None
 
 
+def save_shared_uploaded_file(uploaded_file):
+    safe_name = uploaded_file.name.replace(' ', '_')
+    unique_name = f'{timezone.now().strftime("%Y%m%d%H%M%S")}_{get_random_string(8)}_{safe_name}'
+    temp_path = os.path.join('temp_comprobantes_compartidos', unique_name)
+    return default_storage.save(temp_path, uploaded_file)
+
+
 @csrf_exempt
 def portal_share_target(request):
     if request.method != 'POST':
@@ -287,6 +298,17 @@ def portal_share_target(request):
     text = request.POST.get('text', '').strip()
     url = request.POST.get('url', '').strip()
     comprobante = request.POST.get('comprobante', '').strip() or text or title or url
+
+    if request.FILES.get('comprobante_archivo'):
+        shared_path = save_shared_uploaded_file(request.FILES['comprobante_archivo'])
+        request.session['portal_shared_file'] = shared_path
+        request.session['portal_shared_file_name'] = os.path.basename(request.FILES['comprobante_archivo'].name)
+        try:
+            request.session['portal_shared_file_url'] = default_storage.url(shared_path)
+        except Exception:
+            request.session['portal_shared_file_url'] = ''
+        if not comprobante:
+            comprobante = request.FILES['comprobante_archivo'].name
 
     if not comprobante and request.FILES:
         first_file = next(iter(request.FILES.values()))
@@ -306,11 +328,20 @@ def portal_share_target(request):
         socio=socio,
         estado__in=['desembolsado', 'mora_leve', 'mora_media', 'mora_grave'],
     )
-    if active_creditos.count() == 1:
+    pending_aportes = AporteMensual.objects.filter(
+        libreta__socio=socio,
+        estado__in=['pendiente', 'atrasado'],
+    ).select_related('libreta').order_by('libreta__numero', 'anio', 'mes').first()
+
+    if active_creditos.count() == 1 and not pending_aportes:
         return redirect('portal_reportar_pago', cred_pk=active_creditos.first().pk)
 
-    messages.success(request, 'Comprobante compartido recibido. Seleccione su crédito y abra el formulario de pago.')
-    return redirect('portal_creditos')
+    if active_creditos.exists() or pending_aportes:
+        messages.success(request, 'Comprobante compartido recibido. Seleccione los conceptos a pagar en el centro de pagos.')
+        return redirect('portal_pago_combinado')
+
+    messages.success(request, 'Comprobante compartido recibido. Seleccione el concepto a pagar.')
+    return redirect('portal_inicio')
 
 
 @require_POST
@@ -577,23 +608,48 @@ def portal_reportar_aporte(request, lib_pk, mes):
     if aporte.estado == 'verificado':
         messages.info(request, 'Este aporte ya fue verificado por la administración.')
         return redirect('portal_libretas')
+    shared_comprobante = request.session.pop('portal_shared_comprobante', '')
+    shared_monto = request.session.pop('portal_shared_monto', '')
+    shared_file_path = request.session.pop('portal_shared_file', '')
+    shared_file_url = request.session.pop('portal_shared_file_url', '')
+    shared_file_name = request.session.pop('portal_shared_file_name', '')
+    form_values = {
+        'comprobante_referencia': shared_comprobante,
+        'monto': shared_monto or str(aporte.monto_total),
+        'observacion': '',
+        'shared_file_path': shared_file_path,
+        'shared_file_url': shared_file_url,
+        'shared_file_name': shared_file_name,
+    }
     if request.method == 'POST':
         comprobante = request.POST.get('comprobante', '').strip()
         if not comprobante:
             messages.error(request, 'Debe ingresar el número de comprobante o referencia de transferencia.')
-            return render(request, 'portal/reportar_aporte.html', {'libreta': libreta, 'aporte': aporte})
+            return render(request, 'portal/reportar_aporte.html', {
+                'libreta': libreta, 'aporte': aporte, 'form_values': form_values
+            })
         aporte.estado = 'reportado'
         aporte.fecha_reporte = timezone.now()
         aporte.comprobante_referencia = comprobante
         if request.FILES.get('comprobante_archivo'):
             aporte.comprobante_archivo = request.FILES.get('comprobante_archivo')
+        else:
+            shared_path = request.POST.get('shared_file_path', '')
+            if shared_path:
+                try:
+                    with default_storage.open(shared_path, 'rb') as f:
+                        aporte.comprobante_archivo.save(os.path.basename(shared_path), ContentFile(f.read()), save=False)
+                except Exception:
+                    pass
         aporte.observacion = request.POST.get('observacion', '')
         aporte.save()
         notify_admin_aporte_reportado(aporte)
         registrar_auditoria(None, 'verificaciones', 'reporte_aporte_portal', f'El socio {socio.nombre_completo} reportó un aporte.', 'AporteMensual', aporte.pk)
         messages.success(request, f'Aporte de {aporte.get_mes_display()} reportado. La administración lo verificará pronto.')
         return redirect('portal_libretas')
-    return render(request, 'portal/reportar_aporte.html', {'libreta': libreta, 'aporte': aporte})
+    return render(request, 'portal/reportar_aporte.html', {
+        'libreta': libreta, 'aporte': aporte, 'form_values': form_values
+    })
 
 
 # ── CRÉDITOS ──────────────────────────────────────────────────────────────────
@@ -750,12 +806,18 @@ def portal_reportar_pago(request, cred_pk):
     pago_pendiente = credito.pagos.filter(estado='reportado').exists()
     shared_comprobante = request.session.pop('portal_shared_comprobante', '')
     shared_monto = request.session.pop('portal_shared_monto', '')
+    shared_file_path = request.session.pop('portal_shared_file', '')
+    shared_file_url = request.session.pop('portal_shared_file_url', '')
+    shared_file_name = request.session.pop('portal_shared_file_name', '')
     form_values = {
         'comprobante_referencia': request.GET.get('comprobante', '').strip() or shared_comprobante,
         'monto_pagado': request.GET.get('monto', '').strip() or request.GET.get('monto_pagado', '').strip() or shared_monto or (
             credito.cuota_mensual if credito.tipo == 'mensualizado' else credito.saldo_pendiente
         ),
         'observaciones': request.GET.get('observaciones', '').strip(),
+        'shared_file_path': shared_file_path,
+        'shared_file_url': shared_file_url,
+        'shared_file_name': shared_file_name,
     }
     if request.method == 'POST':
         try:
@@ -786,8 +848,7 @@ def portal_reportar_pago(request, cred_pk):
         saldo_ant = credito.saldo_pendiente
         nuevo_saldo = max(saldo_ant - monto, Decimal('0'))
         num_pago = credito.pagos.count() + 1
-        pago = PagoCredito.objects.create(
-            comprobante_archivo=request.FILES.get('comprobante_archivo'),
+        pago = PagoCredito(
             credito=credito, numero_pago=num_pago,
             monto_pagado=monto,
             saldo_anterior=saldo_ant,
@@ -797,6 +858,17 @@ def portal_reportar_pago(request, cred_pk):
             es_abono=(credito.tipo == 'no_mensualizado'),
             observaciones=request.POST.get('observaciones', ''),
         )
+        if request.FILES.get('comprobante_archivo'):
+            pago.comprobante_archivo = request.FILES.get('comprobante_archivo')
+        else:
+            shared_path = request.POST.get('shared_file_path', '')
+            if shared_path:
+                try:
+                    with default_storage.open(shared_path, 'rb') as f:
+                        pago.comprobante_archivo.save(os.path.basename(shared_path), ContentFile(f.read()), save=False)
+                except Exception:
+                    pass
+        pago.save()
         # Actualizar saldo provisionalmente
         credito.saldo_pendiente = nuevo_saldo
         if nuevo_saldo <= 0:
@@ -832,6 +904,18 @@ def portal_pago_combinado(request):
         observaciones__icontains='Pago reportado por socio.'
     ).select_related('libreta').order_by('-fecha_generacion')
 
+    shared_comprobante = request.session.pop('portal_shared_comprobante', '')
+    shared_monto = request.session.pop('portal_shared_monto', '')
+    shared_file_path = request.session.pop('portal_shared_file', '')
+    shared_file_url = request.session.pop('portal_shared_file_url', '')
+    shared_file_name = request.session.pop('portal_shared_file_name', '')
+    form_values = {
+        'comprobante_referencia': shared_comprobante,
+        'shared_file_path': shared_file_path,
+        'shared_file_url': shared_file_url,
+        'shared_file_name': shared_file_name,
+    }
+
     if request.method == 'POST':
         aporte_ids = request.POST.getlist('aporte_ids')
         credito_ids = request.POST.getlist('credito_ids')
@@ -839,13 +923,20 @@ def portal_pago_combinado(request):
         comprobante = request.POST.get('comprobante_referencia', '').strip()
         observacion = request.POST.get('observacion', '').strip()
         comprobante_archivo = request.FILES.get('comprobante_archivo')
+        shared_path = request.POST.get('shared_file_path', '')
 
         if not (aporte_ids or credito_ids or multa_ids):
             messages.error(request, 'Debe seleccionar al menos un concepto para reportar.')
-            return render(request, 'portal/pago_combinado.html', {'socio': socio, 'aportes': aportes, 'creditos': creditos, 'multas': multas})
+            return render(request, 'portal/pago_combinado.html', {
+                'socio': socio, 'aportes': aportes, 'creditos': creditos, 'multas': multas,
+                'form_values': form_values
+            })
         if not comprobante:
             messages.error(request, 'Debe ingresar el numero de comprobante de la transferencia.')
-            return render(request, 'portal/pago_combinado.html', {'socio': socio, 'aportes': aportes, 'creditos': creditos, 'multas': multas})
+            return render(request, 'portal/pago_combinado.html', {
+                'socio': socio, 'aportes': aportes, 'creditos': creditos, 'multas': multas,
+                'form_values': form_values
+            })
 
         aportes_sel = list(aportes.filter(pk__in=aporte_ids))
         creditos_sel = list(creditos.filter(pk__in=credito_ids))
@@ -857,6 +948,14 @@ def portal_pago_combinado(request):
             if comprobante_archivo and hasattr(comprobante_archivo, 'seek'):
                 comprobante_archivo.seek(0)
 
+        def aplicar_archivo_compartido(obj):
+            if shared_path and not comprobante_archivo:
+                try:
+                    with default_storage.open(shared_path, 'rb') as f:
+                        obj.comprobante_archivo.save(os.path.basename(shared_path), ContentFile(f.read()), save=False)
+                except Exception:
+                    pass
+
         for aporte in aportes_sel:
             aporte.estado = 'reportado'
             aporte.fecha_reporte = timezone.now()
@@ -864,6 +963,8 @@ def portal_pago_combinado(request):
             if comprobante_archivo:
                 reiniciar_archivo()
                 aporte.comprobante_archivo = comprobante_archivo
+            else:
+                aplicar_archivo_compartido(aporte)
             aporte.observacion = observacion
             aporte.save()
             total_reportado += aporte.monto_total
@@ -873,7 +974,10 @@ def portal_pago_combinado(request):
             monto = Decimal(request.POST.get(f'credito_monto_{credito.pk}', '0') or '0')
             if monto <= 0:
                 messages.error(request, f'El monto reportado para el credito {credito.numero} debe ser mayor a cero.')
-                return render(request, 'portal/pago_combinado.html', {'socio': socio, 'aportes': aportes, 'creditos': creditos, 'multas': multas})
+                return render(request, 'portal/pago_combinado.html', {
+                    'socio': socio, 'aportes': aportes, 'creditos': creditos, 'multas': multas,
+                    'form_values': form_values
+                })
             if credito.tipo == 'no_mensualizado':
                 tipo_pago = 'abono'
             else:
@@ -898,6 +1002,9 @@ def portal_pago_combinado(request):
                 es_abono=es_abono,
                 observaciones=detalle,
             )
+            if not comprobante_archivo:
+                aplicar_archivo_compartido(pago)
+                pago.save(update_fields=['comprobante_archivo'])
             pagos_creados.append(pago)
             credito.saldo_pendiente = nuevo_saldo
             if nuevo_saldo <= 0:
@@ -915,6 +1022,8 @@ def portal_pago_combinado(request):
             if comprobante_archivo:
                 reiniciar_archivo()
                 multa.comprobante_archivo = comprobante_archivo
+            else:
+                aplicar_archivo_compartido(multa)
             multa.save()
             total_reportado += multa.monto
             registrar_auditoria(None, 'verificaciones', 'reporte_multa_combinado_portal', f'El socio {socio.nombre_completo} reporto una multa dentro de un pago combinado.', 'Multa', multa.pk, {'comprobante': comprobante})
@@ -939,6 +1048,7 @@ def portal_pago_combinado(request):
         'aportes': aportes,
         'creditos': creditos,
         'multas': multas,
+        'form_values': form_values,
     })
 
 
@@ -965,22 +1075,39 @@ def portal_reportar_multa(request, multa_pk):
     if redir:
         return redir
     multa = get_object_or_404(Multa, pk=multa_pk, socio=socio, estado='pendiente')
+    shared_comprobante = request.session.pop('portal_shared_comprobante', '')
+    shared_file_path = request.session.pop('portal_shared_file', '')
+    shared_file_url = request.session.pop('portal_shared_file_url', '')
+    shared_file_name = request.session.pop('portal_shared_file_name', '')
+    form_values = {
+        'comprobante_referencia': shared_comprobante,
+        'shared_file_path': shared_file_path,
+        'shared_file_url': shared_file_url,
+        'shared_file_name': shared_file_name,
+    }
     if request.method == 'POST':
         comprobante = request.POST.get('comprobante', '').strip()
         if not comprobante:
             messages.error(request, 'Debe ingresar el número de comprobante.')
-            return render(request, 'portal/reportar_multa.html', {'multa': multa})
-        # Store comprobante in observaciones and mark as "reported" (admin still must confirm)
+            return render(request, 'portal/reportar_multa.html', {'multa': multa, 'form_values': form_values})
         multa.observaciones = f'Pago reportado por socio. Comprobante: {comprobante}. Obs: {request.POST.get("observacion","")}'
         multa.comprobante_pago = comprobante
         if request.FILES.get('comprobante_archivo'):
             multa.comprobante_archivo = request.FILES.get('comprobante_archivo')
+        else:
+            shared_path = request.POST.get('shared_file_path', '')
+            if shared_path:
+                try:
+                    with default_storage.open(shared_path, 'rb') as f:
+                        multa.comprobante_archivo.save(os.path.basename(shared_path), ContentFile(f.read()), save=False)
+                except Exception:
+                    pass
         multa.save()
         notify_admin_multa_reportada(multa)
         registrar_auditoria(None, 'verificaciones', 'reporte_multa_portal', f'El socio {socio.nombre_completo} reportó el pago de una multa.', 'Multa', multa.pk)
         messages.success(request, f'Pago de multa de ${multa.monto:.2f} reportado. La administración lo verificará.')
         return redirect('portal_multas')
-    return render(request, 'portal/reportar_multa.html', {'multa': multa})
+    return render(request, 'portal/reportar_multa.html', {'multa': multa, 'form_values': form_values})
 
 
 def portal_mis_solicitudes(request):
