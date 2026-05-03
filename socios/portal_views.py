@@ -38,6 +38,8 @@ from core.image_ocr import extraer_comprobante_de_imagen
 
 from django.contrib.auth.hashers import make_password, check_password
 
+logger = logging.getLogger(__name__)
+
 def legacy_hash_pin(pin):
     return hashlib.sha256(pin.encode()).hexdigest()
 
@@ -318,12 +320,18 @@ def portal_share_target(request):
         request.session['portal_shared_file_name'] = os.path.basename(uploaded.name)
         request.session['portal_shared_file_data'] = base64.b64encode(file_data).decode('utf-8')
         nombre_archivo = uploaded.name
+        logger.info('Share: archivo recibido "%s", tamano: %d bytes', nombre_archivo, len(file_data))
 
         if any(nombre_archivo.lower().endswith(ext) for ext in ('.jpg', '.jpeg', '.png', '.webp')):
+            logger.info('Share: imagen detectada, iniciando OCR')
             comprobante_extraido = extraer_comprobante_de_imagen(file_data, nombre_archivo)
+            logger.info('Share: OCR resultado: %s', comprobante_extraido)
             if comprobante_extraido:
                 comprobante = comprobante_extraido
                 request.session['portal_shared_ocr_detected'] = comprobante_extraido
+                logger.info('Share: comprobante OCR guardado en sesion: %s', comprobante_extraido)
+
+    logger.info('Share: comprobante final: "%s"', comprobante)
 
     monto = request.POST.get('monto', '').strip()
     if not monto:
@@ -921,12 +929,14 @@ def portal_pago_combinado(request):
     shared_file_data = request.session.pop('portal_shared_file_data', '')
     shared_file_name = request.session.pop('portal_shared_file_name', '')
     ocr_detected = request.session.pop('portal_shared_ocr_detected', '')
+    logger.info('Pago combinado: comprobante="%s", ocr="%s", file="%s"', shared_comprobante, ocr_detected, shared_file_name)
     form_values = {
         'comprobante_referencia': ocr_detected or shared_comprobante,
         'shared_file_path': shared_file_path,
         'shared_file_data': shared_file_data,
         'shared_file_name': shared_file_name,
     }
+    logger.info('Pago combinado: form_values comprobante_referencia="%s"', form_values['comprobante_referencia'])
 
     if request.method == 'POST':
         aporte_ids = request.POST.getlist('aporte_ids')
