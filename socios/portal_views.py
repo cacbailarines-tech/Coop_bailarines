@@ -308,18 +308,12 @@ def portal_share_target(request):
             request.session['portal_shared_file_url'] = default_storage.url(shared_path)
         except Exception:
             request.session['portal_shared_file_url'] = ''
-        if not comprobante:
-            comprobante = request.FILES['comprobante_archivo'].name
         nombre_archivo = request.FILES['comprobante_archivo'].name
         if any(nombre_archivo.lower().endswith(ext) for ext in ('.jpg', '.jpeg', '.png', '.webp')):
             comprobante_extraido = extraer_comprobante_de_imagen(default_storage.path(shared_path) if hasattr(default_storage, 'path') else shared_path)
             if comprobante_extraido:
                 comprobante = comprobante_extraido
                 request.session['portal_shared_ocr_detected'] = comprobante_extraido
-
-    if not comprobante and request.FILES:
-        first_file = next(iter(request.FILES.values()))
-        comprobante = first_file.name
 
     monto = request.POST.get('monto', '').strip()
     if not monto:
