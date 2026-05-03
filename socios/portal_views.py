@@ -308,12 +308,6 @@ def portal_share_target(request):
             request.session['portal_shared_file_url'] = default_storage.url(shared_path)
         except Exception:
             request.session['portal_shared_file_url'] = ''
-        nombre_archivo = request.FILES['comprobante_archivo'].name
-        if any(nombre_archivo.lower().endswith(ext) for ext in ('.jpg', '.jpeg', '.png', '.webp')):
-            comprobante_extraido = extraer_comprobante_de_imagen(default_storage.path(shared_path) if hasattr(default_storage, 'path') else shared_path)
-            if comprobante_extraido:
-                comprobante = comprobante_extraido
-                request.session['portal_shared_ocr_detected'] = comprobante_extraido
 
     monto = request.POST.get('monto', '').strip()
     if not monto:
@@ -325,10 +319,6 @@ def portal_share_target(request):
     if monto:
         request.session['portal_shared_monto'] = monto
 
-    ocr_detected = request.session.pop('portal_shared_ocr_detected', '')
-    if ocr_detected:
-        messages.success(request, f'Numero de comprobante detectado automaticamente: {ocr_detected}')
-
     active_creditos = Credito.objects.filter(
         socio=socio,
         estado__in=['desembolsado', 'mora_leve', 'mora_media', 'mora_grave'],
@@ -338,10 +328,14 @@ def portal_share_target(request):
         estado__in=['pendiente', 'atrasado'],
     ).select_related('libreta').order_by('libreta__numero', 'anio', 'mes').first()
 
-    if active_creditos.count() == 1 and not pending_aportes:
-        return redirect('portal_reportar_pago', cred_pk=active_creditos.first().pk)
-
     if active_creditos.exists() or pending_aportes:
+        shared_file = request.session.get('portal_shared_file', '')
+        shared_file_name = request.session.get('portal_shared_file_name', '')
+        if shared_file and any(shared_file_name.lower().endswith(ext) for ext in ('.jpg', '.jpeg', '.png', '.webp')):
+            comprobante_extraido = extraer_comprobante_de_imagen(default_storage.path(shared_file) if hasattr(default_storage, 'path') else shared_file)
+            if comprobante_extraido:
+                request.session['portal_shared_ocr_detected'] = comprobante_extraido
+                messages.success(request, f'Numero de comprobante detectado automaticamente: {comprobante_extraido}')
         messages.success(request, 'Comprobante compartido recibido. Seleccione los conceptos a pagar en el centro de pagos.')
         return redirect('portal_pago_combinado')
 
@@ -618,9 +612,8 @@ def portal_reportar_aporte(request, lib_pk, mes):
     shared_file_path = request.session.pop('portal_shared_file', '')
     shared_file_url = request.session.pop('portal_shared_file_url', '')
     shared_file_name = request.session.pop('portal_shared_file_name', '')
-    ocr_detected = request.session.pop('portal_shared_ocr_detected', '')
     form_values = {
-        'comprobante_referencia': ocr_detected or shared_comprobante,
+        'comprobante_referencia': shared_comprobante,
         'monto': shared_monto or str(aporte.monto_total),
         'observacion': '',
         'shared_file_path': shared_file_path,
@@ -815,8 +808,7 @@ def portal_reportar_pago(request, cred_pk):
     shared_file_path = request.session.pop('portal_shared_file', '')
     shared_file_url = request.session.pop('portal_shared_file_url', '')
     shared_file_name = request.session.pop('portal_shared_file_name', '')
-    ocr_detected = request.session.pop('portal_shared_ocr_detected', '')
-    comprobante_inicial = request.GET.get('comprobante', '').strip() or ocr_detected or shared_comprobante
+    comprobante_inicial = request.GET.get('comprobante', '').strip() or shared_comprobante
     form_values = {
         'comprobante_referencia': comprobante_inicial,
         'monto_pagado': request.GET.get('monto', '').strip() or request.GET.get('monto_pagado', '').strip() or shared_monto or (
@@ -1088,9 +1080,8 @@ def portal_reportar_multa(request, multa_pk):
     shared_file_path = request.session.pop('portal_shared_file', '')
     shared_file_url = request.session.pop('portal_shared_file_url', '')
     shared_file_name = request.session.pop('portal_shared_file_name', '')
-    ocr_detected = request.session.pop('portal_shared_ocr_detected', '')
     form_values = {
-        'comprobante_referencia': ocr_detected or shared_comprobante,
+        'comprobante_referencia': shared_comprobante,
         'shared_file_path': shared_file_path,
         'shared_file_url': shared_file_url,
         'shared_file_name': shared_file_name,
