@@ -1,7 +1,8 @@
 from django.urls import path
 from . import views
 urlpatterns = [
-    path('', views.redirect_root),
+    path('', views.home, name='home'),
+    path('nosotros/', views.about, name='about'),
     path('manifest.webmanifest', views.pwa_manifest, name='pwa_manifest'),
     path('service-worker.js', views.service_worker, name='service_worker'),
     path('offline/', views.offline_page, name='offline_page'),

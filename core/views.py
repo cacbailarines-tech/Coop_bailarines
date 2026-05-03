@@ -35,6 +35,16 @@ from .models import AuditoriaSistema, CajaDiaria, Movimiento, PerfilUsuario
 from .utils import has_role, registrar_auditoria, require_roles
 
 
+def home(request):
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+    return render(request, 'core/landing.html')
+
+
+def about(request):
+    return render(request, 'core/about.html')
+
+
 def redirect_root(request):
     return redirect('dashboard') if request.user.is_authenticated else redirect('login')
 

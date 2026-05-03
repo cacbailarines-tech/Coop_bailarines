@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sobre Nosotros - Cooperativa Bailarines</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; background: linear-gradient(135deg, #F8FAFF 0%, #E8EEF5 100%); color: #1A2332; }
+  .page-header { display: flex; align-items: center; justify-content: space-between; padding: 22px 36px; position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.94); backdrop-filter: blur(14px); border-bottom: 1px solid rgba(27, 34, 55, 0.08); }
+  .brand { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 18px; color: #9b122c; text-decoration: none; }
+  .brand img { width: 42px; height: 42px; object-fit: contain; }
+  .page-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .page-actions a { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 999px; text-decoration: none; font-weight: 700; font-size: 13px; transition: transform 0.2s, background 0.2s, color 0.2s; }
+  .btn-ghost { background: rgba(255,255,255,0.95); color: #4D5B6D; border: 1px solid rgba(155,18,44,0.15); }
+  .btn-primary { background: #9b122c; color: white; }
+  .content { max-width: 1080px; margin: 0 auto; padding: 36px 24px 80px; }
+  .hero { background: white; border-radius: 28px; padding: 36px; box-shadow: 0 28px 70px rgba(37, 61, 111, 0.08); border: 1px solid rgba(15, 34, 97, 0.06); margin-bottom: 28px; }
+  .hero h1 { font-size: clamp(2.8rem, 4vw, 4rem); line-height: 1.02; margin-bottom: 18px; color: #0B3D91; }
+  .hero p { color: #4D5B6D; font-size: 1.05rem; line-height: 1.75; max-width: 760px; }
+  .info-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+  .info-block { background: white; border-radius: 24px; border: 1px solid rgba(155,18,44,0.12); padding: 28px; }
+  .info-block h2 { font-size: 1.4rem; margin-bottom: 14px; color: #0B3D91; }
+  .info-block p { color: #4D5B6D; line-height: 1.75; }
+  .info-block ul { padding-left: 18px; color: #4D5B6D; }
+  .info-block li { margin-bottom: 12px; }
+  .quote-card { background: rgba(155,18,44,0.08); border-radius: 24px; padding: 28px; margin-top: 24px; }
+  .quote-card strong { display: block; margin-bottom: 12px; font-size: 1.1rem; color: #0B3D91; }
+  .footer { text-align: center; padding: 20px 0 0; color: #6B7A99; font-size: 0.95rem; }
+  @media (max-width: 860px) { .info-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 640px) { .page-header { flex-direction: column; align-items: stretch; gap: 12px; } }
+</style>
+</head>
+<body>
+<header class="page-header">
+  <a href="/" class="brand"><img src="/static/img/logo.png" alt="Cooperativa Bailarines"> Cooperativa Bailarines</a>
+  <div class="page-actions">
+    <a href="/" class="btn btn-ghost"><i class="fas fa-arrow-left"></i> Volver</a>
+    <a href="/portal/" class="btn btn-primary"><i class="fas fa-user-circle"></i> Portal Socio</a>
+  </div>
+</header>
+<main class="content">
+  <section class="hero">
+    <h1>Sobre la Cooperativa Bailarines</h1>
+    <p>Somos una cooperativa que impulsa a los bailarines con servicios financieros sólidos, ahorro colaborativo y crédito justo. Nuestra misión es que cada socio pueda administrar su dinero con confianza desde un sistema claro y accesible.</p>
+  </section>
+  <div class="info-grid">
+    <div class="info-block">
+      <h2>Nuestra misión</h2>
+      <p>Fomentar la cultura del ahorro, ofrecer soporte financiero al socio y garantizar una gestión cooperativa transparente y cercana.</p>
+    </div>
+    <div class="info-block">
+      <h2>Lo que ofrecemos</h2>
+      <ul>
+        <li>Portal del socio para consultar libreta y pagos.</li>
+        <li>Panel administrativo con gestión de créditos y aportes.</li>
+        <li>Soporte a socios y seguimiento de préstamos.</li>
+      </ul>
+    </div>
+    <div class="info-block">
+      <h2>Valores</h2>
+      <ul>
+        <li>Transparencia en cada transacción.</li>
+        <li>Compromiso con nuestros socios.</li>
+        <li>Solidaridad en las decisiones financieras.</li>
+      </ul>
+    </div>
+    <div class="info-block">
+      <h2>Visión</h2>
+      <p>Ser la cooperativa de referencia para bailarines, con un ecosistema digital que facilite el ahorro y deje huella en la comunidad.</p>
+    </div>
+  </div>
+  <div class="quote-card">
+    <strong>¿Quieres saber más?</strong>
+    <p>Si necesitas atención personalizada o deseas afiliarte a la cooperativa, escríbenos a <a href="mailto:cacbailarines@gmail.com" style="color:#9b122c; text-decoration:none; font-weight:700;">cacbailarines@gmail.com</a> o contáctanos desde el portal.</p>
+  </div>
+  <div class="footer">
+    <p>Cooperativa Bailarines © {% now "Y" %}</p>
+  </div>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
