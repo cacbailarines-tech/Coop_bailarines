@@ -37,7 +37,7 @@
       <div class="alert alert-success" style="margin-bottom:16px;">
         <i class="fas fa-image"></i> Archivo adjunto recibido:
         <a href="{{ form_values.shared_file_url }}" target="_blank" style="font-weight:700;">{{ form_values.shared_file_name|default:"Ver comprobante" }}</a>
-        {% if form_values.shared_file_name.endswith ".jpg" or form_values.shared_file_name.endswith ".jpeg" or form_values.shared_file_name.endswith ".png" or form_values.shared_file_name.endswith ".webp" %}
+        {% if ".jpg" in form_values.shared_file_name|lower or ".jpeg" in form_values.shared_file_name|lower or ".png" in form_values.shared_file_name|lower or ".webp" in form_values.shared_file_name|lower %}
         <div style="margin-top:12px;"><img src="{{ form_values.shared_file_url }}" alt="Comprobante" style="max-width:100%;border-radius:12px;border:1px solid rgba(0,0,0,0.08);"></div>
         {% endif %}
       </div>
