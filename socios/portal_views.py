@@ -32,6 +32,7 @@ from core.email_notifications import (
     notify_admin_pago_credito_reportado,
     notify_socio_login,
 )
+from core.image_ocr import extraer_comprobante_de_imagen
 
 
 from django.contrib.auth.hashers import make_password, check_password
@@ -309,6 +310,12 @@ def portal_share_target(request):
             request.session['portal_shared_file_url'] = ''
         if not comprobante:
             comprobante = request.FILES['comprobante_archivo'].name
+        nombre_archivo = request.FILES['comprobante_archivo'].name
+        if any(nombre_archivo.lower().endswith(ext) for ext in ('.jpg', '.jpeg', '.png', '.webp')):
+            comprobante_extraido = extraer_comprobante_de_imagen(default_storage.path(shared_path) if hasattr(default_storage, 'path') else shared_path)
+            if comprobante_extraido:
+                comprobante = comprobante_extraido
+                request.session['portal_shared_ocr_detected'] = comprobante_extraido
 
     if not comprobante and request.FILES:
         first_file = next(iter(request.FILES.values()))
@@ -323,6 +330,10 @@ def portal_share_target(request):
         request.session['portal_shared_comprobante'] = comprobante
     if monto:
         request.session['portal_shared_monto'] = monto
+
+    ocr_detected = request.session.pop('portal_shared_ocr_detected', '')
+    if ocr_detected:
+        messages.success(request, f'Numero de comprobante detectado automaticamente: {ocr_detected}')
 
     active_creditos = Credito.objects.filter(
         socio=socio,
@@ -613,8 +624,9 @@ def portal_reportar_aporte(request, lib_pk, mes):
     shared_file_path = request.session.pop('portal_shared_file', '')
     shared_file_url = request.session.pop('portal_shared_file_url', '')
     shared_file_name = request.session.pop('portal_shared_file_name', '')
+    ocr_detected = request.session.pop('portal_shared_ocr_detected', '')
     form_values = {
-        'comprobante_referencia': shared_comprobante,
+        'comprobante_referencia': ocr_detected or shared_comprobante,
         'monto': shared_monto or str(aporte.monto_total),
         'observacion': '',
         'shared_file_path': shared_file_path,
@@ -809,8 +821,10 @@ def portal_reportar_pago(request, cred_pk):
     shared_file_path = request.session.pop('portal_shared_file', '')
     shared_file_url = request.session.pop('portal_shared_file_url', '')
     shared_file_name = request.session.pop('portal_shared_file_name', '')
+    ocr_detected = request.session.pop('portal_shared_ocr_detected', '')
+    comprobante_inicial = request.GET.get('comprobante', '').strip() or ocr_detected or shared_comprobante
     form_values = {
-        'comprobante_referencia': request.GET.get('comprobante', '').strip() or shared_comprobante,
+        'comprobante_referencia': comprobante_inicial,
         'monto_pagado': request.GET.get('monto', '').strip() or request.GET.get('monto_pagado', '').strip() or shared_monto or (
             credito.cuota_mensual if credito.tipo == 'mensualizado' else credito.saldo_pendiente
         ),
@@ -909,8 +923,9 @@ def portal_pago_combinado(request):
     shared_file_path = request.session.pop('portal_shared_file', '')
     shared_file_url = request.session.pop('portal_shared_file_url', '')
     shared_file_name = request.session.pop('portal_shared_file_name', '')
+    ocr_detected = request.session.pop('portal_shared_ocr_detected', '')
     form_values = {
-        'comprobante_referencia': shared_comprobante,
+        'comprobante_referencia': ocr_detected or shared_comprobante,
         'shared_file_path': shared_file_path,
         'shared_file_url': shared_file_url,
         'shared_file_name': shared_file_name,
@@ -1079,8 +1094,9 @@ def portal_reportar_multa(request, multa_pk):
     shared_file_path = request.session.pop('portal_shared_file', '')
     shared_file_url = request.session.pop('portal_shared_file_url', '')
     shared_file_name = request.session.pop('portal_shared_file_name', '')
+    ocr_detected = request.session.pop('portal_shared_ocr_detected', '')
     form_values = {
-        'comprobante_referencia': shared_comprobante,
+        'comprobante_referencia': ocr_detected or shared_comprobante,
         'shared_file_path': shared_file_path,
         'shared_file_url': shared_file_url,
         'shared_file_name': shared_file_name,

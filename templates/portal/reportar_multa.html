@@ -30,7 +30,7 @@
       <input type="hidden" name="shared_file_path" value="{{ form_values.shared_file_path }}">
       {% if form_values.comprobante_referencia %}
       <div class="alert alert-info" style="margin-bottom:16px;">
-        <i class="fas fa-share-from-square"></i> Comprobante recibido: <strong>{{ form_values.comprobante_referencia }}</strong>. Verifique y envíe el reporte.
+        <i class="fas fa-robot"></i> Comprobante detectado automaticamente: <strong>{{ form_values.comprobante_referencia }}</strong>. Verifique y envíe el reporte.
       </div>
       {% endif %}
       {% if form_values.shared_file_url %}
