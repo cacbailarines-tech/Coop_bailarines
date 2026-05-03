@@ -72,7 +72,7 @@
       <td>{{ m.descripcion }}{% if m.observaciones %}<div style="font-size:10px;color:var(--muted);margin-top:4px;">{{ m.observaciones|truncatechars:60 }}</div>{% endif %}</td>
       <td style="font-size:11px;color:var(--muted);">{{ m.socio_ref|default:"—" }}{% if m.libreta_ref %}<div>Lib. {{ m.libreta_ref }}</div>{% endif %}{% if m.credito_ref %}<div>Crd. {{ m.credito_ref }}</div>{% endif %}</td>
       <td class="mono">{{ m.comprobante|default:"—" }}</td>
-      <td>{% if m.comprobante_archivo %}<a href="{{ m.comprobante_archivo.url|media_url }}" target="_blank" class="btn btn-outline btn-sm"><i class="fas fa-paperclip"></i></a>{% else %}<span style="color:var(--muted);">—</span>{% endif %}</td>
+      <td>{% if m.comprobante_archivo %}<a href="{{ m.comprobante_archivo|comprobante_url }}" target="_blank" class="btn btn-outline btn-sm"><i class="fas fa-paperclip"></i></a>{% else %}<span style="color:var(--muted);">—</span>{% endif %}</td>
       <td class="{% if m.tipo == 'ingreso' %}amount-pos{% else %}amount-neg{% endif %}" style="font-size:15px;font-weight:800;">{% if m.tipo == 'ingreso' %}+{% else %}-{% endif %}${{ m.monto|floatformat:2 }}</td>
       <td><span class="badge {% if m.origen == 'automatico' %}badge-primary{% else %}badge-secondary{% endif %}">{{ m.get_origen_display }}</span></td>
       <td style="font-size:11px;">{{ m.registrado_por.get_full_name|default:m.registrado_por.username|default:"Sistema" }}</td>

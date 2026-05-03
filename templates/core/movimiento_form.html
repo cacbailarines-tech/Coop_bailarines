@@ -74,7 +74,7 @@
           <div class="form-group">
             <label class="form-label">Adjuntar Comprobante</label>
             <input type="file" name="comprobante_archivo" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.webp">
-            {% if mov.comprobante_archivo %}<div class="form-text"><a href="{{ mov.comprobante_archivo.url|media_url }}" target="_blank">Ver archivo actual</a></div>{% endif %}
+            {% if mov.comprobante_archivo %}<div class="form-text"><a href="{{ mov.comprobante_archivo|comprobante_url }}" target="_blank">Ver archivo actual</a></div>{% endif %}
           </div>
           <div class="form-group">
             <label class="form-label">Socio Relacionado</label>

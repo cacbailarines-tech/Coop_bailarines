@@ -10,9 +10,9 @@
     Monto reportado: <strong class="amount-pos">${{ pago.monto_pagado|floatformat:2 }}</strong><br>
     Comprobante del socio: <span class="mono">{{ pago.comprobante_referencia|default:"No indicó" }}</span>
     {% if pago.comprobante_archivo %}
-      <br><a href="{{ pago.comprobante_archivo.url|media_url }}" target="_blank">Ver adjunto</a>
-      {% if ".jpg" in pago.comprobante_archivo.url|lower or ".jpeg" in pago.comprobante_archivo.url|lower or ".png" in pago.comprobante_archivo.url|lower or ".webp" in pago.comprobante_archivo.url|lower %}
-      <div style="margin-top:12px;max-width:280px;"><img src="{{ pago.comprobante_archivo.url|media_url }}" alt="Adjunto" style="width:100%;border-radius:10px;border:1px solid rgba(0,0,0,0.08);"></div>
+      <br><a href="{{ pago.comprobante_archivo|comprobante_url }}" target="_blank">Ver adjunto</a>
+      {% if ".jpg" in pago.comprobante_archivo.name|lower or ".jpeg" in pago.comprobante_archivo.name|lower or ".png" in pago.comprobante_archivo.name|lower or ".webp" in pago.comprobante_archivo.name|lower %}
+      <div style="margin-top:12px;max-width:280px;"><img src="{{ pago.comprobante_archivo|comprobante_url }}" alt="Adjunto" style="width:100%;border-radius:10px;border:1px solid rgba(0,0,0,0.08);"></div>
       {% endif %}
     {% endif %}</p>
     <form method="post">{% csrf_token %}
