@@ -16,6 +16,7 @@ urlpatterns = [
     path('creditos/solicitar/', portal_views.portal_solicitar_credito, name='portal_solicitar_credito'),
     path('creditos/<int:cred_pk>/pago/', portal_views.portal_reportar_pago, name='portal_reportar_pago'),
     path('pagos/combinado/', portal_views.portal_pago_combinado, name='portal_pago_combinado'),
+    path('compartir/', portal_views.portal_share_target, name='portal_share_target'),
     path('multas/', portal_views.portal_multas, name='portal_multas'),
     path('multas/<int:multa_pk>/pagar/', portal_views.portal_reportar_multa, name='portal_reportar_multa'),
     path('push/subscribe/', portal_views.portal_push_subscribe, name='portal_push_subscribe'),

@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 
 from django.conf import settings
 from django.http import JsonResponse
@@ -8,6 +9,7 @@ from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Sum
 from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
 from django.db import IntegrityError, transaction
 from .models import Socio, AccesoSocio, Libreta, AporteMensual, Periodo
 from creditos.models import Credito, PagoCredito, BANCO_CHOICES
@@ -257,6 +259,58 @@ Cooperativa Bailarines"""
             return redirect('portal_login')
             
     return render(request, 'portal/recuperar_pin.html', {'estado_otp': estado_otp})
+
+
+def parse_amount_from_share_text(text):
+    if not text:
+        return None
+    match = re.search(r'\$?\s*([0-9]+(?:[\.,][0-9]{1,2})?)', text)
+    if not match:
+        return None
+    try:
+        return Decimal(match.group(1).replace(',', '.'))
+    except Exception:
+        return None
+
+
+@csrf_exempt
+def portal_share_target(request):
+    if request.method != 'POST':
+        return redirect('portal_inicio')
+
+    socio, redir = get_socio_or_redirect(request)
+    if redir:
+        messages.error(request, 'Debe iniciar sesión para usar el objetivo de compartir.')
+        return redirect('portal_login')
+
+    title = request.POST.get('title', '').strip()
+    text = request.POST.get('text', '').strip()
+    url = request.POST.get('url', '').strip()
+    comprobante = request.POST.get('comprobante', '').strip() or text or title or url
+
+    if not comprobante and request.FILES:
+        first_file = next(iter(request.FILES.values()))
+        comprobante = first_file.name
+
+    monto = request.POST.get('monto', '').strip()
+    if not monto:
+        parsed = parse_amount_from_share_text(text) or parse_amount_from_share_text(title)
+        monto = str(parsed) if parsed is not None else ''
+
+    if comprobante:
+        request.session['portal_shared_comprobante'] = comprobante
+    if monto:
+        request.session['portal_shared_monto'] = monto
+
+    active_creditos = Credito.objects.filter(
+        socio=socio,
+        estado__in=['desembolsado', 'mora_leve', 'mora_media', 'mora_grave'],
+    )
+    if active_creditos.count() == 1:
+        return redirect('portal_reportar_pago', cred_pk=active_creditos.first().pk)
+
+    messages.success(request, 'Comprobante compartido recibido. Seleccione su crédito y abra el formulario de pago.')
+    return redirect('portal_creditos')
 
 
 @require_POST
@@ -694,22 +748,41 @@ def portal_reportar_pago(request, cred_pk):
         return redirect('portal_creditos')
     # Verificar que no haya un pago pendiente de verificación
     pago_pendiente = credito.pagos.filter(estado='reportado').exists()
+    shared_comprobante = request.session.pop('portal_shared_comprobante', '')
+    shared_monto = request.session.pop('portal_shared_monto', '')
+    form_values = {
+        'comprobante_referencia': request.GET.get('comprobante', '').strip() or shared_comprobante,
+        'monto_pagado': request.GET.get('monto', '').strip() or request.GET.get('monto_pagado', '').strip() or shared_monto or (
+            credito.cuota_mensual if credito.tipo == 'mensualizado' else credito.saldo_pendiente
+        ),
+        'observaciones': request.GET.get('observaciones', '').strip(),
+    }
     if request.method == 'POST':
         try:
             monto = Decimal(request.POST.get('monto_pagado', '0'))
         except Exception:
+            form_values = {
+                'comprobante_referencia': request.POST.get('comprobante_referencia', '').strip(),
+                'monto_pagado': request.POST.get('monto_pagado', ''),
+                'observaciones': request.POST.get('observaciones', ''),
+            }
             messages.error(request, 'Monto inválido.')
-            return render(request, 'portal/reportar_pago.html', {'credito': credito, 'pago_pendiente': pago_pendiente})
+            return render(request, 'portal/reportar_pago.html', {'credito': credito, 'pago_pendiente': pago_pendiente, 'form_values': form_values})
         comprobante = request.POST.get('comprobante_referencia', '').strip()
+        form_values = {
+            'comprobante_referencia': comprobante,
+            'monto_pagado': request.POST.get('monto_pagado', ''),
+            'observaciones': request.POST.get('observaciones', ''),
+        }
         if monto <= 0:
             messages.error(request, 'El monto debe ser mayor a cero.')
-            return render(request, 'portal/reportar_pago.html', {'credito': credito, 'pago_pendiente': pago_pendiente})
+            return render(request, 'portal/reportar_pago.html', {'credito': credito, 'pago_pendiente': pago_pendiente, 'form_values': form_values})
         if monto > credito.saldo_pendiente:
             messages.error(request, f'El monto no puede ser mayor al saldo pendiente (${credito.saldo_pendiente}).')
-            return render(request, 'portal/reportar_pago.html', {'credito': credito, 'pago_pendiente': pago_pendiente})
+            return render(request, 'portal/reportar_pago.html', {'credito': credito, 'pago_pendiente': pago_pendiente, 'form_values': form_values})
         if not comprobante:
             messages.error(request, 'Debe ingresar el número de comprobante de la transferencia.')
-            return render(request, 'portal/reportar_pago.html', {'credito': credito, 'pago_pendiente': pago_pendiente})
+            return render(request, 'portal/reportar_pago.html', {'credito': credito, 'pago_pendiente': pago_pendiente, 'form_values': form_values})
         saldo_ant = credito.saldo_pendiente
         nuevo_saldo = max(saldo_ant - monto, Decimal('0'))
         num_pago = credito.pagos.count() + 1
@@ -738,6 +811,7 @@ def portal_reportar_pago(request, cred_pk):
     return render(request, 'portal/reportar_pago.html', {
         'credito': credito,
         'pago_pendiente': pago_pendiente,
+        'form_values': form_values,
     })
 
 

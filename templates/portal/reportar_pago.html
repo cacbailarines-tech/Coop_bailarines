@@ -45,12 +45,17 @@
     <div style="background:rgba(155,18,44,0.06);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:var(--primary);">
       <i class="fas fa-info-circle"></i> Primero realice la transferencia a la cuenta autorizada de la cooperativa. Luego ingrese el comprobante aqu&iacute;.
     </div>
+    {% if form_values.comprobante_referencia %}
+    <div class="alert alert-info" style="margin-bottom:16px;">
+      <i class="fas fa-share-from-square"></i> Comprobante recibido: <strong>{{ form_values.comprobante_referencia }}</strong>. Complete el monto y envíe el reporte.
+    </div>
+    {% endif %}
     <form method="post" enctype="multipart/form-data">
       {% csrf_token %}
       <div style="margin-bottom:14px;">
         <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">Monto Pagado ($) *</label>
         <input type="number" name="monto_pagado" class="form-control" min="0.01" step="0.01"
-          value="{% if credito.tipo == 'mensualizado' %}{{ credito.cuota_mensual }}{% else %}{{ credito.saldo_pendiente }}{% endif %}"
+          value="{{ form_values.monto_pagado }}"
           required style="font-size:22px;font-weight:700;text-align:center;color:var(--success);">
         {% if credito.tipo == 'no_mensualizado' %}
         <div style="font-size:11px;color:var(--muted);margin-top:3px;">Puede pagar el total o hacer un abono parcial</div>
@@ -58,11 +63,13 @@
       </div>
       <div style="margin-bottom:14px;">
         <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">N&uacute;mero de comprobante *</label>
-        <input type="text" name="comprobante_referencia" class="form-control" required placeholder="N&uacute;mero de transacci&oacute;n o comprobante">
+        <input type="text" name="comprobante_referencia" class="form-control" required placeholder="N&uacute;mero de transacci&oacute;n o comprobante"
+          value="{{ form_values.comprobante_referencia }}">
       </div>
       <div style="margin-bottom:16px;">
         <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">Observaci&oacute;n (opcional)</label>
-        <input type="text" name="observaciones" class="form-control" placeholder="Ej: Pago cuota enero">
+        <input type="text" name="observaciones" class="form-control" placeholder="Ej: Pago cuota enero"
+          value="{{ form_values.observaciones }}">
       </div>
       <div style="margin-bottom:16px;">
         <label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">Adjuntar comprobante (opcional)</label>

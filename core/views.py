@@ -105,7 +105,22 @@ def pwa_manifest(request):
                 "url": "/dashboard/",
                 "icons": [{"src": "/static/img/logo.png", "sizes": "192x192", "type": "image/png"}]
             }
-        ]
+        ],
+        "share_target": {
+            "action": "/portal/compartir/",
+            "method": "POST",
+            "enctype": "multipart/form-data",
+            "params": {
+                "title": "title",
+                "text": "text",
+                "files": [
+                    {
+                        "name": "comprobante_archivo",
+                        "accept": ["image/*", "application/pdf"]
+                    }
+                ]
+            }
+        }
     })
 
 
