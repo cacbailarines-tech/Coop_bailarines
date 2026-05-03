@@ -11,7 +11,7 @@ from django.contrib.auth.views import LoginView as BaseLoginView
 from django.core.management import call_command
 from django.core.paginator import Paginator
 from django.db.models import Q, Sum
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, FileResponse
 from django.shortcuts import get_object_or_404, redirect, render
 import io
 from django.utils import timezone
@@ -1000,3 +1000,20 @@ def busqueda_global(request):
         'multas': multas,
         'estado_badge_credito': _badge_estado_credito,
     })
+
+
+@login_required
+def servir_comprobante(request, path):
+    file_path = os.path.join(settings.MEDIA_ROOT, path)
+    if not os.path.exists(file_path):
+        return HttpResponse('Archivo no encontrado', status=404)
+    content_type = 'application/octet-stream'
+    if path.lower().endswith(('.jpg', '.jpeg')):
+        content_type = 'image/jpeg'
+    elif path.lower().endswith('.png'):
+        content_type = 'image/png'
+    elif path.lower().endswith('.webp'):
+        content_type = 'image/webp'
+    elif path.lower().endswith('.pdf'):
+        content_type = 'application/pdf'
+    return FileResponse(open(file_path, 'rb'), content_type=content_type)

@@ -1,4 +1,5 @@
 from django import template
+from django.conf import settings
 
 register = template.Library()
 
@@ -19,3 +20,18 @@ def money_fmt(value):
         return fmt
     except (ValueError, TypeError):
         return value
+
+
+@register.filter
+def media_url(url):
+    """
+    Convierte una URL de /media/ a una URL servida por Django.
+    Ejemplo: /media/comprobantes/aporte.jpg -> /core/media/comprobantes/aporte.jpg
+    """
+    if not url:
+        return ''
+    if url.startswith('/media/'):
+        return '/core/media/' + url[7:]
+    if url.startswith(settings.MEDIA_URL):
+        return '/core/media/' + url[len(settings.MEDIA_URL):]
+    return url

@@ -28,4 +28,5 @@ urlpatterns = [
     path('solicitudes/', views.solicitudes_pendientes, name='solicitudes_pendientes'),
     path('cumpleanos/', views.cumpleanos_calendario, name='cumpleanos_calendario'),
     path('cumpleanos/<int:socio_pk>/registrar-egreso/', views.cumpleanos_registrar_egreso, name='cumpleanos_registrar_egreso'),
+    path('media/<path:path>', views.servir_comprobante, name='servir_comprobante'),
 ]
