@@ -8,36 +8,41 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; background: linear-gradient(135deg, #F8FAFF 0%, #E8EEF5 100%); color: #1A2332; }
-  .page-header { display: flex; align-items: center; justify-content: space-between; padding: 22px 36px; position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.94); backdrop-filter: blur(14px); border-bottom: 1px solid rgba(27, 34, 55, 0.08); }
-  .brand { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 18px; color: #9b122c; text-decoration: none; }
-  .brand img { width: 42px; height: 42px; object-fit: contain; }
-  .page-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-  .page-actions a { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 999px; text-decoration: none; font-weight: 700; font-size: 13px; transition: transform 0.2s, background 0.2s, color 0.2s; }
-  .btn-ghost { background: rgba(255,255,255,0.95); color: #4D5B6D; border: 1px solid rgba(155,18,44,0.15); }
-  .btn-primary { background: #9b122c; color: white; }
-  .content { max-width: 1080px; margin: 0 auto; padding: 36px 24px 80px; }
-  .hero { background: white; border-radius: 28px; padding: 36px; box-shadow: 0 28px 70px rgba(37, 61, 111, 0.08); border: 1px solid rgba(15, 34, 97, 0.06); margin-bottom: 28px; }
-  .hero h1 { font-size: clamp(2.8rem, 4vw, 4rem); line-height: 1.02; margin-bottom: 18px; color: #0B3D91; }
-  .hero p { color: #4D5B6D; font-size: 1.05rem; line-height: 1.75; max-width: 760px; }
-  .info-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
-  .info-block { background: white; border-radius: 24px; border: 1px solid rgba(155,18,44,0.12); padding: 28px; }
-  .info-block h2 { font-size: 1.4rem; margin-bottom: 14px; color: #0B3D91; }
-  .info-block p { color: #4D5B6D; line-height: 1.75; }
-  .info-block ul { padding-left: 18px; color: #4D5B6D; }
-  .info-block li { margin-bottom: 12px; }
-  .quote-card { background: rgba(155,18,44,0.08); border-radius: 24px; padding: 28px; margin-top: 24px; }
-  .quote-card strong { display: block; margin-bottom: 12px; font-size: 1.1rem; color: #0B3D91; }
-  .footer { text-align: center; padding: 20px 0 0; color: #6B7A99; font-size: 0.95rem; }
-  @media (max-width: 860px) { .info-grid { grid-template-columns: 1fr; } }
-  @media (max-width: 640px) { .page-header { flex-direction: column; align-items: stretch; gap: 12px; } }
+:root { --primary:#9b122c; --primary-light:#bd1636; --accent:#F2A900; --bg:#F8FAFF; --surface:#FFFFFF; --text:#1A2332; --muted:#6B7A99; --border:#DDE3EF; }
+*{box-sizing:border-box;margin:0;padding:0;}
+body { font-family:'Plus Jakarta Sans', sans-serif; min-height:100vh; background: linear-gradient(135deg, #F8FAFF 0%, #E8EEF5 100%); color: var(--text); }
+.page-header { position: sticky; top: 0; z-index: 100; margin: 16px; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; background: rgba(255,255,255,0.90); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.75); border-radius: 18px; box-shadow: 0 18px 40px rgba(0,0,0,0.08); }
+.brand { display:flex; align-items:center; gap:12px; color: var(--primary); font-weight:800; text-decoration:none; }
+.brand img { width: 46px; height: 46px; object-fit: contain; }
+.page-actions { display:flex; gap:10px; flex-wrap:wrap; }
+.btn { display:inline-flex; align-items:center; gap:8px; padding: 10px 16px; border-radius: 999px; font-weight:700; font-size:13px; text-decoration:none; transition: all 0.2s ease; }
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: var(--primary-light); }
+.btn-outline { background: rgba(255,255,255,0.95); color: var(--text); border: 1px solid rgba(155,18,44,0.15); }
+.btn-outline:hover { transform: translateY(-2px); border-color: var(--primary); color: var(--primary); }
+.content { max-width: 1080px; margin: 0 auto; padding: 32px 24px 72px; }
+.hero { background: rgba(255,255,255,0.92); border-radius: 28px; padding: 38px; box-shadow: 0 28px 70px rgba(37, 61, 111, 0.08); border: 1px solid rgba(255,255,255,0.75); margin-bottom: 32px; }
+.hero h1 { font-size: clamp(2.8rem, 4vw, 4rem); line-height: 1.02; margin-bottom: 18px; color: #0B3D91; }
+.hero p { color: var(--muted); font-size: 1.05rem; line-height: 1.75; max-width: 760px; }
+.info-grid { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:24px; }
+.info-block { background: rgba(255,255,255,0.92); border:1px solid rgba(155,18,44,0.13); border-radius:24px; padding: 28px; box-shadow: 0 18px 36px rgba(15,34,97,0.05); }
+.info-block h2 { font-size: 1.4rem; margin-bottom: 14px; color: #0B3D91; }
+.info-block p, .info-block li { color: var(--muted); line-height: 1.75; }
+.info-block ul { padding-left: 18px; margin-top: 8px; }
+.info-block li { margin-bottom: 12px; }
+.quote-card { background: rgba(155,18,44,0.08); border-radius: 24px; padding: 28px; margin-top: 28px; border: 1px solid rgba(155,18,44,0.12); }
+.quote-card strong { display:block; margin-bottom:12px; font-size:1.1rem; color:#0B3D91; }
+.quote-card a { color: var(--primary); font-weight:700; text-decoration:none; }
+.footer { text-align:center; padding: 24px 0 0; color: var(--muted); font-size:0.95rem; }
+@media(max-width:860px){ .info-grid { grid-template-columns: 1fr; } }
+@media(max-width:640px){ .page-header { flex-direction:column; align-items:flex-start; } }
 </style>
 </head>
 <body>
 <header class="page-header">
   <a href="/" class="brand"><img src="/static/img/logo.png" alt="Cooperativa Bailarines"> Cooperativa Bailarines</a>
   <div class="page-actions">
-    <a href="/" class="btn btn-ghost"><i class="fas fa-arrow-left"></i> Volver</a>
+    <a href="/" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
     <a href="/portal/" class="btn btn-primary"><i class="fas fa-user-circle"></i> Portal Socio</a>
   </div>
 </header>
@@ -74,7 +79,7 @@
   </div>
   <div class="quote-card">
     <strong>¿Quieres saber más?</strong>
-    <p>Si necesitas atención personalizada o deseas afiliarte a la cooperativa, escríbenos a <a href="mailto:cacbailarines@gmail.com" style="color:#9b122c; text-decoration:none; font-weight:700;">cacbailarines@gmail.com</a> o contáctanos desde el portal.</p>
+    <p>Si necesitas atención personalizada o deseas afiliarte a la cooperativa, escríbenos a <a href="mailto:cacbailarines@gmail.com">cacbailarines@gmail.com</a> o contáctanos desde el portal.</p>
   </div>
   <div class="footer">
     <p>Cooperativa Bailarines © {% now "Y" %}</p>
