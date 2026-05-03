@@ -194,9 +194,17 @@
   {% if form_values.shared_file_data %}
   <div class="alert alert-success" style="margin-bottom:16px;">
     <i class="fas fa-image"></i> Archivo adjunto recibido:
-    <a href="{{ form_values.shared_file_data }}" target="_blank" style="font-weight:700;">{{ form_values.shared_file_name|default:"Ver comprobante" }}</a>
-    {% if ".jpg" in form_values.shared_file_name|lower or ".jpeg" in form_values.shared_file_name|lower or ".png" in form_values.shared_file_name|lower or ".webp" in form_values.shared_file_name|lower %}
-    <div style="margin-top:12px;"><img src="{{ form_values.shared_file_data }}" alt="Comprobante" style="max-width:100%;border-radius:12px;border:1px solid rgba(0,0,0,0.08);"></div>
+    {% if ".jpg" in form_values.shared_file_name|lower or ".jpeg" in form_values.shared_file_name|lower %}
+    <a href="data:image/jpeg;base64,{{ form_values.shared_file_data }}" target="_blank" style="font-weight:700;">{{ form_values.shared_file_name|default:"Ver comprobante" }}</a>
+    <div style="margin-top:12px;"><img src="data:image/jpeg;base64,{{ form_values.shared_file_data }}" alt="Comprobante" style="max-width:100%;border-radius:12px;border:1px solid rgba(0,0,0,0.08);"></div>
+    {% elif ".png" in form_values.shared_file_name|lower %}
+    <a href="data:image/png;base64,{{ form_values.shared_file_data }}" target="_blank" style="font-weight:700;">{{ form_values.shared_file_name|default:"Ver comprobante" }}</a>
+    <div style="margin-top:12px;"><img src="data:image/png;base64,{{ form_values.shared_file_data }}" alt="Comprobante" style="max-width:100%;border-radius:12px;border:1px solid rgba(0,0,0,0.08);"></div>
+    {% elif ".webp" in form_values.shared_file_name|lower %}
+    <a href="data:image/webp;base64,{{ form_values.shared_file_data }}" target="_blank" style="font-weight:700;">{{ form_values.shared_file_name|default:"Ver comprobante" }}</a>
+    <div style="margin-top:12px;"><img src="data:image/webp;base64,{{ form_values.shared_file_data }}" alt="Comprobante" style="max-width:100%;border-radius:12px;border:1px solid rgba(0,0,0,0.08);"></div>
+    {% else %}
+    <span style="font-weight:700;">{{ form_values.shared_file_name }}</span>
     {% endif %}
   </div>
   {% endif %}

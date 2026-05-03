@@ -310,11 +310,20 @@ def portal_share_target(request):
     comprobante = request.POST.get('comprobante', '').strip() or text or title or url
 
     if request.FILES.get('comprobante_archivo'):
-        shared_path = save_shared_uploaded_file(request.FILES['comprobante_archivo'])
+        uploaded = request.FILES['comprobante_archivo']
+        file_data = uploaded.read()
+        uploaded.seek(0)
+        shared_path = save_shared_uploaded_file(uploaded)
         request.session['portal_shared_file'] = shared_path
-        request.session['portal_shared_file_name'] = os.path.basename(request.FILES['comprobante_archivo'].name)
-        request.session['portal_shared_file_data'] = encode_uploaded_as_data_uri(request.FILES['comprobante_archivo'])
-        nombre_archivo = request.FILES['comprobante_archivo'].name
+        request.session['portal_shared_file_name'] = os.path.basename(uploaded.name)
+        request.session['portal_shared_file_data'] = base64.b64encode(file_data).decode('utf-8')
+        nombre_archivo = uploaded.name
+
+        if any(nombre_archivo.lower().endswith(ext) for ext in ('.jpg', '.jpeg', '.png', '.webp')):
+            comprobante_extraido = extraer_comprobante_de_imagen(file_data, nombre_archivo)
+            if comprobante_extraido:
+                comprobante = comprobante_extraido
+                request.session['portal_shared_ocr_detected'] = comprobante_extraido
 
     monto = request.POST.get('monto', '').strip()
     if not monto:
@@ -336,13 +345,8 @@ def portal_share_target(request):
     ).select_related('libreta').order_by('libreta__numero', 'anio', 'mes').first()
 
     if active_creditos.exists() or pending_aportes:
-        shared_file = request.session.get('portal_shared_file', '')
-        shared_file_name = request.session.get('portal_shared_file_name', '')
-        if shared_file and any(shared_file_name.lower().endswith(ext) for ext in ('.jpg', '.jpeg', '.png', '.webp')):
-            comprobante_extraido = extraer_comprobante_de_imagen(default_storage.path(shared_file) if hasattr(default_storage, 'path') else shared_file)
-            if comprobante_extraido:
-                request.session['portal_shared_ocr_detected'] = comprobante_extraido
-                messages.success(request, f'Numero de comprobante detectado automaticamente: {comprobante_extraido}')
+        if request.session.get('portal_shared_ocr_detected'):
+            messages.success(request, f'Numero de comprobante detectado automaticamente: {request.session["portal_shared_ocr_detected"]}')
         messages.success(request, 'Comprobante compartido recibido. Seleccione los conceptos a pagar en el centro de pagos.')
         return redirect('portal_pago_combinado')
 
