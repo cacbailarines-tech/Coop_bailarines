@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import re
+import base64
 
 from django.conf import settings
 from django.core.files.base import ContentFile
@@ -285,6 +286,14 @@ def save_shared_uploaded_file(uploaded_file):
     return default_storage.save(temp_path, uploaded_file)
 
 
+def encode_uploaded_as_data_uri(uploaded_file):
+    data = uploaded_file.read()
+    uploaded_file.seek(0)
+    b64 = base64.b64encode(data).decode('utf-8')
+    content_type = uploaded_file.content_type or 'image/jpeg'
+    return f'data:{content_type};base64,{b64}'
+
+
 @csrf_exempt
 def portal_share_target(request):
     if request.method != 'POST':
@@ -304,10 +313,8 @@ def portal_share_target(request):
         shared_path = save_shared_uploaded_file(request.FILES['comprobante_archivo'])
         request.session['portal_shared_file'] = shared_path
         request.session['portal_shared_file_name'] = os.path.basename(request.FILES['comprobante_archivo'].name)
-        try:
-            request.session['portal_shared_file_url'] = default_storage.url(shared_path)
-        except Exception:
-            request.session['portal_shared_file_url'] = ''
+        request.session['portal_shared_file_data'] = encode_uploaded_as_data_uri(request.FILES['comprobante_archivo'])
+        nombre_archivo = request.FILES['comprobante_archivo'].name
 
     monto = request.POST.get('monto', '').strip()
     if not monto:
@@ -610,14 +617,14 @@ def portal_reportar_aporte(request, lib_pk, mes):
     shared_comprobante = request.session.pop('portal_shared_comprobante', '')
     shared_monto = request.session.pop('portal_shared_monto', '')
     shared_file_path = request.session.pop('portal_shared_file', '')
-    shared_file_url = request.session.pop('portal_shared_file_url', '')
+    shared_file_data = request.session.pop('portal_shared_file_data', '')
     shared_file_name = request.session.pop('portal_shared_file_name', '')
     form_values = {
         'comprobante_referencia': shared_comprobante,
         'monto': shared_monto or str(aporte.monto_total),
         'observacion': '',
         'shared_file_path': shared_file_path,
-        'shared_file_url': shared_file_url,
+        'shared_file_data': shared_file_data,
         'shared_file_name': shared_file_name,
     }
     if request.method == 'POST':
@@ -806,7 +813,7 @@ def portal_reportar_pago(request, cred_pk):
     shared_comprobante = request.session.pop('portal_shared_comprobante', '')
     shared_monto = request.session.pop('portal_shared_monto', '')
     shared_file_path = request.session.pop('portal_shared_file', '')
-    shared_file_url = request.session.pop('portal_shared_file_url', '')
+    shared_file_data = request.session.pop('portal_shared_file_data', '')
     shared_file_name = request.session.pop('portal_shared_file_name', '')
     comprobante_inicial = request.GET.get('comprobante', '').strip() or shared_comprobante
     form_values = {
@@ -816,7 +823,7 @@ def portal_reportar_pago(request, cred_pk):
         ),
         'observaciones': request.GET.get('observaciones', '').strip(),
         'shared_file_path': shared_file_path,
-        'shared_file_url': shared_file_url,
+        'shared_file_data': shared_file_data,
         'shared_file_name': shared_file_name,
     }
     if request.method == 'POST':
@@ -907,13 +914,13 @@ def portal_pago_combinado(request):
     shared_comprobante = request.session.pop('portal_shared_comprobante', '')
     shared_monto = request.session.pop('portal_shared_monto', '')
     shared_file_path = request.session.pop('portal_shared_file', '')
-    shared_file_url = request.session.pop('portal_shared_file_url', '')
+    shared_file_data = request.session.pop('portal_shared_file_data', '')
     shared_file_name = request.session.pop('portal_shared_file_name', '')
     ocr_detected = request.session.pop('portal_shared_ocr_detected', '')
     form_values = {
         'comprobante_referencia': ocr_detected or shared_comprobante,
         'shared_file_path': shared_file_path,
-        'shared_file_url': shared_file_url,
+        'shared_file_data': shared_file_data,
         'shared_file_name': shared_file_name,
     }
 
@@ -1078,12 +1085,12 @@ def portal_reportar_multa(request, multa_pk):
     multa = get_object_or_404(Multa, pk=multa_pk, socio=socio, estado='pendiente')
     shared_comprobante = request.session.pop('portal_shared_comprobante', '')
     shared_file_path = request.session.pop('portal_shared_file', '')
-    shared_file_url = request.session.pop('portal_shared_file_url', '')
+    shared_file_data = request.session.pop('portal_shared_file_data', '')
     shared_file_name = request.session.pop('portal_shared_file_name', '')
     form_values = {
         'comprobante_referencia': shared_comprobante,
         'shared_file_path': shared_file_path,
-        'shared_file_url': shared_file_url,
+        'shared_file_data': shared_file_data,
         'shared_file_name': shared_file_name,
     }
     if request.method == 'POST':
