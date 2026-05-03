@@ -1,0 +1,9 @@
+.git
+.gitignore
+.venv
+__pycache__
+*.pyc
+*.pyo
+scratch_*.py
+media/temp_comprobantes_compartidos
+staticfiles
