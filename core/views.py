@@ -978,45 +978,38 @@ def verificar_todo(request):
     for a in aportes_pendientes:
         ref = a.comprobante_referencia.strip()
         if ref:
-            comprobante_groups.setdefault(ref, []).append({'tipo': 'aporte', 'pk': a.pk, 'label': f'Aporte {a.get_mes_display()} {a.anio} - {a.libreta.socio.nombre_completo}'})
+            comprobante_groups.setdefault(ref, {'ref': ref, 'archivo': a.comprobante_archivo, 'fecha': a.fecha_reporte, 'items': []})['items'].append({'tipo': 'aporte', 'pk': a.pk, 'label': f'Aporte {a.get_mes_display()} {a.anio}', 'monto': a.monto_total, 'socio': a.libreta.socio.nombre_completo, 'detalle': f'Libreta #{a.libreta.numero}'})
     for p in pagos_credito:
         ref = p.comprobante_referencia.strip()
         if ref:
-            comprobante_groups.setdefault(ref, []).append({'tipo': 'pago_credito', 'pk': p.pk, 'label': f'Pago #{p.numero_pago} - {p.credito.socio.nombre_completo}'})
+            comprobante_groups.setdefault(ref, {'ref': ref, 'archivo': p.comprobante_archivo, 'fecha': p.fecha_reporte, 'items': []})['items'].append({'tipo': 'pago_credito', 'pk': p.pk, 'label': f'Pago #{p.numero_pago}', 'monto': p.monto_pagado, 'socio': p.credito.socio.nombre_completo, 'detalle': f'Credito {p.credito.numero}'})
     for m in multas_reportadas:
         ref = m.comprobante_pago.strip()
         if ref:
-            comprobante_groups.setdefault(ref, []).append({'tipo': 'multa', 'pk': m.pk, 'label': f'Multa - {m.socio.nombre_completo}'})
+            comprobante_groups.setdefault(ref, {'ref': ref, 'archivo': m.comprobante_archivo, 'fecha': m.fecha_generacion, 'items': []})['items'].append({'tipo': 'multa', 'pk': m.pk, 'label': 'Multa', 'monto': m.monto, 'socio': m.socio.nombre_completo, 'detalle': m.descripcion})
 
-    comprobante_count_map = {}
-    comprobante_members_map = {}
-    for ref, members in comprobante_groups.items():
-        if len(members) > 1:
-            for member in members:
-                key = f"{member['tipo']}_{member['pk']}"
-                comprobante_count_map[key] = len(members)
-                comprobante_members_map[key] = members
-
+    grupos_comprobante = sorted(comprobante_groups.values(), key=lambda g: g['fecha'] or timezone.now(), reverse=True)
+    items_sueltos = []
+    refs_agrupados = {ref for ref, g in comprobante_groups.items() if len(g['items']) > 1}
     for a in aportes_pendientes:
-        key = f"aporte_{a.pk}"
-        a.comprobante_count = comprobante_count_map.get(key, 0)
-        a.comprobante_members = comprobante_members_map.get(key, [])
-        a.comprobante_ref_display = a.comprobante_referencia.strip()
+        ref = a.comprobante_referencia.strip()
+        if not ref or ref not in refs_agrupados:
+            items_sueltos.append({'tipo': 'aporte', 'pk': a.pk, 'label': f'Aporte {a.get_mes_display()} {a.anio}', 'monto': a.monto_total, 'socio': a.libreta.socio.nombre_completo, 'detalle': f'Libreta #{a.libreta.numero}', 'archivo': a.comprobante_archivo, 'fecha': a.fecha_reporte, 'ref': ref or 'Sin referencia'})
     for p in pagos_credito:
-        key = f"pago_credito_{p.pk}"
-        p.comprobante_count = comprobante_count_map.get(key, 0)
-        p.comprobante_members = comprobante_members_map.get(key, [])
-        p.comprobante_ref_display = p.comprobante_referencia.strip()
+        ref = p.comprobante_referencia.strip()
+        if not ref or ref not in refs_agrupados:
+            items_sueltos.append({'tipo': 'pago_credito', 'pk': p.pk, 'label': f'Pago #{p.numero_pago}', 'monto': p.monto_pagado, 'socio': p.credito.socio.nombre_completo, 'detalle': f'Credito {p.credito.numero}', 'archivo': p.comprobante_archivo, 'fecha': p.fecha_reporte, 'ref': ref or 'Sin referencia'})
     for m in multas_reportadas:
-        key = f"multa_{m.pk}"
-        m.comprobante_count = comprobante_count_map.get(key, 0)
-        m.comprobante_members = comprobante_members_map.get(key, [])
-        m.comprobante_ref_display = m.comprobante_pago.strip()
+        ref = m.comprobante_pago.strip()
+        if not ref or ref not in refs_agrupados:
+            items_sueltos.append({'tipo': 'multa', 'pk': m.pk, 'label': 'Multa', 'monto': m.monto, 'socio': m.socio.nombre_completo, 'detalle': m.descripcion, 'archivo': m.comprobante_archivo, 'fecha': m.fecha_generacion, 'ref': ref or 'Sin referencia'})
+    items_sueltos.sort(key=lambda i: i['fecha'] or timezone.now(), reverse=True)
+    items_sueltos_grupo = [{'ref': i['ref'], 'archivo': i['archivo'], 'fecha': i['fecha'], 'items': [i]} for i in items_sueltos]
+
+    todos_grupos = grupos_comprobante + items_sueltos_grupo
 
     return render(request, 'core/verificar_todo.html', {
-        'aportes_pendientes': aportes_pendientes,
-        'pagos_credito': pagos_credito,
-        'multas_reportadas': multas_reportadas,
+        'todos_grupos': todos_grupos,
         'total': total,
     })
 
