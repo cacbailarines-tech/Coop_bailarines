@@ -67,7 +67,7 @@
       <td style="font-weight:500;">{{ item.socio }}</td>
       <td style="font-size:12px;color:var(--muted);">{{ item.detalle }}</td>
       <td class="mono" style="font-weight:600;">${{ item.monto|floatformat:2 }}</td>
-    {% if forloop.last %}
+    {% if forloop.last and grupo.items|length > 1 %}
       <td rowspan="{{ grupo.items|length }}" style="vertical-align:middle;text-align:center;">
         <form method="post" class="grupo-form" style="display:grid;gap:6px;min-width:200px;">{% csrf_token %}
           <input type="hidden" name="tipo" value="grupo">
@@ -79,8 +79,26 @@
           </div>
         </form>
       </td>
+    {% elif forloop.last %}
+      <td>
+        <form method="post" class="grupo-form" style="display:grid;gap:6px;min-width:200px;">{% csrf_token %}
+          <input type="hidden" name="tipo" value="grupo">
+          <input type="hidden" name="items" class="grupo-items" value='{{ grupo.items|to_json }}'>
+          <input type="text" name="observacion" class="form-control" placeholder="Motivo si rechaza (vacío = aprueba)">
+          <div style="display:flex;gap:6px;">
+            <button name="accion" value="verificar" class="btn btn-success btn-sm" style="flex:1;"><i class="fas fa-check"></i> Aprobar</button>
+            <button name="accion" value="rechazar" class="btn btn-danger btn-sm"><i class="fas fa-times"></i></button>
+          </div>
+        </form>
+      </td>
     {% endif %}
     </tr>
+    {% if forloop.last %}
+    <tr style="background:rgba(11,61,145,0.06);border-bottom:2px solid var(--primary);">
+      <td colspan="4" style="text-align:right;font-weight:800;padding:8px 12px;font-size:13px;">Total comprobante <span class="mono" style="color:var(--muted);">{{ grupo.ref|truncatechars:25 }}</span>:</td>
+      <td class="mono" style="font-weight:900;font-size:15px;color:var(--primary);">${{ grupo.total_monto|floatformat:2 }}</td>
+    </tr>
+    {% endif %}
     {% endfor %}
     {% endfor %}
     </tbody>

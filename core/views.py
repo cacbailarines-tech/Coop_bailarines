@@ -989,6 +989,8 @@ def verificar_todo(request):
             comprobante_groups.setdefault(ref, {'ref': ref, 'archivo': m.comprobante_archivo, 'fecha': m.fecha_generacion, 'items': []})['items'].append({'tipo': 'multa', 'pk': m.pk, 'label': 'Multa', 'monto': m.monto, 'socio': m.socio.nombre_completo, 'detalle': m.descripcion})
 
     grupos_comprobante = sorted(comprobante_groups.values(), key=lambda g: g['fecha'] or timezone.now(), reverse=True)
+    for g in grupos_comprobante:
+        g['total_monto'] = sum(item['monto'] for item in g['items'])
     items_sueltos = []
     refs_agrupados = {ref for ref, g in comprobante_groups.items() if len(g['items']) > 1}
     for a in aportes_pendientes:
@@ -1004,7 +1006,7 @@ def verificar_todo(request):
         if not ref or ref not in refs_agrupados:
             items_sueltos.append({'tipo': 'multa', 'pk': m.pk, 'label': 'Multa', 'monto': m.monto, 'socio': m.socio.nombre_completo, 'detalle': m.descripcion, 'archivo': m.comprobante_archivo, 'fecha': m.fecha_generacion, 'ref': ref or 'Sin referencia'})
     items_sueltos.sort(key=lambda i: i['fecha'] or timezone.now(), reverse=True)
-    items_sueltos_grupo = [{'ref': i['ref'], 'archivo': i['archivo'], 'fecha': i['fecha'], 'items': [i]} for i in items_sueltos]
+    items_sueltos_grupo = [{'ref': i['ref'], 'archivo': i['archivo'], 'fecha': i['fecha'], 'items': [i], 'total_monto': i['monto']} for i in items_sueltos]
 
     todos_grupos = grupos_comprobante + items_sueltos_grupo
 
