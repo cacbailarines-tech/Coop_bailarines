@@ -1152,15 +1152,12 @@ def busqueda_global(request):
 
 @login_required
 def servir_comprobante(request, path):
-    import logging
-    logger = logging.getLogger(__name__)
+    if hasattr(settings, 'AWS_STORAGE_BUCKET_NAME') and settings.AWS_STORAGE_BUCKET_NAME:
+        s3_url = f'https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/media/{path}'
+        return redirect(s3_url)
     file_path = os.path.join(settings.MEDIA_ROOT, path)
-    logger.info('Servir comprobante: path="%s", MEDIA_ROOT="%s", file_path="%s", existe=%s', path, settings.MEDIA_ROOT, file_path, os.path.exists(file_path))
     if not os.path.exists(file_path):
-        # Listar directorio para debug
-        parent = os.path.dirname(file_path)
-        logger.info('Servir comprobante: parent="%s", parent_existe=%s, contenido=%s', parent, os.path.exists(parent), os.listdir(parent) if os.path.exists(parent) else 'N/A')
-        return HttpResponse('Archivo no encontrado: ' + file_path, status=404)
+        return HttpResponse('Archivo no encontrado', status=404)
     content_type = 'application/octet-stream'
     if path.lower().endswith(('.jpg', '.jpeg')):
         content_type = 'image/jpeg'
