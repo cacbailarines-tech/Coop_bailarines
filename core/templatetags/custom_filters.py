@@ -22,4 +22,5 @@ def comprobante_url(field):
     if not field:
         return ''
     name = getattr(field, 'name', str(field))
-    return '/core/media/' + name
+    result = '/media/' + name
+    return result

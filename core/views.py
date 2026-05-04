@@ -1004,9 +1004,15 @@ def busqueda_global(request):
 
 @login_required
 def servir_comprobante(request, path):
+    import logging
+    logger = logging.getLogger(__name__)
     file_path = os.path.join(settings.MEDIA_ROOT, path)
+    logger.info('Servir comprobante: path="%s", MEDIA_ROOT="%s", file_path="%s", existe=%s', path, settings.MEDIA_ROOT, file_path, os.path.exists(file_path))
     if not os.path.exists(file_path):
-        return HttpResponse('Archivo no encontrado', status=404)
+        # Listar directorio para debug
+        parent = os.path.dirname(file_path)
+        logger.info('Servir comprobante: parent="%s", parent_existe=%s, contenido=%s', parent, os.path.exists(parent), os.listdir(parent) if os.path.exists(parent) else 'N/A')
+        return HttpResponse('Archivo no encontrado: ' + file_path, status=404)
     content_type = 'application/octet-stream'
     if path.lower().endswith(('.jpg', '.jpeg')):
         content_type = 'image/jpeg'
