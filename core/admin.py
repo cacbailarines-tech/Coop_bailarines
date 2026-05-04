@@ -15,9 +15,15 @@ class ConfiguracionSistemaAdmin(admin.ModelAdmin):
     list_display_links = ['id']
 
     def has_add_permission(self, request):
-        return ConfiguracionSistema.objects.count() == 0
+        try:
+            return ConfiguracionSistema.objects.count() == 0
+        except Exception:
+            return True
 
     def changelist_view(self, request, extra_context=None):
-        if not ConfiguracionSistema.objects.exists():
-            ConfiguracionSistema.objects.create()
+        try:
+            if not ConfiguracionSistema.objects.exists():
+                ConfiguracionSistema.objects.create()
+        except Exception:
+            pass
         return super().changelist_view(request, extra_context)
