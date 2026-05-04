@@ -10,8 +10,9 @@ class PerfilUsuarioAdmin(admin.ModelAdmin):
 
 @admin.register(ConfiguracionSistema)
 class ConfiguracionSistemaAdmin(admin.ModelAdmin):
-    list_display = ['modo_mantenimiento', 'mensaje_mantenimiento']
+    list_display = ['id', 'modo_mantenimiento', 'mensaje_mantenimiento']
     list_editable = ['modo_mantenimiento', 'mensaje_mantenimiento']
+    list_display_links = ['id']
 
     def has_add_permission(self, request):
         return ConfiguracionSistema.objects.count() == 0
