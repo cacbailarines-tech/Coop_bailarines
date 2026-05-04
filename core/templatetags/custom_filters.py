@@ -2,8 +2,16 @@ from django import template
 from django.conf import settings
 import os
 import json
+from decimal import Decimal
 
 register = template.Library()
+
+class DjangoEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return float(obj)
+        return super().default(obj)
+
 
 @register.filter
 def money_fmt(value):
@@ -31,4 +39,4 @@ def comprobante_url(field):
 def to_json(value):
     if value is None:
         return '[]'
-    return json.dumps(value)
+    return json.dumps(value, cls=DjangoEncoder)
