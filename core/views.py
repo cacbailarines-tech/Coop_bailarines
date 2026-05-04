@@ -130,6 +130,9 @@ def service_worker(request):
         'static_version': f'v-{int(time.time())}',
     }, content_type='application/javascript')
     response['Service-Worker-Allowed'] = '/'
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
     return response
 
 
