@@ -20,7 +20,12 @@ class MaintenanceModeMiddleware:
                 logger.info('Mantenimiento activo: mostrando pagina 503 para %s', request.path)
                 template = loader.get_template('core/maintenance.html')
                 mensaje = config.mensaje_mantenimiento or 'Estamos realizando mejoras. Volvemos pronto.'
-                return HttpResponse(template.render({'mensaje': mensaje}), status=503)
+                response = HttpResponse(template.render({'mensaje': mensaje}), status=503)
+                response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+                response['Pragma'] = 'no-cache'
+                response['Expires'] = '0'
+                response['Service-Worker-Allowed'] = '/'
+                return response
             else:
                 logger.debug('Mantenimiento NO activo (config=%s)', config)
         except Exception as e:
