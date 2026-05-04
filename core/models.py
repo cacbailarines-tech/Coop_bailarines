@@ -148,3 +148,23 @@ class PushSubscription(models.Model):
         ordering = ['-updated_at']
         verbose_name = 'Suscripción Push'
         verbose_name_plural = 'Suscripciones Push'
+
+
+class ConfiguracionSistema(models.Model):
+    modo_mantenimiento = models.BooleanField(
+        default=False,
+        help_text='Activa el modo mantenimiento para mostrar página de espera a los usuarios.'
+    )
+    mensaje_mantenimiento = models.CharField(
+        max_length=300,
+        blank=True,
+        default='Estamos realizando mejoras en el sistema. Volvemos pronto.',
+        help_text='Mensaje personalizado para la página de mantenimiento.'
+    )
+
+    def __str__(self):
+        return 'Configuración del Sistema'
+
+    class Meta:
+        verbose_name = 'Configuración del Sistema'
+        verbose_name_plural = 'Configuración del Sistema'
