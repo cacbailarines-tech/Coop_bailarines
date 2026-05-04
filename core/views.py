@@ -1152,9 +1152,6 @@ def busqueda_global(request):
 
 @login_required
 def servir_comprobante(request, path):
-    if hasattr(settings, 'AWS_STORAGE_BUCKET_NAME') and settings.AWS_STORAGE_BUCKET_NAME:
-        s3_url = f'https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/media/{path}'
-        return redirect(s3_url)
     file_path = os.path.join(settings.MEDIA_ROOT, path)
     if not os.path.exists(file_path):
         return HttpResponse('Archivo no encontrado', status=404)

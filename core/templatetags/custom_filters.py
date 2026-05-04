@@ -31,10 +31,6 @@ def comprobante_url(field):
     if not field:
         return ''
     name = getattr(field, 'name', str(field))
-    bucket = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', '')
-    region = getattr(settings, 'AWS_S3_REGION_NAME', 'us-east-1')
-    if bucket:
-        return f'https://{bucket}.s3.{region}.amazonaws.com/media/{name}'
     return '/media/' + name
 
 
