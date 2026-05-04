@@ -33,16 +33,39 @@
       <td>{% if a.comprobante_archivo %}<a href="{{ a.comprobante_archivo|comprobante_url }}" target="_blank" class="btn btn-outline btn-sm"><i class="fas fa-paperclip"></i></a>{% else %}—{% endif %}</td>
       <td style="font-size:11px;color:var(--muted);">{{ a.fecha_reporte|date:"d/m/Y H:i"|default:"—" }}</td>
       <td>
-        <form method="post" style="display:grid;gap:6px;min-width:220px;">{% csrf_token %}
-          <input type="hidden" name="tipo" value="aporte">
-          <input type="hidden" name="pk" value="{{ a.pk }}">
-          <input type="text" name="comprobante" class="form-control" placeholder="Confirmar comprobante" value="{{ a.comprobante_referencia }}">
-          <input type="text" name="observacion" class="form-control" placeholder="Motivo si rechaza">
-          <div style="display:flex;gap:6px;">
-            <button name="accion" value="verificar" class="btn btn-success btn-sm" style="flex:1;"><i class="fas fa-check"></i> Verificar</button>
-            <button name="accion" value="rechazar" class="btn btn-danger btn-sm"><i class="fas fa-times"></i></button>
+        {% if a.comprobante_count %}
+          <div style="display:grid;gap:6px;min-width:220px;">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              <span class="badge badge-primary" style="font-size:11px;">{{ a.comprobante_count }} reportes mismo comprobante</span>
+              <form method="post" class="grupo-form" style="display:inline;">{% csrf_token %}
+                <input type="hidden" name="tipo" value="grupo">
+                <input type="hidden" name="items" class="grupo-items" value='{{ a.comprobante_members|to_json }}'>
+                <button name="accion" value="verificar" class="btn btn-success btn-sm"><i class="fas fa-check-double"></i> Verificar todos</button>
+              </form>
+            </div>
+            <form method="post" class="individual-form" style="display:grid;gap:6px;">{% csrf_token %}
+              <input type="hidden" name="tipo" value="aporte">
+              <input type="hidden" name="pk" value="{{ a.pk }}">
+              <input type="text" name="comprobante" class="form-control" placeholder="Confirmar comprobante" value="{{ a.comprobante_referencia }}">
+              <input type="text" name="observacion" class="form-control" placeholder="Motivo si rechaza">
+              <div style="display:flex;gap:6px;">
+                <button name="accion" value="verificar" class="btn btn-success btn-sm" style="flex:1;"><i class="fas fa-check"></i> Verificar</button>
+                <button name="accion" value="rechazar" class="btn btn-danger btn-sm"><i class="fas fa-times"></i></button>
+              </div>
+            </form>
           </div>
-        </form>
+        {% else %}
+          <form method="post" style="display:grid;gap:6px;min-width:220px;">{% csrf_token %}
+            <input type="hidden" name="tipo" value="aporte">
+            <input type="hidden" name="pk" value="{{ a.pk }}">
+            <input type="text" name="comprobante" class="form-control" placeholder="Confirmar comprobante" value="{{ a.comprobante_referencia }}">
+            <input type="text" name="observacion" class="form-control" placeholder="Motivo si rechaza">
+            <div style="display:flex;gap:6px;">
+              <button name="accion" value="verificar" class="btn btn-success btn-sm" style="flex:1;"><i class="fas fa-check"></i> Verificar</button>
+              <button name="accion" value="rechazar" class="btn btn-danger btn-sm"><i class="fas fa-times"></i></button>
+            </div>
+          </form>
+        {% endif %}
       </td>
     </tr>
     {% endfor %}
@@ -79,15 +102,37 @@
       </td>
       <td style="font-size:11px;color:var(--muted);">{{ p.fecha_reporte|date:"d/m/Y H:i" }}</td>
       <td>
-        <form method="post" style="display:grid;gap:6px;min-width:220px;">{% csrf_token %}
-          <input type="hidden" name="tipo" value="pago_credito">
-          <input type="hidden" name="pk" value="{{ p.pk }}">
-          <input type="text" name="observacion" class="form-control" placeholder="Motivo si rechaza">
-          <div style="display:flex;gap:6px;">
-            <button name="accion" value="verificar" class="btn btn-success btn-sm" style="flex:1;"><i class="fas fa-check"></i> Verificar</button>
-            <button name="accion" value="rechazar" class="btn btn-danger btn-sm"><i class="fas fa-times"></i></button>
+        {% if p.comprobante_count %}
+          <div style="display:grid;gap:6px;min-width:220px;">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              <span class="badge badge-primary" style="font-size:11px;">{{ p.comprobante_count }} reportes mismo comprobante</span>
+              <form method="post" class="grupo-form" style="display:inline;">{% csrf_token %}
+                <input type="hidden" name="tipo" value="grupo">
+                <input type="hidden" name="items" class="grupo-items" value='{{ p.comprobante_members|to_json }}'>
+                <button name="accion" value="verificar" class="btn btn-success btn-sm"><i class="fas fa-check-double"></i> Verificar todos</button>
+              </form>
+            </div>
+            <form method="post" class="individual-form" style="display:grid;gap:6px;">{% csrf_token %}
+              <input type="hidden" name="tipo" value="pago_credito">
+              <input type="hidden" name="pk" value="{{ p.pk }}">
+              <input type="text" name="observacion" class="form-control" placeholder="Motivo si rechaza">
+              <div style="display:flex;gap:6px;">
+                <button name="accion" value="verificar" class="btn btn-success btn-sm" style="flex:1;"><i class="fas fa-check"></i> Verificar</button>
+                <button name="accion" value="rechazar" class="btn btn-danger btn-sm"><i class="fas fa-times"></i></button>
+              </div>
+            </form>
           </div>
-        </form>
+        {% else %}
+          <form method="post" style="display:grid;gap:6px;min-width:220px;">{% csrf_token %}
+            <input type="hidden" name="tipo" value="pago_credito">
+            <input type="hidden" name="pk" value="{{ p.pk }}">
+            <input type="text" name="observacion" class="form-control" placeholder="Motivo si rechaza">
+            <div style="display:flex;gap:6px;">
+              <button name="accion" value="verificar" class="btn btn-success btn-sm" style="flex:1;"><i class="fas fa-check"></i> Verificar</button>
+              <button name="accion" value="rechazar" class="btn btn-danger btn-sm"><i class="fas fa-times"></i></button>
+            </div>
+          </form>
+        {% endif %}
       </td>
     </tr>
     {% endfor %}
@@ -114,16 +159,39 @@
       <td style="font-size:11px;color:var(--muted);">{{ m.observaciones|truncatechars:70 }}</td>
       <td>{% if m.comprobante_archivo %}<a href="{{ m.comprobante_archivo|comprobante_url }}" target="_blank" class="btn btn-outline btn-sm"><i class="fas fa-paperclip"></i></a>{% else %}—{% endif %}</td>
       <td>
-        <form method="post" style="display:grid;gap:6px;min-width:220px;">{% csrf_token %}
-          <input type="hidden" name="tipo" value="multa">
-          <input type="hidden" name="pk" value="{{ m.pk }}">
-          <input type="text" name="comprobante" class="form-control" placeholder="Comprobante confirmado">
-          <input type="text" name="observacion" class="form-control" placeholder="Motivo si rechaza">
-          <div style="display:flex;gap:6px;">
-            <button name="accion" value="verificar" class="btn btn-success btn-sm" style="flex:1;"><i class="fas fa-check"></i> Pagada</button>
-            <button name="accion" value="rechazar" class="btn btn-danger btn-sm"><i class="fas fa-times"></i></button>
+        {% if m.comprobante_count %}
+          <div style="display:grid;gap:6px;min-width:220px;">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              <span class="badge badge-primary" style="font-size:11px;">{{ m.comprobante_count }} reportes mismo comprobante</span>
+              <form method="post" class="grupo-form" style="display:inline;">{% csrf_token %}
+                <input type="hidden" name="tipo" value="grupo">
+                <input type="hidden" name="items" class="grupo-items" value='{{ m.comprobante_members|to_json }}'>
+                <button name="accion" value="verificar" class="btn btn-success btn-sm"><i class="fas fa-check-double"></i> Verificar todos</button>
+              </form>
+            </div>
+            <form method="post" class="individual-form" style="display:grid;gap:6px;">{% csrf_token %}
+              <input type="hidden" name="tipo" value="multa">
+              <input type="hidden" name="pk" value="{{ m.pk }}">
+              <input type="text" name="comprobante" class="form-control" placeholder="Comprobante confirmado">
+              <input type="text" name="observacion" class="form-control" placeholder="Motivo si rechaza">
+              <div style="display:flex;gap:6px;">
+                <button name="accion" value="verificar" class="btn btn-success btn-sm" style="flex:1;"><i class="fas fa-check"></i> Pagada</button>
+                <button name="accion" value="rechazar" class="btn btn-danger btn-sm"><i class="fas fa-times"></i></button>
+              </div>
+            </form>
           </div>
-        </form>
+        {% else %}
+          <form method="post" style="display:grid;gap:6px;min-width:220px;">{% csrf_token %}
+            <input type="hidden" name="tipo" value="multa">
+            <input type="hidden" name="pk" value="{{ m.pk }}">
+            <input type="text" name="comprobante" class="form-control" placeholder="Comprobante confirmado">
+            <input type="text" name="observacion" class="form-control" placeholder="Motivo si rechaza">
+            <div style="display:flex;gap:6px;">
+              <button name="accion" value="verificar" class="btn btn-success btn-sm" style="flex:1;"><i class="fas fa-check"></i> Pagada</button>
+              <button name="accion" value="rechazar" class="btn btn-danger btn-sm"><i class="fas fa-times"></i></button>
+            </div>
+          </form>
+        {% endif %}
       </td>
     </tr>
     {% endfor %}
@@ -131,4 +199,24 @@
   </table></div>
 </div>
 {% endif %}
+
+<script>
+document.querySelectorAll('.grupo-form').forEach(function(form) {
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    var itemsInput = form.querySelector('.grupo-items');
+    try {
+      var items = JSON.parse(itemsInput.value);
+      var itemsData = [];
+      items.forEach(function(item) {
+        itemsData.push({tipo: item.tipo, pk: item.pk});
+      });
+      itemsInput.value = JSON.stringify(itemsData);
+      form.submit();
+    } catch(err) {
+      alert('Error al procesar el grupo de comprobantes.');
+    }
+  });
+});
+</script>
 {% endblock %}

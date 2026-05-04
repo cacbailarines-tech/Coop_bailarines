@@ -1,6 +1,7 @@
 from django import template
 from django.conf import settings
 import os
+import json
 
 register = template.Library()
 
@@ -24,3 +25,10 @@ def comprobante_url(field):
     name = getattr(field, 'name', str(field))
     result = '/media/' + name
     return result
+
+
+@register.filter
+def to_json(value):
+    if value is None:
+        return '[]'
+    return json.dumps(value)

@@ -857,12 +857,161 @@ def verificar_todo(request):
                 notify_multa_rechazada(multa, observacion)
                 messages.warning(request, 'Reporte de multa rechazado.')
 
+        elif tipo == 'grupo':
+            import json
+            items_json = request.POST.get('items', '[]')
+            observacion_grupo = request.POST.get('observacion', '').strip()
+            try:
+                items = json.loads(items_json)
+            except json.JSONDecodeError:
+                messages.error(request, 'Datos inválidos para verificación grupal.')
+                return redirect('verificar_todo')
+
+            if not items:
+                messages.error(request, 'No hay registros para verificar.')
+                return redirect('verificar_todo')
+
+            verificados = 0
+            rechazados = 0
+            for item in items:
+                item_tipo = item.get('tipo')
+                item_pk = item.get('pk')
+                try:
+                    if item_tipo == 'aporte':
+                        aporte = AporteMensual.objects.get(pk=item_pk)
+                        if observacion_grupo:
+                            aporte.estado = 'pendiente'
+                            aporte.observacion = f'Rechazado: {observacion_grupo}'
+                            aporte.save()
+                            notify_aporte_rechazado(aporte, observacion_grupo)
+                            rechazados += 1
+                        else:
+                            aporte.estado = 'verificado'
+                            aporte.fecha_verificacion = timezone.now()
+                            aporte.observacion = ''
+                            aporte.save()
+                            notify_aporte_verificado(aporte)
+                            lib = aporte.libreta
+                            lib.saldo_ahorro += aporte.monto_ahorro
+                            lib.save()
+                            Movimiento.objects.create(
+                                tipo='ingreso', categoria='aporte_mensual',
+                                descripcion=f'Aporte {aporte.get_mes_display()} {aporte.anio} - Libreta #{lib.numero} - {lib.socio.nombre_completo}',
+                                monto=aporte.monto_total, fecha=timezone.localdate(), origen='automatico',
+                                comprobante=aporte.comprobante_referencia, comprobante_archivo=aporte.comprobante_archivo,
+                                socio_ref=lib.socio.nombre_completo, libreta_ref=f'#{lib.numero}', registrado_por=request.user,
+                            )
+                            registrar_auditoria(request.user, 'verificaciones', 'verificar_aporte', f'Se verific? el aporte {aporte.get_mes_display()} {aporte.anio} (grupo).', 'AporteMensual', aporte.pk)
+                            verificados += 1
+                    elif item_tipo == 'pago_credito':
+                        pago = PagoCredito.objects.get(pk=item_pk)
+                        if observacion_grupo:
+                            pago.estado = 'rechazado'
+                            pago.observaciones = observacion_grupo
+                            pago.credito.saldo_pendiente = pago.saldo_anterior
+                            if pago.credito.estado == 'pagado':
+                                pago.credito.estado = 'desembolsado'
+                            pago.credito.save()
+                            pago.save()
+                            notify_pago_credito_rechazado(pago, observacion_grupo)
+                            rechazados += 1
+                        else:
+                            pago.estado = 'verificado'
+                            pago.fecha_verificacion = timezone.now()
+                            pago.verificado_por = request.user
+                            pago.observaciones = ''
+                            pago.save()
+                            notify_pago_credito_verificado(pago)
+                            credito = pago.credito
+                            tasa = credito.tasa_mensual
+                            saldo_antes = pago.saldo_anterior
+                            interes = saldo_antes * tasa
+                            capital = max(pago.monto_pagado - interes, 0)
+                            Movimiento.objects.create(
+                                tipo='ingreso', categoria='interes_credito',
+                                descripcion=f'Pago #{pago.numero_pago} - crédito {credito.numero} - {credito.socio.nombre_completo}',
+                                monto=pago.monto_pagado, fecha=timezone.localdate(), origen='automatico',
+                                comprobante=pago.comprobante_referencia, comprobante_archivo=pago.comprobante_archivo,
+                                socio_ref=credito.socio.nombre_completo, credito_ref=credito.numero, registrado_por=request.user,
+                                observaciones=f'Capital: ${capital:.2f} | Interés estimado: ${interes:.2f}',
+                            )
+                            registrar_auditoria(request.user, 'verificaciones', 'verificar_pago_credito', f'Se verific? el pago #{pago.numero_pago} (grupo).', 'PagoCredito', pago.pk)
+                            verificados += 1
+                    elif item_tipo == 'multa':
+                        multa = Multa.objects.get(pk=item_pk)
+                        if observacion_grupo:
+                            multa.observaciones = f'Reporte rechazado: {observacion_grupo}'
+                            multa.comprobante_pago = ''
+                            multa.comprobante_archivo = None
+                            multa.save()
+                            rechazados += 1
+                        else:
+                            multa.estado = 'pagada'
+                            multa.fecha_pago = timezone.localdate()
+                            multa.save()
+                            Movimiento.objects.create(
+                                tipo='ingreso', categoria='multa',
+                                descripcion=f'Multa pagada - {multa.socio.nombre_completo}: {multa.descripcion}',
+                                monto=multa.monto, fecha=timezone.localdate(), origen='automatico',
+                                comprobante=multa.comprobante_pago, comprobante_archivo=multa.comprobante_archivo,
+                                socio_ref=multa.socio.nombre_completo, libreta_ref=f'#{multa.libreta.numero}' if multa.libreta else '',
+                                registrado_por=request.user,
+                            )
+                            notify_multa_verificada(multa)
+                            verificados += 1
+                except Exception:
+                    continue
+
+            if rechazados:
+                messages.warning(request, f'{rechazados} reporte(s) rechazado(s) del grupo.')
+            elif verificados:
+                messages.success(request, f'{verificados} reportes verificados del mismo comprobante.')
+
         return redirect('verificar_todo')
 
-    aportes_pendientes = AporteMensual.objects.filter(estado='reportado').select_related('libreta__socio', 'libreta__periodo').order_by('-fecha_reporte')
-    pagos_credito = PagoCredito.objects.filter(estado='reportado').select_related('credito__socio', 'credito__libreta').order_by('-fecha_reporte')
-    multas_reportadas = Multa.objects.filter(estado='pendiente', observaciones__startswith='Pago reportado').select_related('socio', 'libreta').order_by('-fecha_generacion')
-    total = aportes_pendientes.count() + pagos_credito.count() + multas_reportadas.count()
+    aportes_pendientes = list(AporteMensual.objects.filter(estado='reportado').select_related('libreta__socio', 'libreta__periodo').order_by('-fecha_reporte'))
+    pagos_credito = list(PagoCredito.objects.filter(estado='reportado').select_related('credito__socio', 'credito__libreta').order_by('-fecha_reporte'))
+    multas_reportadas = list(Multa.objects.filter(estado='pendiente', observaciones__startswith='Pago reportado').select_related('socio', 'libreta').order_by('-fecha_generacion'))
+    total = len(aportes_pendientes) + len(pagos_credito) + len(multas_reportadas)
+
+    comprobante_groups = {}
+    for a in aportes_pendientes:
+        ref = a.comprobante_referencia.strip()
+        if ref:
+            comprobante_groups.setdefault(ref, []).append({'tipo': 'aporte', 'pk': a.pk, 'label': f'Aporte {a.get_mes_display()} {a.anio} - {a.libreta.socio.nombre_completo}'})
+    for p in pagos_credito:
+        ref = p.comprobante_referencia.strip()
+        if ref:
+            comprobante_groups.setdefault(ref, []).append({'tipo': 'pago_credito', 'pk': p.pk, 'label': f'Pago #{p.numero_pago} - {p.credito.socio.nombre_completo}'})
+    for m in multas_reportadas:
+        ref = m.comprobante_pago.strip()
+        if ref:
+            comprobante_groups.setdefault(ref, []).append({'tipo': 'multa', 'pk': m.pk, 'label': f'Multa - {m.socio.nombre_completo}'})
+
+    comprobante_count_map = {}
+    comprobante_members_map = {}
+    for ref, members in comprobante_groups.items():
+        if len(members) > 1:
+            for member in members:
+                key = f"{member['tipo']}_{member['pk']}"
+                comprobante_count_map[key] = len(members)
+                comprobante_members_map[key] = members
+
+    for a in aportes_pendientes:
+        key = f"aporte_{a.pk}"
+        a.comprobante_count = comprobante_count_map.get(key, 0)
+        a.comprobante_members = comprobante_members_map.get(key, [])
+        a.comprobante_ref_display = a.comprobante_referencia.strip()
+    for p in pagos_credito:
+        key = f"pago_credito_{p.pk}"
+        p.comprobante_count = comprobante_count_map.get(key, 0)
+        p.comprobante_members = comprobante_members_map.get(key, [])
+        p.comprobante_ref_display = p.comprobante_referencia.strip()
+    for m in multas_reportadas:
+        key = f"multa_{m.pk}"
+        m.comprobante_count = comprobante_count_map.get(key, 0)
+        m.comprobante_members = comprobante_members_map.get(key, [])
+        m.comprobante_ref_display = m.comprobante_pago.strip()
 
     return render(request, 'core/verificar_todo.html', {
         'aportes_pendientes': aportes_pendientes,
